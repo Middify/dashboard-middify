@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_URL =
-  "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getUsers";
+const API_URL ="https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getUsers";
 
 export const getUsers = async ({ token, signal } = {}) => {
   if (!token) {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_URL =
-  "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getProductStates";
+const API_URL ="https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getProductStates";
 
 export const getProductStates = async ({ token, signal } = {}) => {
   if (!token) {
@@ -19,48 +18,7 @@ export const getProductStates = async ({ token, signal } = {}) => {
     throw new Error(`Error ${response.status}`);
   }
 
-  const result = await response.json();
-
-  const tenantsList = Array.isArray(result?.tenants)
-    ? result.tenants
-    : Array.isArray(result)
-    ? result
-    : null;
-
-  if (!tenantsList) {
-    throw new Error(
-      "La respuesta no contiene la propiedad 'tenants' como arreglo."
-    );
-  }
-
-  const dedupedTenants = [];
-  const seenTenantIds = new Set();
-
-  tenantsList.forEach((tenant, index) => {
-    if (!tenant || typeof tenant !== "object") {
-      return;
-    }
-
-    const hasId = typeof tenant.tenantId === "string" && tenant.tenantId.length > 0;
-    const key = hasId ? tenant.tenantId : `__tenant_${index}`;
-
-    if (seenTenantIds.has(key)) {
-      return;
-    }
-
-    seenTenantIds.add(key);
-
-    if (hasId) {
-      dedupedTenants.push(tenant);
-    } else {
-      dedupedTenants.push({
-        ...tenant,
-        tenantId: key,
-      });
-    }
-  });
-
-  return dedupedTenants;
+  return response.json();
 };
 
 export const useProductStates = (token) => {
@@ -82,12 +40,17 @@ export const useProductStates = (token) => {
       setLoading(true);
       setError(null);
       try {
-        const tenantsList = await getProductStates({
+        const data = await getProductStates({
           token,
           signal: controller.signal,
         });
         if (isMounted) {
-          setTenants(tenantsList);
+          const tenantList = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.tenants)
+            ? data.tenants
+            : [];
+          setTenants(tenantList);
         }
       } catch (err) {
         if (err.name === "AbortError") {

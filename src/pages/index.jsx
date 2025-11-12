@@ -7,10 +7,12 @@ import Navbar from "../navbar/navbar";
 import Sidebar from "../navbar/sidebar";
 import Dashboard from "./Dashboard";
 import Stores from "./Stores";
+import OrdersTable from "./OrdersTable";
 
 const VIEW_REGISTRY = {
   dashboard: Dashboard,
   stores: Stores,
+  orders: OrdersTable,
 };
 
 const Index = () => {
@@ -35,6 +37,7 @@ const Index = () => {
 
   const [activeView, setActiveView] = useState("dashboard");
   const [selectedTenantId, setSelectedTenantId] = useState(null);
+  const [selectedOrderState, setSelectedOrderState] = useState(null);
 
   const handleChangeView = useCallback((nextView) => {
     setActiveView((current) =>
@@ -77,6 +80,14 @@ const Index = () => {
       };
     }
 
+    if (activeView === "orders") {
+      return {
+        token,
+        selectedTenantId,
+        selectedOrderState,
+      };
+    }
+
     return {
       isLoading,
       error,
@@ -106,6 +117,8 @@ const Index = () => {
           activeView={activeView}
           onChangeView={handleChangeView}
           showTenantFilter={true}
+          activeOrderState={selectedOrderState}
+          onChangeOrderState={setSelectedOrderState}
         />
         <main className="flex-1">
           <ActiveViewComponent {...viewProps} />
