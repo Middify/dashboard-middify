@@ -8,11 +8,13 @@ import Sidebar from "../navbar/sidebar";
 import Dashboard from "./Dashboard";
 import Stores from "./Stores";
 import OrdersTable from "./OrdersTable";
+import DetailsOrders from "../components/orders/DetailsOrders";
 
 const VIEW_REGISTRY = {
   dashboard: Dashboard,
   stores: Stores,
   orders: OrdersTable,
+  detailsOrders: DetailsOrders,
 };
 
 const Index = () => {
@@ -40,6 +42,7 @@ const Index = () => {
   const [selectedOrderState, setSelectedOrderState] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const handleChangeView = useCallback((nextView) => {
     setActiveView((current) =>
@@ -57,6 +60,19 @@ const Index = () => {
     },
     [setActiveView, setSelectedOrderState]
   );
+
+  const handleSelectOrder = useCallback(
+    (order) => {
+      setSelectedOrder(order ?? null);
+      setActiveView("detailsOrders");
+    },
+    [setActiveView]
+  );
+
+  const handleCloseOrderDetails = useCallback(() => {
+    setSelectedOrder(null);
+    setActiveView("orders");
+  }, []);
 
   const filteredTenants = useMemo(() => {
     if (selectedTenantId) {
@@ -95,6 +111,16 @@ const Index = () => {
         token,
         selectedTenantId,
         selectedOrderState,
+        onSelectOrder: handleSelectOrder,
+      };
+    }
+
+    if (activeView === "detailsOrders") {
+      return {
+        token,
+        orderId: selectedOrder?._id ?? selectedOrder?.id ?? null,
+        fallbackOrder: selectedOrder,
+        onClose: handleCloseOrderDetails,
       };
     }
 
@@ -113,10 +139,13 @@ const Index = () => {
     filteredTenants,
     isLoading,
     marketplaceTenants,
+    selectedOrder,
     selectedOrderState,
     selectedTenantId,
     tenants,
     token,
+    handleCloseOrderDetails,
+    handleSelectOrder,
   ]);
 
   const handleToggleSidebarCollapse = useCallback(() => {
@@ -167,7 +196,7 @@ const Index = () => {
           onToggleMobileSidebar={handleOpenSidebar}
         />
         <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-8">
-          <main className="mx-auto w-full max-w-6xl">
+          <main className="w-full">
             <ActiveViewComponent {...viewProps} />
           </main>
         </div>
