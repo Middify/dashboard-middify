@@ -11,9 +11,9 @@ const DeleteOrdersModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
+      {/* Overlay con blur */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
@@ -50,10 +50,7 @@ const DeleteOrdersModal = ({
                 {selectedCount === 1 ? "orden seleccionada" : "órdenes seleccionadas"}
                 ?
               </p>
-              <p className="mt-2 text-sm text-slate-500">
-                Esta acción cambiará el estado de las órdenes a "eliminada" y no se
-                puede deshacer.
-              </p>
+
             </div>
 
             {/* Botones */}
