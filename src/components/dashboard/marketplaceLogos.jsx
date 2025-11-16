@@ -11,7 +11,9 @@ import hitesLogo from "../../assets/marketplace/hites.jpg";
 import anymarketLogo from "../../assets/marketplace/anymarket.webp";    
 import jumpsellerLogo from "../../assets/marketplace/jumpseller.png";
 import meliLogo from "../../assets/marketplace/meli.png";
-import marketplaceLogo from "../../assets/marketplace/marketplace.webp";
+import softlandLogo from "../../assets/marketplace/softland.png";
+import rappiLogo from "../../assets/marketplace/rappi.jpg";
+import fardoLogo from "../../assets/marketplace/fardo.webp";
 
 import defaultLogo from "../../assets/marketplace/middify.png";
 
@@ -31,7 +33,7 @@ export const getMarketplaceLogoByName = (name) => {
   if (n.includes("prestashop")) {
     return prestashopLogo;
   }
-  if (n.includes("tienda-nueva")) {
+  if (n.includes("tiendanube")) {
     return tiendaNuevaLogo;
   }
   if (n.includes("walmart")) {
@@ -61,15 +63,21 @@ export const getMarketplaceLogoByName = (name) => {
   if (n.includes("meli")) {
     return meliLogo;
   }
-  if (n.includes("marketplace")) {
-    return marketplaceLogo;
+  if (n.includes("softland")) {
+    return softlandLogo;
+  }
+  if (n.includes("rappi")) {
+    return rappiLogo;
+  }
+  if (n.includes("fardo")) {
+    return fardoLogo;
   }
   return defaultLogo;
 };
 
-export const MarketplaceLogo = ({ name, className = "h-6 w-6" }) => {
+export const MarketplaceLogo = ({ name, className = "h-20 w-20" }) => {
   const src = getMarketplaceLogoByName(name);
-  const alt = typeof name === "string" && name ? name : "marketplace";
+  const alt = typeof name === "string" && name ? name : "sin marketplace";
   return (
     <img
       src={src}
