@@ -198,10 +198,12 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
           };
         });
 
-        const totalOrders =
-          card.total && Number.isFinite(card.total)
-            ? card.total
-            : states.reduce((acc, state) => acc + (Number(state?.count) || 0), 0);
+        // Total de órdenes: únicamente suma de los 6 estados principales,
+        // evitando contar estados adicionales no contemplados.
+        const totalOrders = states.reduce(
+          (acc, state) => acc + (Number(state?.count) || 0),
+          0
+        );
 
         const summaryChips = [
           {

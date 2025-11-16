@@ -367,6 +367,7 @@ const Sidebar = ({
               aria-label="Papelera de reciclaje"
               className={`rounded-xl text-white/85 transition-colors duration-200 hover:bg-white/10 hover:text-white ${collapsed ? "p-2" : "px-3 py-2"}`}
               title="Papelera de reciclaje"
+              onClick={() => handleViewChange("recycle")}
             >
               <div className={`flex items-center ${collapsed ? "" : "gap-2"}`}>
                 <RestoreFromTrashOutlinedIcon fontSize="small" />

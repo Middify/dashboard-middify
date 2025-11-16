@@ -8,6 +8,34 @@ import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 
 const numberFormatter = new Intl.NumberFormat("es-CL");
 
+// Estados principales permitidos (normalizados)
+const normalizeStateName = (value = "") =>
+  value.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const ALLOWED_STATE_SET = new Set([
+  "ingresada",
+  "en proceso",
+  "pendiente",
+  "error",
+  "descartada",
+  "procesada",
+]);
+
+const sumAllowedStatesCount = (marketplace) => {
+  // Si viene desglosado por estados, sumar solo los 6 principales
+  const states = Array.isArray(marketplace?.states) ? marketplace.states : null;
+  if (states && states.length > 0) {
+    return states.reduce((acc, st) => {
+      const key = normalizeStateName(st?._id ?? st?.name ?? "");
+      if (ALLOWED_STATE_SET.has(key)) {
+        return acc + (Number(st?.count) || 0);
+      }
+      return acc;
+    }, 0);
+  }
+  // Si no hay desglose, usar count como fallback
+  return Number(marketplace?.count) || 0;
+};
+
 const aggregateTenants = (tenants) => {
   const map = new Map();
 
@@ -15,7 +43,7 @@ const aggregateTenants = (tenants) => {
     (Array.isArray(tenant?.marketplaces) ? tenant.marketplaces : []).forEach(
       (marketplace) => {
         const name = marketplace?.name ?? "Sin nombre";
-        const countValue = Number(marketplace?.count) || 0;
+        const countValue = sumAllowedStatesCount(marketplace);
 
         map.set(name, (map.get(name) || 0) + countValue);
       }
@@ -36,7 +64,7 @@ const normalizeTenantMarketplaces = (tenant, index) =>
         marketplace?.name ??
         `tenant-${tenant?.tenantId ?? index}-marketplace-${marketplaceIndex}`,
       name: marketplace?.name ?? "Sin nombre",
-      count: Number(marketplace?.count) || 0,
+      count: sumAllowedStatesCount(marketplace),
     })
   );
 

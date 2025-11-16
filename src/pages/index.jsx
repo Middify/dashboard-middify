@@ -19,6 +19,7 @@ import Dashboard from "./Dashboard";
 import Stores from "./Stores";
 import OrdersTable from "./OrdersTable";
 import DetailsOrders from "./DetailsOrders";
+import RecycleBin from "./RecycleBin";
 
 const ORDER_STATE_IDS = new Set([
   "ingresada",
@@ -35,6 +36,9 @@ const ensureOrderState = (value) =>
 const deriveView = (pathname, hasDetail) => {
   if (hasDetail) {
     return "detailsOrders";
+  }
+  if (pathname.startsWith("/recycle")) {
+    return "recycle";
   }
   if (pathname.startsWith("/stores")) {
     return "stores";
@@ -119,6 +123,11 @@ const Index = () => {
           break;
         }
         case "dashboard":
+          navigate("/");
+          break;
+        case "recycle":
+          navigate("/recycle");
+          break;
         default:
           navigate("/");
           break;
@@ -288,6 +297,16 @@ const Index = () => {
                     selectedOrderState={resolvedOrderState}
                     onSelectOrder={handleSelectOrder}
                     user={user}
+                  />
+                }
+              />
+              <Route
+                path="/recycle"
+                element={
+                  <RecycleBin
+                    token={token}
+                    selectedTenantId={selectedTenantId}
+                    onSelectOrder={handleSelectOrder}
                   />
                 }
               />
