@@ -1,5 +1,6 @@
 import CardsStates from "../components/dashboard/CardsStates";
 import CardMarketplace from "../components/dashboard/CardMarketplace";
+import { SkeletonDashboard } from "../components/skeleton";
 
 const Dashboard = ({
   isLoading = false,
@@ -12,7 +13,7 @@ const Dashboard = ({
   let content;
 
   if (isLoading) {
-    content = <div>Cargando...</div>;
+    content = <SkeletonDashboard />;
   } else if (error) {
     content = (
       <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">

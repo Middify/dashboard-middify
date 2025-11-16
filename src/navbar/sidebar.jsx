@@ -166,8 +166,8 @@ const Sidebar = ({
     const selectedTenantLabel = selectedTenantOption ? selectedTenantOption.tenantName : "Todas las tiendas";
 
     return (
-      <div className="flex h-full flex-col justify-between">
-        <div>
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-y-auto">
           <div className={`${headerPaddingX} ${headerPaddingTop}`}>
             <div className="flex flex-col items-center">
               <img
@@ -360,15 +360,18 @@ const Sidebar = ({
           </div>
         </div>
 
-        <div className={`${footerPaddingX} pb-4`}>
-          <div className={`mb-2 flex ${collapsed ? "justify-center" : "justify-end"}`}>
+        <div className={`mt-auto ${footerPaddingX} pb-4 border-t border-white/10`}>
+          <div className={`pt-3 mb-2 flex justify-center`}>
             <button
               type="button"
               aria-label="Papelera de reciclaje"
-              className="rounded-xl p-2 text-white/85 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+              className={`rounded-xl text-white/85 transition-colors duration-200 hover:bg-white/10 hover:text-white ${collapsed ? "p-2" : "px-3 py-2"}`}
               title="Papelera de reciclaje"
             >
-              <RestoreFromTrashOutlinedIcon fontSize="small" />
+              <div className={`flex items-center ${collapsed ? "" : "gap-2"}`}>
+                <RestoreFromTrashOutlinedIcon fontSize="small" />
+                {!collapsed && <span className="text-sm">Papelera</span>}
+              </div>
             </button>
           </div>
           {!collapsed && (
