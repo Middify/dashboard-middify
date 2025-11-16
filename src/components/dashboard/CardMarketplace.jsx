@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { MarketplaceLogo } from "./marketplaceLogos.jsx";
+import MarketplacePie from "./MarketplacePie.jsx";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 
 const numberFormatter = new Intl.NumberFormat("es-CL");
 
@@ -75,6 +80,8 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
   // Asegurar que la página siempre esté en rango
   const currentPage = Math.min(page, totalPages);
 
+  const [viewMode, setViewMode] = useState("list"); // list | pie
+
   // Orden determinístico: primero por cantidad desc, luego por nombre asc
   const sortedMarketplaces = useMemo(() => {
     const list = Array.isArray(cardData.marketplaces)
@@ -122,6 +129,28 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
           Marketplace por tienda
         </h2>
         <div className="flex items-center gap-3">
+          <div className="flex items-center">
+            <Tooltip title="Vista lista">
+              <IconButton
+                size="small"
+                color={viewMode === "list" ? "primary" : "default"}
+                onClick={() => setViewMode("list")}
+                aria-label="Ver como lista"
+              >
+                <ViewListIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Vista torta">
+              <IconButton
+                size="small"
+                color={viewMode === "pie" ? "primary" : "default"}
+                onClick={() => setViewMode("pie")}
+                aria-label="Ver como gráfico de torta"
+              >
+                <DonutLargeIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </div>
           <span className="text-xs font-medium uppercase tracking-wide text-indigo-600">
             {cardData.title}
           </span>
@@ -157,34 +186,38 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
         </p>
       ) : (
         <div className="flex-1">
-          <ul
-            className="
+          {viewMode === "pie" ? (
+            <MarketplacePie items={sortedMarketplaces} />
+          ) : (
+            <ul
+              className="
               grid grid-cols-1 gap-4
               sm:grid-cols-2
               md:grid-cols-3
               transition-opacity duration-200 ease-out
             "
-            style={{ opacity: isFading ? 0 : 1 }}
-          >
-            {paginatedMarketplaces.map((marketplace) => (
-              <li
-                key={marketplace.id}
-                className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-200 transition-transform duration-200 ease-out group-hover:scale-105">
-                    <MarketplaceLogo name={marketplace.name} className="h-6 w-6 transition-transform duration-200 ease-out group-hover:scale-110" />
+              style={{ opacity: isFading ? 0 : 1 }}
+            >
+              {paginatedMarketplaces.map((marketplace) => (
+                <li
+                  key={marketplace.id}
+                  className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-200 transition-transform duration-200 ease-out group-hover:scale-105">
+                      <MarketplaceLogo name={marketplace.name} className="h-6 w-6 transition-transform duration-200 ease-out group-hover:scale-110" />
+                    </div>
+                    <span className="truncate" title={marketplace.name}>
+                      {marketplace.name}
+                    </span>
                   </div>
-                  <span className="truncate" title={marketplace.name}>
-                    {marketplace.name}
+                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[12px] font-medium text-indigo-700 ring-1 ring-indigo-100 transition-colors duration-200 ease-out group-hover:bg-indigo-100 group-hover:text-indigo-800">
+                    {numberFormatter.format(marketplace.count || 0)}
                   </span>
-                </div>
-                <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[12px] font-medium text-indigo-700 ring-1 ring-indigo-100 transition-colors duration-200 ease-out group-hover:bg-indigo-100 group-hover:text-indigo-800">
-                  {numberFormatter.format(marketplace.count || 0)}
-                </span>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </section>
