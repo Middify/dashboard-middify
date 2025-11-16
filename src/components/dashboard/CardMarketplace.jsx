@@ -1,3 +1,5 @@
+import { MarketplaceLogo } from "./marketplaceLogos.jsx";
+
 const numberFormatter = new Intl.NumberFormat("es-CL");
 
 const aggregateTenants = (tenants) => {
@@ -71,9 +73,10 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
               key={marketplace.id}
               className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600"
             >
-              <span className="capitalize text-slate-700">
-                {marketplace.name}
-              </span>
+              <div className="flex items-center gap-3">
+                <MarketplaceLogo name={marketplace.name} className="h-6 w-6" />
+                <span className="sr-only">{marketplace.name}</span>
+              </div>
               <span className="rounded-full bg-white px-2 py-0.5 text-indigo-600 shadow-sm">
                 {numberFormatter.format(marketplace.count || 0)}
               </span>
