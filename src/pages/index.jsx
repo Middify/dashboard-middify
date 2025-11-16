@@ -249,6 +249,8 @@ const Index = () => {
           isSidebarCollapsed={isSidebarCollapsed}
           onToggleSidebarCollapse={handleToggleSidebarCollapse}
           onToggleMobileSidebar={handleOpenSidebar}
+          activeView={currentView}
+          activeOrderState={resolvedOrderState}
         />
         <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-8">
           <main className="w-full">

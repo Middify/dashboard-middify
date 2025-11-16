@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useSignOut } from "../auth/useSignOut";
 
 const getInitials = (fullName, email) => {
@@ -30,6 +32,8 @@ const Navbar = ({
   isSidebarCollapsed = false,
   onToggleSidebarCollapse,
   onToggleMobileSidebar,
+  activeView = "dashboard",
+  activeOrderState = null,
 }) => {
   const { signOut } = useSignOut();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -87,10 +91,51 @@ const Navbar = ({
     setIsMenuOpen((prev) => !prev);
   };
 
+  const orderStateLabels = {
+    ingresada: "Ingresada",
+    pendiente: "Pendiente",
+    procesada: "Procesada",
+    error: "Error",
+    en_proceso: "En proceso",
+    descartada: "Descartada",
+  };
+
+  const breadcrumb = (() => {
+    switch (activeView) {
+      case "stores":
+        return "Tiendas";
+      case "orders":
+        return activeOrderState
+          ? `Órdenes · ${orderStateLabels[activeOrderState] ?? activeOrderState}`
+          : "Órdenes";
+      case "detailsOrders":
+        return "Órdenes · Detalle";
+      case "dashboard":
+      default:
+        return "Dashboard";
+    }
+  })();
+
   return (
-    <header className="w-full bg-white shadow-sm">
+    <header className="sticky top-0 z-30 relative w-full bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-slate-200/60">
+      {/* Botón de colapsar/expandir pegado al borde izquierdo en desktop */}
+      <button
+        type="button"
+        onClick={handleToggleSidebarCollapse}
+        className="absolute left-2 top-1/2 hidden -translate-y-1/2 h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 lg:flex"
+        aria-label={
+          isSidebarCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"
+        }
+        title={isSidebarCollapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
+      >
+        {isSidebarCollapsed ? (
+          <ChevronRightIcon fontSize="small" />
+        ) : (
+          <ChevronLeftIcon fontSize="small" />
+        )}
+      </button>
       <nav className="flex h-16 w-full justify-center px-4 sm:px-6 lg:px-8">
-        <div className="flex w-full max-w-6xl items-center gap-3">
+        <div className="flex w-full max-w-6xl items-center gap-3 lg:pl-12">
           <button
             type="button"
             onClick={handleToggleMobileSidebar}
@@ -100,24 +145,13 @@ const Navbar = ({
             <MenuIcon fontSize="small" />
           </button>
 
-          <div className="ml-auto flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleToggleSidebarCollapse}
-              className="hidden h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 lg:inline-flex"
-              aria-label={
-                isSidebarCollapsed
-                  ? "Expandir barra lateral"
-                  : "Contraer barra lateral"
-              }
-            >
-              {isSidebarCollapsed ? (
-                <MenuIcon fontSize="small" />
-              ) : (
-                <MenuOpenIcon fontSize="small" />
-              )}
-            </button>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-slate-700">
+              {breadcrumb}
+            </p>
+          </div>
 
+          <div className="ml-auto flex items-center gap-3">
             <div className="relative" ref={menuRef}>
               <button
                 type="button"

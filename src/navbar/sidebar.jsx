@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
+import RestoreFromTrashOutlinedIcon from "@mui/icons-material/RestoreFromTrashOutlined";
 import LogoFull from "../assets/logo/logo-removebg-preview.png";
 import LogoCompact from "../assets/logo/middify.png";
 
@@ -74,6 +75,8 @@ const Sidebar = ({
   const [ordersExpanded, setOrdersExpanded] = useState(activeView === "orders");
   const [isAnimating, setIsAnimating] = useState(false);
   const effectiveCollapsed = isCollapsed && !isMobileOpen;
+  const [tenantOpen, setTenantOpen] = useState(false);
+  const tenantRef = useRef(null);
 
   useEffect(() => {
     if (effectiveCollapsed) {
@@ -128,31 +131,39 @@ const Sidebar = ({
 
   const renderSidebarBody = (collapsed) => {
     const headerPaddingX = collapsed ? "px-3" : "px-6";
-    const headerPaddingTop = collapsed ? "pt-4" : "pt-6"; // Reducido
+    const headerPaddingTop = collapsed ? "pt-4" : "pt-6";
     const navPaddingX = collapsed ? "px-2" : "px-6";
-    const navPaddingTop = collapsed ? "pt-2" : "pt-4"; // Reducido
+    const navPaddingTop = collapsed ? "pt-2" : "pt-4";
     const footerPaddingX = collapsed ? "px-3" : "px-6";
     const navAlignment = collapsed ? "text-center" : "text-left";
 
     const primaryButtonClasses = (isActive) =>
       [
-        "flex w-full items-center rounded-2xl py-2.5 text-sm font-semibold transition-all duration-200", // py reducido
-        isActive
-          ? "bg-white/20 shadow-lg shadow-black/10"
-          : "bg-transparent hover:bg-white/10",
-        collapsed ? "justify-center px-0" : "justify-start px-4",
-        collapsed ? "" : "gap-3",
+        "relative flex w-full items-center rounded-2xl py-2.5 text-[13px] font-medium tracking-wide transition-all duration-200",
+        isActive ? "bg-white/12 border border-white/15 shadow-lg shadow-black/10" : "bg-transparent hover:bg-white/8 hover:border hover:border-white/10",
+        collapsed ? "justify-center px-0" : "justify-start px-3.5 gap-3",
+        isActive ? "before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-1.5 before:rounded-r-full before:bg-white/90" : ""
       ]
         .filter(Boolean)
         .join(" ");
 
     const ordersButtonClasses = [
-      "flex w-full items-center rounded-2xl py-2.5 text-sm font-semibold transition-all duration-200", // py reducido
+      "relative flex w-full items-center rounded-2xl py-2.5 text-[13px] font-medium tracking-wide transition-all duration-200",
       activeView === "orders" && ordersExpanded
-        ? "bg-white/20 shadow-lg shadow-black/10"
-        : "bg-transparent hover:bg-white/10",
-      collapsed ? "justify-center px-0" : "justify-between px-4",
+        ? "bg-white/12 border border-white/15 shadow-lg shadow-black/10"
+        : "bg-transparent hover:bg-white/8 hover:border hover:border-white/10",
+      collapsed ? "justify-center px-0" : "justify-between px-3.5",
+      activeView === "orders" && ordersExpanded ? "before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-6 before:w-1.5 before:rounded-r-full before:bg-white/90" : ""
     ].join(" ");
+
+    const renderIconWrapper = (icon, isActive) => (
+      <div className={`h-8 w-8 rounded-xl grid place-items-center transition-all duration-200 ${isActive ? "bg-white/15 text-white" : "bg-white/10 text-white/90"}`}>
+        {icon}
+      </div>
+    );
+
+    const selectedTenantOption = (hasValidTenants && tenantOptions.find(t => t.tenantId === selectedTenantId)) || null;
+    const selectedTenantLabel = selectedTenantOption ? selectedTenantOption.tenantName : "Todas las tiendas";
 
     return (
       <div className="flex h-full flex-col justify-between">
@@ -171,33 +182,61 @@ const Sidebar = ({
                 <div className="mt-4 w-full text-left">
                   <div className="h-px w-full bg-white/15 transition-all duration-200" />
                   <label
-                    htmlFor="tenant-select"
-                    className="mt-3 block text-sm font-medium text-white/80 transition-colors duration-200" // mt reducido
+                    className="mt-3 block text-sm font-medium text-white/80 transition-colors duration-200"
                   >
                     Tienda
                   </label>
-                  <div className="relative mt-1.5"> 
-                    <select
-                      id="tenant-select"
-                      value={selectedTenantId ?? "all"}
-                      onChange={handleTenantChange}
-                      className="w-full appearance-none rounded-xl border border-white/25 bg-white/10 px-3 py-2 pr-10 text-sm font-medium text-white outline-none transition-all duration-200 hover:border-white/40 focus:border-white focus:bg-white/15" // py reducido
+                  <div className="relative mt-1.5" ref={tenantRef}>
+                    <button
+                      type="button"
+                      onClick={() => setTenantOpen((v) => !v)}
+                      className={`w-full rounded-xl border ${tenantOpen ? "border-white/40 bg-white/15" : "border-white/25 bg-white/10"} px-3 py-2 pr-10 text-sm font-medium text-white outline-none transition-all duration-200 hover:border-white/40 hover:bg-white/12 focus:border-white/50 focus:bg-white/15`}
+                      aria-haspopup="listbox"
+                      aria-expanded={tenantOpen}
+                      title="Seleccionar tienda"
                     >
-                      <option className="bg-white text-slate-800" value="all">
-                        Todas las tiendas
-                      </option>
+                      <span className="truncate">{selectedTenantLabel}</span>
+                      <ExpandMoreIcon className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/70 transition-transform duration-300 ${tenantOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    <div
+                      className={`absolute z-10 mt-2 w-full rounded-xl border border-white/15 bg-[#063279]/95 backdrop-blur-sm shadow-xl shadow-black/20 transition-all duration-300 ease-out ${tenantOpen ? "max-h-[60vh] opacity-100 translate-y-0" : "pointer-events-none max-h-0 opacity-0 -translate-y-1"} ${tenantOpen ? "overflow-auto" : "overflow-hidden"}`}
+                      role="listbox"
+                      tabIndex={-1}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof onChangeTenant === "function") onChangeTenant(null);
+                          setTenantOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-3 px-3 py-2 text-sm text-left transition-colors duration-150 ${selectedTenantId == null ? "bg-white/10 text-white" : "text-white/90 hover:bg-white/10 hover:text-white"}`}
+                        role="option"
+                        aria-selected={selectedTenantId == null}
+                      >
+                        <StatusDot active={selectedTenantId == null} />
+                        <span>Todas las tiendas</span>
+                      </button>
                       {hasValidTenants &&
-                        tenantOptions.map((tenant) => (
-                          <option
-                            key={tenant.tenantId}
-                            value={tenant.tenantId}
-                            className="bg-white text-slate-800"
-                          >
-                            {tenant.tenantName}
-                          </option>
-                        ))}
-                    </select>
-                    <ExpandMoreIcon className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/70 transition-transform duration-200" />
+                        tenantOptions.map((tenant) => {
+                          const isActive = selectedTenantId === tenant.tenantId;
+                          return (
+                            <button
+                              key={tenant.tenantId}
+                              type="button"
+                              onClick={() => {
+                                if (typeof onChangeTenant === "function") onChangeTenant(tenant.tenantId);
+                                setTenantOpen(false);
+                              }}
+                              className={`flex w-full items-center gap-3 px-3 py-2 text-sm text-left transition-colors duration-150 ${isActive ? "bg-white/10 text-white" : "text-white/90 hover:bg-white/10 hover:text-white"}`}
+                              role="option"
+                              aria-selected={isActive}
+                            >
+                              <StatusDot active={isActive} />
+                              <span className="truncate">{tenant.tenantName}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
                   </div>
                 </div>
               
@@ -208,6 +247,7 @@ const Sidebar = ({
           <div
             className={`${navPaddingX} ${navPaddingTop}`} 
           >
+            <div className="my-2 h-px bg-white/10" />
             <nav className={`space-y-4 ${navAlignment}`}> 
               <div className="space-y-2"> 
                 <button
@@ -215,12 +255,7 @@ const Sidebar = ({
                   onClick={() => handleViewChange("dashboard")}
                   className={primaryButtonClasses(isDashboardActive)}
                 >
-                  <AssessmentIcon 
-                    className={`transition-all duration-200 ${
-                      isDashboardActive ? "text-white scale-110" : "text-white/85"
-                    }`} 
-                    fontSize="small" 
-                  />
+                  {renderIconWrapper(<AssessmentIcon fontSize="small" />, isDashboardActive)}
                   {!collapsed && (
                     <span className={`transition-all duration-200 ${
                       isDashboardActive ? "text-white font-semibold" : "text-white/90"
@@ -235,12 +270,7 @@ const Sidebar = ({
                   onClick={() => handleViewChange("stores")}
                   className={primaryButtonClasses(isStoresActive)}
                 >
-                  <ApartmentIcon 
-                    className={`transition-all duration-200 ${
-                      isStoresActive ? "text-white scale-110" : "text-white/85"
-                    }`} 
-                    fontSize="small" 
-                  />
+                  {renderIconWrapper(<ApartmentIcon fontSize="small" />, isStoresActive)}
                   {!collapsed && (
                     <span className={`transition-all duration-200 ${
                       isStoresActive ? "text-white font-semibold" : "text-white/90"
@@ -252,6 +282,12 @@ const Sidebar = ({
               </div>
 
               <div className="space-y-2">
+                {!collapsed && (
+                  <>
+                    <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-white/45">Órdenes</p>
+                    <div className="my-2 h-px bg-white/10" />
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={handleOrdersToggle}
@@ -260,12 +296,7 @@ const Sidebar = ({
                   <div
                     className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
                   >
-                    <Inventory2Icon 
-                      className={`transition-all duration-200 ${
-                        activeView === "orders" ? "text-white scale-110" : "text-white/85"
-                      }`} 
-                      fontSize="small" 
-                    />
+                    {renderIconWrapper(<Inventory2Icon fontSize="small" />, activeView === "orders")}
                     {!collapsed && (
                       <span className={`transition-all duration-200 ${
                         activeView === "orders" ? "text-white font-semibold" : "text-white/90"
@@ -298,7 +329,7 @@ const Sidebar = ({
                           isOrdersRootActive
                             ? "bg-white/15 font-semibold text-white shadow shadow-black/10"
                             : "text-white/80 hover:bg-white/10 hover:text-white"
-                        }`} // py reducido
+                        }`}
                       >
                         <StatusDot active={isOrdersRootActive} />
                         <span>Todas</span>
@@ -330,6 +361,16 @@ const Sidebar = ({
         </div>
 
         <div className={`${footerPaddingX} pb-4`}>
+          <div className={`mb-2 flex ${collapsed ? "justify-center" : "justify-end"}`}>
+            <button
+              type="button"
+              aria-label="Papelera de reciclaje"
+              className="rounded-xl p-2 text-white/85 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+              title="Papelera de reciclaje"
+            >
+              <RestoreFromTrashOutlinedIcon fontSize="small" />
+            </button>
+          </div>
           {!collapsed && (
             <div className="text-center text-xs text-white/50 transition-all duration-200">
               © {new Date().getFullYear()} Middify
@@ -343,7 +384,7 @@ const Sidebar = ({
   return (
     <>
       <aside
-        className="hidden h-screen-full flex-shrink-0 bg-[#063279] text-white transition-all duration-200 lg:flex flex-col" // h-full-screen cambiado a h-full
+        className="hidden sticky top-0 z-20 h-screen flex-shrink-0 bg-[#063279] text-white transition-all duration-200 lg:flex flex-col"
         style={{
           width: effectiveCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
         }}
