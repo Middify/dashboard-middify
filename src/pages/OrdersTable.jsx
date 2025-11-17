@@ -14,13 +14,13 @@ const OrdersTable = ({
 }) => {
   const {
     error,
-    searchTerm,
     grid,
-    onSearchChange,
     selectedRowIds,
     getSelectedOrderIds,
     clearSelection,
     refreshData,
+    onSearchIds,
+    onSearchLoading,
   } = useOrdersTableLogic({
     token,
     selectedTenantId,
@@ -96,11 +96,12 @@ const OrdersTable = ({
     <>
       <div className="flex flex-col gap-6 pt-4">
         <OrdersTableHeader
-          searchTerm={searchTerm}
-          onSearchChange={onSearchChange}
+          token={token}
           selectedCount={selectedRowIds.length}
           onDeleteSelected={handleDeleteClick}
           isDeleting={isDeleting}
+          onSearchIds={onSearchIds}
+          onSearchLoading={onSearchLoading}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <OrdersTableGrid

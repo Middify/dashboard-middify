@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
-/* Scrollbar muy sutil para el sidebar */
 .sidebar-scroll {
-  scrollbar-width: thin; /* Firefox */
+  scrollbar-width: thin; 
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 .sidebar-scroll::-webkit-scrollbar {
