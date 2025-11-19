@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -6,15 +6,26 @@ import Inventory2Icon from "@mui/icons-material/Inventory2";
 import RestoreFromTrashOutlinedIcon from "@mui/icons-material/RestoreFromTrashOutlined";
 import LogoFull from "../assets/logo/logo-removebg-preview.png";
 import LogoCompact from "../assets/logo/middify.png";
+import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
 
-const ORDER_STATE_ITEMS = [
-  { id: "ingresada", label: "Ingresada" },
-  { id: "pendiente", label: "Pendiente" },
-  { id: "procesada", label: "Procesada" },
-  { id: "error", label: "Error" },
-  { id: "en_proceso", label: "En proceso" },
-  { id: "descartada", label: "Descartada" },
+const PRIMARY_NAV_ITEMS = [
+  { id: "dashboard", label: "Dashboard", Icon: AssessmentIcon },
+  { id: "stores", label: "Tiendas", Icon: ApartmentIcon },
 ];
+
+const normalizeStateId = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+const ORDER_STATE_ITEMS = STATE_DEFINITIONS.map(({ key, label }) => {
+  const id = normalizeStateId(key);
+  const displayLabel =
+    id === "en_proceso" ? "En proceso" : label ?? key;
+  return { id, label: displayLabel };
+});
 
 export const SIDEBAR_WIDTH = 280;
 export const SIDEBAR_COLLAPSED_WIDTH = 84;
@@ -59,13 +70,6 @@ const Sidebar = ({
     closeMobileIfNeeded();
   };
 
-  const handleTenantChange = (event) => {
-    if (typeof onChangeTenant === "function") {
-      const value = event.target.value;
-      onChangeTenant(value === "all" ? null : value);
-    }
-  };
-
   const closeMobileIfNeeded = () => {
     if (isMobileOpen && typeof onCloseMobile === "function") {
       onCloseMobile();
@@ -73,10 +77,8 @@ const Sidebar = ({
   };
 
   const [ordersExpanded, setOrdersExpanded] = useState(activeView === "orders");
-  const [isAnimating, setIsAnimating] = useState(false);
   const effectiveCollapsed = isCollapsed && !isMobileOpen;
   const [tenantOpen, setTenantOpen] = useState(false);
-  const tenantRef = useRef(null);
 
   useEffect(() => {
     if (effectiveCollapsed) {
@@ -88,8 +90,18 @@ const Sidebar = ({
     }
   }, [activeView, effectiveCollapsed]);
 
-  const isDashboardActive = activeView === "dashboard";
-  const isStoresActive = activeView === "stores";
+  useEffect(() => {
+    if (effectiveCollapsed || !showTenantFilter) {
+      setTenantOpen(false);
+    }
+  }, [effectiveCollapsed, showTenantFilter]);
+
+  useEffect(() => {
+    if (!isMobileOpen) {
+      setTenantOpen(false);
+    }
+  }, [isMobileOpen]);
+
   const isOrdersRootActive = activeView === "orders" && !activeOrderState;
 
   const handleOrderRootClick = () => {
@@ -101,10 +113,6 @@ const Sidebar = ({
   };
 
   const handleOrderStateClick = (stateId) => {
-    const exists = ORDER_STATE_ITEMS.some((state) => state.id === stateId);
-    if (!exists) {
-      return;
-    }
     handleViewChange("orders");
     if (typeof onChangeOrderState === "function") {
       onChangeOrderState(stateId);
@@ -112,21 +120,12 @@ const Sidebar = ({
     closeMobileIfNeeded();
   };
 
-  const handleOrdersToggle = async () => {
+  const handleOrdersToggle = () => {
     if (effectiveCollapsed) {
       onToggleCollapse(false);
       return;
     }
-    
-    if (isAnimating) return;
-    
-    setIsAnimating(true);
-    setOrdersExpanded(prev => !prev);
-    
-    // Esperar a que la animación termine
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 300);
+    setOrdersExpanded((prev) => !prev);
   };
 
   const renderSidebarBody = (collapsed) => {
@@ -186,7 +185,7 @@ const Sidebar = ({
                   >
                     Tienda
                   </label>
-                  <div className="relative mt-1.5" ref={tenantRef}>
+                  <div className="relative mt-1.5">
                     <button
                       type="button"
                       onClick={() => setTenantOpen((v) => !v)}
@@ -249,36 +248,29 @@ const Sidebar = ({
           <div className={`${navPaddingX} ${navPaddingTop}`}> 
             <div className="my-2 h-px bg-white/10" />
             <nav className={`space-y-4 ${navAlignment}`}> 
-              <div className="space-y-2"> 
-                <button
-                  type="button"
-                  onClick={() => handleViewChange("dashboard")}
-                  className={primaryButtonClasses(isDashboardActive)}
-                >
-                  {renderIconWrapper(<AssessmentIcon fontSize="small" />, isDashboardActive)}
-                  {!collapsed && (
-                    <span className={`transition-all duration-200 ${
-                      isDashboardActive ? "text-white font-semibold" : "text-white/90"
-                    }`}>
-                      Dashboard
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleViewChange("stores")}
-                  className={primaryButtonClasses(isStoresActive)}
-                >
-                  {renderIconWrapper(<ApartmentIcon fontSize="small" />, isStoresActive)}
-                  {!collapsed && (
-                    <span className={`transition-all duration-200 ${
-                      isStoresActive ? "text-white font-semibold" : "text-white/90"
-                    }`}>
-                      Tiendas
-                    </span>
-                  )}
-                </button>
+              <div className="space-y-2">
+                {PRIMARY_NAV_ITEMS.map(({ id, label, Icon }) => {
+                  const isActive = activeView === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => handleViewChange(id)}
+                      className={primaryButtonClasses(isActive)}
+                    >
+                      {renderIconWrapper(<Icon fontSize="small" />, isActive)}
+                      {!collapsed && (
+                        <span
+                          className={`transition-all duration-200 ${
+                            isActive ? "text-white font-semibold" : "text-white/90"
+                          }`}
+                        >
+                          {label}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="space-y-2">
@@ -345,7 +337,7 @@ const Sidebar = ({
                               isActive
                                 ? "bg-white/15 font-semibold text-white shadow shadow-black/10"
                                 : "text-white/80 hover:bg-white/10 hover:text-white"
-                            }`} // py reducido
+                            }`}
                           >
                             <StatusDot active={isActive} />
                             <span>{state.label}</span>

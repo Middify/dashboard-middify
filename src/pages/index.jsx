@@ -17,6 +17,7 @@ import Navbar from "../navbar/navbar";
 import Sidebar from "../navbar/sidebar";
 import Dashboard from "./Dashboard";
 import Stores from "./Stores";
+import StoreDetail from "./StoreDetail";
 import OrdersTable from "./OrdersTable";
 import DetailsOrders from "./DetailsOrders";
 import RecycleBin from "./RecycleBin";
@@ -212,6 +213,16 @@ const Index = () => {
     );
   }, [selectedTenantId, tenants]);
 
+  const selectedTenantName = useMemo(() => {
+    if (!selectedTenantId) {
+      return null;
+    }
+    const match = (tenants || []).find(
+      (tenant) => tenant.tenantId === selectedTenantId
+    );
+    return match?.tenantName ?? null;
+  }, [selectedTenantId, tenants]);
+
   const filteredMarketplaceTenants = useMemo(() => {
     if (!selectedTenantId) {
       return marketplaceTenants || [];
@@ -289,11 +300,16 @@ const Index = () => {
                 }
               />
               <Route
+                path="/stores/:storeId"
+                element={<StoreDetail token={token} />}
+              />
+              <Route
                 path="/orders"
                 element={
                   <OrdersTable
                     token={token}
                     selectedTenantId={selectedTenantId}
+                    selectedTenantName={selectedTenantName}
                     selectedOrderState={resolvedOrderState}
                     onSelectOrder={handleSelectOrder}
                     user={user}

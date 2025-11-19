@@ -1,167 +1,218 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const API_URL =
   "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getOrdersByState";
 
-const CACHE_TTL_MS = 30 * 1000;
+export const DASHBOARD_COLUMNS_TEMPLATE = [
+  { title: "_id", value: "_id", hasFilter: true },
+  { title: "LastUpdate", value: "lastUpdate", hasFilter: true },
+  { title: "TennantId", value: "tennantId", hasFilter: true },
+  { title: "TennantName", value: "tennantName", hasFilter: true },
+  { title: "Brand", value: "brand", hasFilter: true },
+  { title: "Attempts", value: "attempts", hasFilter: true },
+  { title: "Creation", value: "creation", hasFilter: true },
+  { title: "Discounts", value: "discounts", hasFilter: true },
+  { title: "ErrorDetail", value: "errorDetail", hasFilter: true },
+  { title: "Message", value: "message", hasFilter: true },
+  { title: "Status", value: "status", hasFilter: true },
+  { title: "MarketPlace", value: "marketPlace", hasFilter: true },
+  { title: "OmniChannel", value: "omniChannel", hasFilter: true },
+  { title: "Taxes", value: "taxes", hasFilter: true },
+  { title: "SubTotal", value: "subTotal", hasFilter: true },
+  { title: "Total", value: "total", hasFilter: true },
+  { title: "ItemQuantity", value: "itemQuantity", hasFilter: true },
+  { title: "Extras", value: "extras", hasFilter: true },
+  { title: "Documents", value: "documents", hasFilter: true },
+  { title: "Comments", value: "comments", hasFilter: true },
+  { title: "Stages", value: "stages", hasFilter: true },
+];
 
-const buildUrlWithParams = ({ tenantId, status, page, pageSize } = {}) => {
-  const url = new URL(API_URL);
-
-  if (tenantId) {
-    url.searchParams.set("tenantId", tenantId);
-  }
-  if (status) {
-    url.searchParams.set("status", status);
-  }
-  if (page) {
-    url.searchParams.set("page", page);
-  }
-  if (pageSize) {
-    url.searchParams.set("pageSize", pageSize);
-  }
-
-  return url;
-};
-
-export const getOrdersByState = async ({
-  token,
-  signal,
+export const buildUrlWithParams = ({
   tenantId,
+  tenantName,
   status,
   page,
   pageSize,
 } = {}) => {
-  if (!token) {
-    throw new Error("Token de autenticación no proporcionado.");
-  }
+  const url = new URL(API_URL);
+  if (tenantId) url.searchParams.set("tenantId", tenantId);
+  if (tenantName) url.searchParams.set("tenantName", tenantName);
+  if (status) url.searchParams.set("status", status);
+  if (page) url.searchParams.set("page", page);
+  if (pageSize) url.searchParams.set("pageSize", pageSize);
+  return url;
+};
 
-  const endpoint = buildUrlWithParams({
+export async function fetchTenantColumns({
+  token,
+  tenantName,
+  tenantId,
+  signal,
+}) {
+  if (!token) throw new Error("Falta token");
+  if (!tenantName && !tenantId) throw new Error("Falta referencia del tenant");
+
+  const url = buildUrlWithParams({
     tenantId,
-    status,
-    page,
-    pageSize,
+    tenantName,
+    page: 1,
+    pageSize: 1,
   });
 
-  const response = await fetch(endpoint, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
     signal,
   });
 
+  const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(`Error ${response.status}`);
+    throw new Error(
+      payload?.error || payload?.message || "Error al leer columnas"
+    );
   }
 
-  return response.json();
+  const targetName =
+    typeof tenantName === "string" ? tenantName.toLowerCase() : null;
+  const targetId =
+    tenantId === null || tenantId === undefined ? null : String(tenantId);
+
+  if ((targetName || targetId) && Array.isArray(payload?.columnsConfig)) {
+    const match =
+      payload.columnsConfig.find((entry) => {
+        const entryName =
+          typeof entry?.tenantName === "string"
+            ? entry.tenantName.toLowerCase()
+            : null;
+        const entryId =
+          entry?.tenantId === null || entry?.tenantId === undefined
+            ? null
+            : String(entry.tenantId);
+
+        if (targetName && entryName && entryName === targetName) {
+          return true;
+        }
+        if (targetId && entryId && entryId === targetId) {
+          return true;
+        }
+        return false;
+      }) ?? null;
+
+    if (match?.columns) {
+      return match.columns.map((column) => ({ ...column }));
+    }
+  }
+
+  if (Array.isArray(payload?.defaultColumns) && payload.defaultColumns.length) {
+    return payload.defaultColumns.map((column) => ({ ...column }));
+  }
+
+  if (Array.isArray(payload?.columns) && payload.columns.length) {
+    return payload.columns.map((column) => ({ ...column }));
+  }
+
+  return DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column }));
+}
+
+export const fetchOrdersByState = async ({
+  token,
+  params = {},
+  signal,
+} = {}) => {
+  if (!token) throw new Error("Falta token");
+  const url = buildUrlWithParams(params);
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(
+      payload?.error || payload?.message || "Error al cargar órdenes"
+    );
+  }
+
+  return {
+    orders: Array.isArray(payload?.orders) ? payload.orders : [],
+    meta: payload?.meta || null,
+  };
 };
 
-export const useOrdersByState = (
-  token,
-  { tenantId = null, status = null, page = null, pageSize = null } = {},
-  refreshTrigger = 0
-) => {
+export const useOrdersByState = (token, params = {}, refreshTrigger = 0) => {
   const [orders, setOrders] = useState([]);
   const [meta, setMeta] = useState(null);
-  const [loading, setLoading] = useState(Boolean(token));
+  const [columns, setColumns] = useState(
+    DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column }))
+  );
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const cacheRef = useRef(new Map());
 
   useEffect(() => {
     if (!token) {
       setOrders([]);
       setMeta(null);
-      setLoading(false);
+      setColumns(DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column })));
+      setError(new Error("Falta token"));
       return;
     }
 
     const controller = new AbortController();
-    let isMounted = true;
-    const cacheKey = JSON.stringify({
-      tenantId: tenantId ?? null,
-      status: status ?? null,
-      page: page ?? null,
-      pageSize: pageSize ?? null,
-    });
-    const now = Date.now();
-    const cachedResult = cacheRef.current.get(cacheKey);
-
-    // Si hay un refreshTrigger, invalidar el cache
-    const shouldUseCache = refreshTrigger === 0 && cachedResult && (now - cachedResult.timestamp < CACHE_TTL_MS);
-
-    if (shouldUseCache) {
-      if (isMounted) {
-        setOrders(cachedResult.orders);
-        setMeta(cachedResult.meta);
-        setLoading(false);
-      }
-      return () => {
-        isMounted = false;
-        controller.abort();
-      };
-    }
-
-    // Si hay refreshTrigger, limpiar el cache para esta clave
-    if (refreshTrigger > 0) {
-      cacheRef.current.delete(cacheKey);
-    }
 
     const load = async () => {
-      if (!cachedResult || refreshTrigger > 0) {
-        setLoading(true);
-      }
-      setError(null);
       try {
-        const data = await getOrdersByState({
-          token,
-          signal: controller.signal,
-          tenantId,
-          status,
-          page,
-          pageSize,
-        });
-        if (isMounted) {
-          const normalizedOrders = Array.isArray(data?.orders)
-            ? data.orders
-            : [];
-          const normalizedMeta = {
-            ok: data?.ok ?? null,
-            total: data?.total ?? null,
-            page: data?.page ?? null,
-            pageSize: data?.pageSize ?? null,
-            totalPages: data?.totalPages ?? null,
-          };
-          setOrders(normalizedOrders);
-          setMeta(normalizedMeta);
-          cacheRef.current.set(cacheKey, {
-            orders: normalizedOrders,
-            meta: normalizedMeta,
-            timestamp: Date.now(),
-          });
+        setLoading(true);
+        setError(null);
+
+        const [ordersResult, tenantColumns] = await Promise.all([
+          fetchOrdersByState({
+            token,
+            params,
+            signal: controller.signal,
+          }),
+          params?.tenantName || params?.tenantId
+            ? fetchTenantColumns({
+                token,
+                tenantName: params?.tenantName,
+                tenantId: params?.tenantId,
+                signal: controller.signal,
+              }).catch(() => null)
+            : Promise.resolve(null),
+        ]);
+
+        setOrders(ordersResult.orders);
+        setMeta(ordersResult.meta);
+        if (tenantColumns && Array.isArray(tenantColumns)) {
+          setColumns(tenantColumns);
+        } else {
+          setColumns(
+            DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column }))
+          );
         }
       } catch (err) {
         if (err.name === "AbortError") {
           return;
         }
-        if (isMounted) {
-          setError(err);
-        }
+        setOrders([]);
+        setMeta(null);
+        setColumns(DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column })));
+        setError(err);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     load();
+    return () => controller.abort();
+  }, [
+    token,
+    params?.tenantId,
+    params?.tenantName,
+    params?.status,
+    params?.page,
+    params?.pageSize,
+    refreshTrigger,
+  ]);
 
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [token, tenantId, status, page, pageSize, refreshTrigger]);
-
-  return { orders, meta, loading, error };
+  return { orders, meta, columns, loading, error };
 };
-

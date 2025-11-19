@@ -9,6 +9,7 @@ import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
 const OrdersTable = ({
   token = null,
   selectedTenantId = null,
+  selectedTenantName = null,
   selectedOrderState = null,
   onSelectOrder = () => {},
   user = null,
@@ -26,6 +27,7 @@ const OrdersTable = ({
     token,
     selectedTenantId,
     selectedOrderState,
+    selectedTenantName,
     onSelectOrder,
   });
 

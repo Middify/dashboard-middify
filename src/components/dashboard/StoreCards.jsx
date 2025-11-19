@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 const numberFormatter = new Intl.NumberFormat("es-CL");
 
 const mergeTenants = (productTenants, marketplaceTenants) => {
@@ -85,7 +87,24 @@ const mergeTenants = (productTenants, marketplaceTenants) => {
 };
 
 const StoreCards = ({ productTenants, marketplaceTenants }) => {
+  const navigate = useNavigate();
   const cards = mergeTenants(productTenants, marketplaceTenants);
+
+  const handleOpenStore = (card) => {
+    if (!card?.id) {
+      return;
+    }
+    navigate(`/stores/${encodeURIComponent(card.id)}`, {
+      state: { store: card },
+    });
+  };
+
+  const handleKeyDown = (event, card) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleOpenStore(card);
+    }
+  };
 
   if (cards.length === 0) {
     return (
@@ -110,7 +129,11 @@ const StoreCards = ({ productTenants, marketplaceTenants }) => {
         {cards.map((card) => (
           <article
             key={card.id}
-            className="flex h-full flex-col gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-5 shadow-sm"
+            className="flex h-full flex-col gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-5 shadow-sm transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={() => handleOpenStore(card)}
+            onKeyDown={(event) => handleKeyDown(event, card)}
           >
             <header className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg text-indigo-500">
