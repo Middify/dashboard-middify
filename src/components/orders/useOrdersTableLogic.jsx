@@ -174,7 +174,20 @@ export const useOrdersTableLogic = ({
       Array.isArray(apiColumns) && apiColumns.length > 0
         ? apiColumns
         : DASHBOARD_COLUMNS_TEMPLATE;
-    return base.filter((column) => column?.hasFilter === true);
+
+    return base
+      .filter((column) => column?.active === true)
+      .map((column, index) => {
+        const computedOrder =
+          typeof column.sortOrder === "number"
+            ? column.sortOrder
+            : typeof column.originalIndex === "number"
+            ? column.originalIndex
+            : index;
+        return { ...column, _computedOrder: computedOrder };
+      })
+      .sort((a, b) => a._computedOrder - b._computedOrder)
+      .map(({ _computedOrder, ...column }) => column);
   }, [apiColumns]);
 
   useEffect(() => {
