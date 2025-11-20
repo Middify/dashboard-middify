@@ -19,6 +19,9 @@ const OrdersTableHeader = ({
   onExportData,
   isExportingData,
   exportDisabled,
+  onExportSelectedData,
+  isExportingSelectedData,
+  exportSelectedDisabled,
 }) => {
   const hasSelection = selectedCount > 0;
   const shouldDisableSearch =
@@ -26,6 +29,10 @@ const OrdersTableHeader = ({
       ? true
       : searchDisabled ?? false;
   const canTriggerExport = typeof onExportData === "function" && !exportDisabled;
+  const canTriggerExportSelected =
+    hasSelection &&
+    typeof onExportSelectedData === "function" &&
+    !exportSelectedDisabled;
 
   return (
     <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -98,6 +105,7 @@ const OrdersTableHeader = ({
           </div>
           <div className="w-full max-w-md">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-nowrap">
               <button
                 type="button"
                 onClick={() => {
@@ -108,7 +116,7 @@ const OrdersTableHeader = ({
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 disabled={!canTriggerExport || isExportingData}
-                aria-label="Exportar órdenes visibles a Excel"
+                  aria-label="Exportar órdenes filtradas a Excel"
                 title="Exportar órdenes a Excel"
               >
                 {isExportingData ? (
@@ -123,6 +131,34 @@ const OrdersTableHeader = ({
                   </>
                 )}
               </button>
+                {hasSelection ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!canTriggerExportSelected || isExportingSelectedData) {
+                        return;
+                      }
+                      onExportSelectedData();
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    disabled={!canTriggerExportSelected || isExportingSelectedData}
+                    aria-label="Exportar órdenes seleccionadas a Excel"
+                    title="Exportar órdenes seleccionadas a Excel"
+                  >
+                    {isExportingSelectedData ? (
+                      <>
+                        <CircularProgress size={16} />
+                        Exportando selección...
+                      </>
+                    ) : (
+                      <>
+                        <FileDownloadOutlinedIcon fontSize="small" />
+                        Exportar selección
+                      </>
+                    )}
+                  </button>
+                ) : null}
+              </div>
               <label className="relative block flex-1">
                 <span className="sr-only">Buscar órdenes</span>
                 <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
@@ -178,6 +214,9 @@ OrdersTableHeader.propTypes = {
   onExportData: PropTypes.func,
   isExportingData: PropTypes.bool,
   exportDisabled: PropTypes.bool,
+  onExportSelectedData: PropTypes.func,
+  isExportingSelectedData: PropTypes.bool,
+  exportSelectedDisabled: PropTypes.bool,
 };
 
 OrdersTableHeader.defaultProps = {
@@ -196,6 +235,9 @@ OrdersTableHeader.defaultProps = {
   onExportData: undefined,
   isExportingData: false,
   exportDisabled: false,
+  onExportSelectedData: undefined,
+  isExportingSelectedData: false,
+  exportSelectedDisabled: false,
 };
 
 export default OrdersTableHeader;

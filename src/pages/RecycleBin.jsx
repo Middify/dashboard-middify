@@ -21,6 +21,7 @@ const RecycleBin = ({
     grid,
     selectedRowIds,
     getSelectedOrderIds,
+    getSelectedOrders,
     clearSelection,
     refreshData,
     formatOrdersForExport,
@@ -36,6 +37,7 @@ const RecycleBin = ({
   const [pendingStatus, setPendingStatus] = useState(null);
   const [selectedStatusValue, setSelectedStatusValue] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingSelection, setIsExportingSelection] = useState(false);
 
   const stateOptions = useMemo(() => {
     const baseOptions =
@@ -116,6 +118,42 @@ const RecycleBin = ({
     exportFileName,
     formatOrdersForExport,
   ]);
+
+  const handleExportSelectedDeletedOrders = useCallback(async () => {
+    const selectedOrders = getSelectedOrders();
+    if (!selectedOrders || selectedOrders.length === 0) {
+      alert("Selecciona al menos una orden para exportar.");
+      return;
+    }
+
+    setIsExportingSelection(true);
+    try {
+      const formattedRows = formatOrdersForExport(selectedOrders);
+      if (!formattedRows || formattedRows.length === 0) {
+        alert("No se pudo preparar la exportación de las órdenes seleccionadas.");
+        return;
+      }
+      const baseName =
+        typeof exportFileName === "string" && exportFileName.trim().length > 0
+          ? exportFileName.trim()
+          : "ordenes_papelera.xlsx";
+      const selectionFileName = baseName.replace(/\.xlsx$/i, "") + "_seleccion.xlsx";
+      exportOrdersToExcel({
+        rows: formattedRows,
+        columns,
+        fileName: selectionFileName,
+      });
+    } catch (error) {
+      console.error("Error al exportar las órdenes seleccionadas de la papelera:", error);
+      alert(
+        `No se pudo exportar las órdenes seleccionadas: ${
+          error.message ?? "Error desconocido"
+        }`
+      );
+    } finally {
+      setIsExportingSelection(false);
+    }
+  }, [getSelectedOrders, formatOrdersForExport, exportFileName, columns]);
 
   const handleStateSelection = useCallback(
     (value) => {
@@ -237,6 +275,9 @@ const RecycleBin = ({
         onExportData={handleExportDeletedOrders}
         isExportingData={isExporting}
         exportDisabled={!token || grid.rowCount === 0}
+        onExportSelectedData={handleExportSelectedDeletedOrders}
+        isExportingSelectedData={isExportingSelection}
+        exportSelectedDisabled={selectedRowIds.length === 0}
       />
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">

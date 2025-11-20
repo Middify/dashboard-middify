@@ -21,6 +21,7 @@ const OrdersTable = ({
     grid,
     selectedRowIds,
     getSelectedOrderIds,
+    getSelectedOrders,
     clearSelection,
     refreshData,
     selectedStateLabel,
@@ -40,6 +41,7 @@ const OrdersTable = ({
   const [pendingStatus, setPendingStatus] = useState(null);
   const [selectedStatusValue, setSelectedStatusValue] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingSelection, setIsExportingSelection] = useState(false);
 
   const stateOptions = useMemo(() => {
     const baseOptions =
@@ -235,6 +237,42 @@ const OrdersTable = ({
     formatOrdersForExport,
   ]);
 
+  const handleExportSelectedOrders = useCallback(async () => {
+    const selectedOrders = getSelectedOrders();
+    if (!selectedOrders || selectedOrders.length === 0) {
+      alert("Selecciona al menos una orden para exportar.");
+      return;
+    }
+
+    setIsExportingSelection(true);
+    try {
+      const formattedRows = formatOrdersForExport(selectedOrders);
+      if (!formattedRows || formattedRows.length === 0) {
+        alert("No se pudo preparar la exportación de las órdenes seleccionadas.");
+        return;
+      }
+      const baseName =
+        typeof exportFileName === "string" && exportFileName.trim().length > 0
+          ? exportFileName.trim()
+          : "ordenes.xlsx";
+      const selectionFileName = baseName.replace(/\.xlsx$/i, "") + "_seleccion.xlsx";
+      exportOrdersToExcel({
+        rows: formattedRows,
+        columns: grid.columns,
+        fileName: selectionFileName,
+      });
+    } catch (error) {
+      console.error("Error al exportar la selección de órdenes:", error);
+      alert(
+        `No se pudo exportar las órdenes seleccionadas: ${
+          error.message ?? "Error desconocido"
+        }`
+      );
+    } finally {
+      setIsExportingSelection(false);
+    }
+  }, [getSelectedOrders, formatOrdersForExport, exportFileName, grid.columns]);
+
   return (
     <>
       <div className="flex flex-col gap-6 pt-4">
@@ -247,6 +285,9 @@ const OrdersTable = ({
           onExportData={handleExportAllOrders}
           isExportingData={isExporting}
           exportDisabled={!token || grid.rowCount === 0}
+          onExportSelectedData={handleExportSelectedOrders}
+          isExportingSelectedData={isExportingSelection}
+          exportSelectedDisabled={selectedRowIds.length === 0}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <OrdersTableGrid

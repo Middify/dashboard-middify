@@ -424,6 +424,16 @@ const mapOrdersToGridRows = (orders, activeColumns) => {
     return selectedIds;
   }, [dataGridRows, selectedRowIds]);
 
+  const getSelectedOrders = useCallback(() => {
+    const selectedOrders = [];
+    dataGridRows.forEach((row) => {
+      if (selectedRowIds.has(row.id) && row.rawOrder) {
+        selectedOrders.push(row.rawOrder);
+      }
+    });
+    return selectedOrders;
+  }, [dataGridRows, selectedRowIds]);
+
   const refreshData = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
   }, []);
@@ -439,6 +449,7 @@ const mapOrdersToGridRows = (orders, activeColumns) => {
     selectedStateLabel: getSelectedStateLabel(selectedOrderState),
     selectedRowIds: Array.from(selectedRowIds),
     getSelectedOrderIds,
+    getSelectedOrders,
     clearSelection,
     refreshData,
     formatOrdersForExport,
