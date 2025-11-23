@@ -1,52 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  fetchUsers,
-  updateUserTenants,
-} from "../../api/users/assignTenantToUser";
+import { useEffect, useState, useMemo } from "react";
+import { getUsersList } from "../../api/users/getUsersList";
+import { updateUserTenants } from "../../api/users/updateUserTenants";
+import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Outlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import ConfirmModal from "../../utils/ConfirmModal";
 
-const getUserId = (user) =>
-  user?.userId ?? user?.id ?? user?._id ?? user?.email ?? null;
-
-const getUserLabel = (user) => {
-  if (!user || typeof user !== "object") {
-    return "Usuario desconocido";
-  }
-  return (
-    user?.displayName ||
-    user?.name ||
-    user?.username ||
-    user?.email ||
-    getUserId(user) ||
-    "Usuario sin nombre"
-  );
-};
-
-const extractUsers = (payload) => {
-  if (!payload) {
-    return [];
-  }
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-  if (Array.isArray(payload?.users)) {
-    return payload.users;
-  }
-  if (Array.isArray(payload?.data)) {
-    return payload.data;
-  }
-  return [];
-};
-
-const StoreUsersTab = ({
-  token = null,
-  storeName = "Tienda",
-  storeId = null,
-}) => {
+const StoreUsersTab = ({ token, storeName, storeId }) => {
   const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [assigning, setAssigning] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [feedback, setFeedback] = useState(null);
+  const [assigningLoading, setAssigningLoading] = useState(false);
+  const [assignMessage, setAssignMessage] = useState("");
+  const [removingUserId, setRemovingUserId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const tenantEntry = useMemo(() => {
     const normalizedId =
@@ -66,169 +36,236 @@ const StoreUsersTab = ({
     };
   }, [storeId, storeName]);
 
+  const loadUsers = async () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getUsersList({ token, pageSize: 100 });
+      const fetchedUsers = response.users || [];
+      setAllUsers(fetchedUsers);
+
+      const storeUsers = fetchedUsers.filter((user) => {
+        if (!Array.isArray(user.tenant)) return false;
+        return user.tenant.some(
+          (t) => t.tenantId === storeId || t.tenantName === storeName
+        );
+      });
+
+      setUsers(storeUsers);
+    } catch (err) {
+      console.error("Error loading users:", err);
+      setError("No se pudieron cargar los usuarios.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!token) {
-      setFeedback({
-        type: "error",
-        message: "Necesitas iniciar sesión para gestionar usuarios.",
-      });
-      return;
-    }
-
-    const controller = new AbortController();
-    let isMounted = true;
-
-    const loadUsers = async () => {
-      setLoadingUsers(true);
-      setFeedback(null);
-      try {
-        const result = await fetchUsers({
-          token,
-          signal: controller.signal,
-        });
-        if (!isMounted) {
-          return;
-        }
-        setUsers(extractUsers(result));
-      } catch (error) {
-        if (error.name === "AbortError") {
-          return;
-        }
-        if (isMounted) {
-          setFeedback({
-            type: "error",
-            message:
-              error.message || "No se pudieron cargar los usuarios disponibles.",
-          });
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingUsers(false);
-        }
-      }
-    };
-
     loadUsers();
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, [token]);
+  }, [token, storeId, storeName]);
 
-  const handleAssignTenant = async () => {
-    if (!token) {
-      setFeedback({
-        type: "error",
-        message: "Necesitas iniciar sesión.",
-      });
-      return;
-    }
-    if (!selectedUserId) {
-      setFeedback({
-        type: "error",
-        message: "Selecciona un usuario antes de asignar.",
-      });
-      return;
-    }
-    if (!tenantEntry) {
-      setFeedback({
-        type: "error",
-        message: "No se encontró una referencia válida del tenant.",
-      });
-      return;
-    }
+  const handleAssignUser = async () => {
+    if (!selectedUserId || !tenantEntry) return;
 
-    setAssigning(true);
-    setFeedback(null);
+    setAssigningLoading(true);
+    setAssignMessage("");
     try {
       await updateUserTenants({
         token,
         userId: selectedUserId,
         tenantsToAssign: [tenantEntry],
       });
-      setFeedback({
-        type: "success",
-        message: `Tenant asignado correctamente al usuario.`,
-      });
-    } catch (error) {
-      setFeedback({
-        type: "error",
-        message: error.message || "No se pudo asignar el tenant.",
-      });
+      setAssignMessage("Usuario asignado correctamente.");
+      setSelectedUserId("");
+      setIsAssigning(false);
+      loadUsers(); // Refresh list
+    } catch (err) {
+      console.error("Error assigning user:", err);
+      setAssignMessage(err.message || "Error al asignar usuario.");
     } finally {
-      setAssigning(false);
+      setAssigningLoading(false);
     }
   };
 
+  const handleRemoveClick = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmRemoveUser = async () => {
+    if (!userToDelete || !tenantEntry) return;
+
+    setRemovingUserId(userToDelete._id);
+    try {
+      await updateUserTenants({
+        token,
+        userId: userToDelete._id,
+        tenantsToRemove: [tenantEntry],
+      });
+      loadUsers(); // Refresh list
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+    } catch (err) {
+      console.error("Error removing user:", err);
+      alert(err.message || "Error al eliminar usuario.");
+    } finally {
+      setRemovingUserId(null);
+    }
+  };
+
+  const availableUsers = allUsers.filter(
+    (u) => !users.some((assigned) => assigned._id === u._id)
+  );
+
+  if (!token) {
+    return (
+      <div className="p-4 text-sm text-red-600">Necesitas iniciar sesión.</div>
+    );
+  }
+
+  if (loading && users.length === 0) {
+    return (
+      <div className="p-4 text-sm text-slate-500">Cargando usuarios...</div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-4 text-sm text-red-600">{error}</div>;
+  }
+
   return (
     <div className="space-y-4 p-3">
-      <header>
-        <h2 className="text-xl font-semibold text-slate-900">
-          Usuarios asignados
-        </h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Gestiona qué usuarios tienen acceso al tenant{" "}
-          <span className="font-semibold text-slate-800">{storeName}</span>.
-        </p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">
+            Usuarios asignados
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Usuarios con acceso al tenant{" "}
+            <span className="font-semibold text-slate-800">{storeName}</span>.
+          </p>
+        </div>
+        <button
+          onClick={() => setIsAssigning(!isAssigning)}
+          className="inline-flex items-center gap-2 rounded-lg bg-catalina-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-catalina-blue-700 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 focus:ring-offset-2"
+        >
+          <PersonAddAlt1OutlinedIcon fontSize="small" />
+          {isAssigning ? "Cancelar" : "Asignar Usuario"}
+        </button>
       </header>
 
-      <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4 shadow-sm">
-        <label className="text-sm font-medium text-slate-700">
-          Selecciona un usuario
-        </label>
-        <select
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none"
-          value={selectedUserId}
-          disabled={loadingUsers || assigning || !token}
-          onChange={(event) => setSelectedUserId(event.target.value)}
-        >
-          <option value="">
-            {loadingUsers
-              ? "Cargando usuarios..."
-              : "Selecciona un usuario disponible"}
-          </option>
-          {users.map((user) => {
-            const optionValue = getUserId(user);
-            if (!optionValue) {
-              return null;
-            }
-            return (
-              <option key={optionValue} value={optionValue}>
-                {getUserLabel(user)}
-              </option>
-            );
-          })}
-        </select>
+      {isAssigning && (
+        <div className="rounded-xl border border-catalina-blue-100 bg-catalina-blue-50 p-4">
+          <h3 className="mb-3 text-sm font-medium text-catalina-blue-900">
+            Asignar nuevo usuario
+          </h3>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-catalina-blue-500 focus:outline-none focus:ring-1 focus:ring-catalina-blue-500"
+            >
+              <option value="">Selecciona un usuario...</option>
+              {availableUsers.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.email} ({user.role})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAssignUser}
+              disabled={!selectedUserId || assigningLoading}
+              className="rounded-lg bg-catalina-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-catalina-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {assigningLoading ? "Asignando..." : "Confirmar"}
+            </button>
+          </div>
+          {assignMessage && (
+            <p
+              className={`mt-2 text-sm ${assignMessage.includes("Error")
+                ? "text-red-600"
+                : "text-green-600"
+                }`}
+            >
+              {assignMessage}
+            </p>
+          )}
+        </div>
+      )}
 
-        <button
-          type="button"
-          onClick={handleAssignTenant}
-          disabled={
-            assigning ||
-            loadingUsers ||
-            !selectedUserId ||
-            !tenantEntry ||
-            !token
-          }
-          className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
-        >
-          {assigning ? "Asignando..." : "Asignar tenant al usuario"}
-        </button>
+      {users.length === 0 ? (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+          No hay usuarios asignados a esta tienda.
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500"
+                >
+                  Email
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500"
+                >
+                  Rol
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500"
+                >
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {users.map((user) => (
+                <tr key={user._id || user.email}>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                    {user.email}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">
+                    {user.role}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleRemoveClick(user)}
+                      disabled={removingUserId === user._id}
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                      title="Eliminar usuario"
+                    >
+                      {removingUserId === user._id ? (
+                        <span className="animate-pulse">...</span>
+                      ) : (
+                        <DeleteOutlineIcon fontSize="small" />
+                      )}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-        {feedback?.message && (
-          <p
-            className={`text-sm ${
-              feedback.type === "error" ? "text-red-600" : "text-green-600"
-            }`}
-          >
-            {feedback.message}
-          </p>
-        )}
-      </section>
-
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmRemoveUser}
+        title="Eliminar usuario"
+        message={`¿Estás seguro de que deseas eliminar al usuario ${userToDelete?.email} de esta tienda? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isLoading={removingUserId === userToDelete?._id}
+        isDestructive={true}
+      />
     </div>
   );
 };
 
 export default StoreUsersTab;
-

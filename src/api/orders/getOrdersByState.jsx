@@ -71,89 +71,18 @@ export async function fetchTenantColumns({
     );
   }
 
-  const targetName =
-    typeof tenantName === "string" ? tenantName.toLowerCase() : null;
-  const targetId =
-    tenantId === null || tenantId === undefined ? null : String(tenantId);
-
-  if ((targetName || targetId) && Array.isArray(payload?.columnsConfig)) {
-    const match =
-      payload.columnsConfig.find((entry) => {
-        const entryName =
-          typeof entry?.tenantName === "string"
-            ? entry.tenantName.toLowerCase()
-            : null;
-        const entryId =
-          entry?.tenantId === null || entry?.tenantId === undefined
-            ? null
-            : String(entry.tenantId);
-
-        if (targetName && entryName && entryName === targetName) {
-          return true;
-        }
-        if (targetId && entryId && entryId === targetId) {
-          return true;
-        }
-        return false;
-      }) ?? null;
-
-    if (match?.columns) {
-      return match.columns.map((column) => ({ ...column }));
-    }
+  if (Array.isArray(payload?.columnsConfig)) {
+    const match = payload.columnsConfig.find(c =>
+      (tenantId && String(c.tenantId) === String(tenantId)) ||
+      (tenantName && c.tenantName?.toLowerCase() === tenantName.toLowerCase())
+    );
+    if (match?.columns) return match.columns;
   }
 
-  if (Array.isArray(payload?.defaultColumns) && payload.defaultColumns.length) {
-    return payload.defaultColumns.map((column) => ({ ...column }));
-  }
-
-  if (Array.isArray(payload?.columns) && payload.columns.length) {
-    return payload.columns.map((column) => ({ ...column }));
-  }
-
-  return DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column }));
+  return payload?.defaultColumns || payload?.columns || DASHBOARD_COLUMNS_TEMPLATE;
 }
 
-const buildMetaFromPayload = (payload) => {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
 
-  const fallbackMeta = {
-    total: payload?.total ?? payload?.totalOrders ?? payload?.count ?? null,
-    totalOrders: payload?.totalOrders ?? payload?.total ?? null,
-    count: payload?.count ?? payload?.total ?? null,
-    totalPages: payload?.totalPages ?? payload?.pages ?? null,
-    page: payload?.page ?? payload?.currentPage ?? 1,
-    pageSize: payload?.pageSize ?? payload?.limit ?? payload?.perPage ?? null,
-    hasMore:
-      payload?.hasMore ??
-      payload?.hasNext ??
-      payload?.hasNextPage ??
-      payload?.pagination?.hasMore ??
-      null,
-    nextPage:
-      payload?.nextPage ??
-      payload?.pagination?.nextPage ??
-      payload?.pagination?.next ??
-      null,
-    cursor:
-      payload?.cursor ??
-      payload?.nextToken ??
-      payload?.lastEvaluatedKey ??
-      payload?.lastKey ??
-      null,
-    pagination: payload?.pagination ?? null,
-  };
-
-  if (payload?.meta && typeof payload.meta === "object") {
-    return {
-      ...fallbackMeta,
-      ...payload.meta,
-    };
-  }
-
-  return fallbackMeta;
-};
 
 export const fetchOrdersByState = async ({
   token,
@@ -177,7 +106,7 @@ export const fetchOrdersByState = async ({
 
   return {
     orders: Array.isArray(payload?.orders) ? payload.orders : [],
-    meta: buildMetaFromPayload(payload),
+    meta: payload?.meta || payload || {},
   };
 };
 
@@ -283,11 +212,11 @@ export const useOrdersByState = (token, params = {}, refreshTrigger = 0) => {
           }),
           params?.tenantName || params?.tenantId
             ? fetchTenantColumns({
-                token,
-                tenantName: params?.tenantName,
-                tenantId: params?.tenantId,
-                signal: controller.signal,
-              }).catch(() => null)
+              token,
+              tenantName: params?.tenantName,
+              tenantId: params?.tenantId,
+              signal: controller.signal,
+            }).catch(() => null)
             : Promise.resolve(null),
         ]);
 

@@ -14,11 +14,6 @@ export async function fetchOrdersByParam({ token, filtro = {}, signal } = {}) {
     signal
   });
 
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(payload?.error || payload?.message || "Error al buscar órdenes");
-  }
-
-  return payload; // { message, filter, count, ids }
+  const payload = await response.json();
+  return payload;
 }

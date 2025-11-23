@@ -85,10 +85,10 @@ export const STATE_DEFINITIONS = [
 
 const stateStyles = {
   ingresada: {
-    badge: "bg-blue-50 text-blue-600 border border-blue-200",
-    accent: "text-blue-600",
-    gradient: "from-slate-50 via-transparent to-blue-50",
-    border: "border-blue-100",
+    badge: "bg-catalina-blue-50 text-catalina-blue-600 border border-catalina-blue-200",
+    accent: "text-catalina-blue-600",
+    gradient: "from-slate-50 via-transparent to-catalina-blue-50",
+    border: "border-catalina-blue-100",
   },
   "en proceso": {
     badge: "bg-amber-50 text-amber-600 border border-amber-200",
@@ -298,11 +298,10 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                         onClick={handleClick}
                         onKeyDown={handleKeyDown}
                         data-order-state={orderStateId}
-                        className={`group relative overflow-hidden rounded-2xl border ${cardBorder} bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
-                          isClickable
-                            ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                        className={`group relative overflow-hidden rounded-2xl border ${cardBorder} bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${isClickable
+                            ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-catalina-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                             : ""
-                        }`}
+                          }`}
                       >
                         <div
                           className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 bg-gradient-to-br ${gradientClasses}`}

@@ -262,6 +262,7 @@ const Index = () => {
         onToggleCollapse={setIsSidebarCollapsed}
         isMobileOpen={isSidebarOpen}
         onCloseMobile={handleCloseSidebar}
+        userRole={user?.role ?? null}
       />
       <div className="flex flex-1 flex-col">
         <Navbar

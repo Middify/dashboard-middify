@@ -79,7 +79,7 @@ const OrdersTableGrid = ({
                   cursor: "pointer",
                 },
                 "& .MuiDataGrid-row:hover": {
-                  backgroundColor: "#eef2ff",
+                  backgroundColor: "#eaf8ff",
                 },
                 "& .MuiDataGrid-cell": {
                   borderBottomColor: "#e2e8f0",

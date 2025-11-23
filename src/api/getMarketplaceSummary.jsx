@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 
-const API_URL ="https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getMarketplaceSummary";
+const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getMarketplaceSummary";
 
 export const getMarketplaceSummary = async ({ token, signal } = {}) => {
   if (!token) {
@@ -44,12 +44,7 @@ export const useMarketplaceSummary = (token, autoRefreshInterval = null) => {
       try {
         const data = await getMarketplaceSummary({ token, signal: controller.signal });
         if (isMounted) {
-          const tenantList = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.tenants)
-            ? data.tenants
-            : [];
-          setTenants(tenantList);
+          setTenants(data.tenants || data || []);
           isInitialLoad.current = false;
         }
       } catch (err) {

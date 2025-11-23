@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_URL ="https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getUsers";
+const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getUsers";
 
 export const getUsers = async ({ token, signal } = {}) => {
   if (!token) {
@@ -19,15 +19,7 @@ export const getUsers = async ({ token, signal } = {}) => {
   }
 
   const result = await response.json();
-  const userData =
-    (result && typeof result === "object" && result.data) ||
-    (result && typeof result === "object" && result);
-
-  if (!userData || typeof userData !== "object") {
-    throw new Error("La respuesta no contiene un objeto 'data' válido.");
-  }
-
-  return userData;
+  return result.data || result;
 };
 
 export const useUsers = (token) => {

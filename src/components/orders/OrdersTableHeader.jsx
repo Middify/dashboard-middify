@@ -72,7 +72,7 @@ const OrdersTableHeader = ({
                   Cambiar estado
                   <div className="relative mt-1">
                     <select
-                      className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-700 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-700 shadow-sm transition focus:border-catalina-blue-500 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                       onChange={(event) => onChangeState(event.target.value)}
                       value={selectedState}
                       disabled={isProcessing || stateOptions.length === 0}
@@ -85,16 +85,15 @@ const OrdersTableHeader = ({
                       ))}
                     </select>
                     {isProcessing ? (
-                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-indigo-500">
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-catalina-blue-500">
                         <CircularProgress size={16} />
                       </span>
                     ) : null}
                   </div>
                 </label>
                 <p className="mt-1 text-xs text-slate-500">
-                  {`${selectedCount} ${
-                    selectedCount === 1 ? "orden seleccionada" : "órdenes seleccionadas"
-                  }`}
+                  {`${selectedCount} ${selectedCount === 1 ? "orden seleccionada" : "órdenes seleccionadas"
+                    }`}
                 </p>
               </>
             ) : (
@@ -106,31 +105,31 @@ const OrdersTableHeader = ({
           <div className="w-full max-w-md">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-nowrap">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!canTriggerExport || isExportingData) {
-                    return;
-                  }
-                  onExportData();
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                disabled={!canTriggerExport || isExportingData}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!canTriggerExport || isExportingData) {
+                      return;
+                    }
+                    onExportData();
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-catalina-blue-500 hover:text-catalina-blue-600 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  disabled={!canTriggerExport || isExportingData}
                   aria-label="Exportar órdenes filtradas a Excel"
-                title="Exportar órdenes a Excel"
-              >
-                {isExportingData ? (
-                  <>
-                    <CircularProgress size={16} />
-                    Exportando...
-                  </>
-                ) : (
-                  <>
-                    <FileDownloadOutlinedIcon fontSize="small" />
-                    Exportar Excel
-                  </>
-                )}
-              </button>
+                  title="Exportar órdenes a Excel"
+                >
+                  {isExportingData ? (
+                    <>
+                      <CircularProgress size={16} />
+                      Exportando...
+                    </>
+                  ) : (
+                    <>
+                      <FileDownloadOutlinedIcon fontSize="small" />
+                      Exportar Excel
+                    </>
+                  )}
+                </button>
                 {hasSelection ? (
                   <button
                     type="button"
@@ -140,7 +139,7 @@ const OrdersTableHeader = ({
                       }
                       onExportSelectedData();
                     }}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-catalina-blue-500 hover:text-catalina-blue-600 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                     disabled={!canTriggerExportSelected || isExportingSelectedData}
                     aria-label="Exportar órdenes seleccionadas a Excel"
                     title="Exportar órdenes seleccionadas a Excel"
@@ -174,7 +173,7 @@ const OrdersTableHeader = ({
                     }
                     onSearchChange(event);
                   }}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-catalina-blue-500 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={shouldDisableSearch}
                 />
               </label>
@@ -224,7 +223,7 @@ OrdersTableHeader.defaultProps = {
   subtitle: "",
   infoChips: [],
   selectedCount: 0,
-  onChangeState: () => {},
+  onChangeState: () => { },
   isProcessing: false,
   stateOptions: [],
   selectedState: "",

@@ -91,15 +91,15 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
   }, []);
   const cardData = isAggregated
     ? {
-        id: "marketplace-all",
-        title: "Todas las tiendas",
-        marketplaces: aggregateTenants(tenants),
-      }
+      id: "marketplace-all",
+      title: "Todas las tiendas",
+      marketplaces: aggregateTenants(tenants),
+    }
     : {
-        id: `marketplace-${tenants[0].tenantId ?? "tenant"}`,
-        title: tenants[0]?.tenantName ?? "Sin nombre",
-        marketplaces: normalizeTenantMarketplaces(tenants[0], 0),
-      };
+      id: `marketplace-${tenants[0].tenantId ?? "tenant"}`,
+      title: tenants[0]?.tenantName ?? "Sin nombre",
+      marketplaces: normalizeTenantMarketplaces(tenants[0], 0),
+    };
 
   const PAGE_SIZE = COLS * rows;
   const totalItems = cardData.marketplaces.length;
@@ -179,7 +179,7 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
               </IconButton>
             </Tooltip>
           </div>
-          <span className="text-xs font-medium uppercase tracking-wide text-indigo-600">
+          <span className="text-xs font-medium uppercase tracking-wide text-catalina-blue-600">
             {cardData.title}
           </span>
           {totalItems > PAGE_SIZE && (
@@ -239,7 +239,7 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                       {marketplace.name}
                     </span>
                   </div>
-                  <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[12px] font-medium text-indigo-700 ring-1 ring-indigo-100 transition-colors duration-200 ease-out group-hover:bg-indigo-100 group-hover:text-indigo-800">
+                  <span className="rounded-full bg-catalina-blue-50 px-2.5 py-1 text-[12px] font-medium text-catalina-blue-700 ring-1 ring-catalina-blue-100 transition-colors duration-200 ease-out group-hover:bg-catalina-blue-100 group-hover:text-catalina-blue-800">
                     {numberFormatter.format(marketplace.count || 0)}
                   </span>
                 </li>

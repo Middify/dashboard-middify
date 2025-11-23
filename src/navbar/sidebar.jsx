@@ -51,6 +51,7 @@ const Sidebar = ({
   onToggleCollapse = () => {},
   isMobileOpen = false,
   onCloseMobile = null,
+  userRole = null,
 }) => {
   const { hasValidTenants, tenantOptions } = useMemo(() => {
     if (!Array.isArray(tenants)) {
@@ -75,6 +76,18 @@ const Sidebar = ({
       onCloseMobile();
     }
   };
+
+  const normalizedRole =
+    typeof userRole === "string" && userRole.trim().length > 0
+      ? userRole.trim().toLowerCase()
+      : null;
+
+  const primaryNavItems = useMemo(() => {
+    if (normalizedRole === "user") {
+      return PRIMARY_NAV_ITEMS.filter((item) => item.id !== "stores");
+    }
+    return PRIMARY_NAV_ITEMS;
+  }, [normalizedRole]);
 
   const [ordersExpanded, setOrdersExpanded] = useState(activeView === "orders");
   const effectiveCollapsed = isCollapsed && !isMobileOpen;
@@ -249,7 +262,7 @@ const Sidebar = ({
             <div className="my-2 h-px bg-white/10" />
             <nav className={`space-y-4 ${navAlignment}`}> 
               <div className="space-y-2">
-                {PRIMARY_NAV_ITEMS.map(({ id, label, Icon }) => {
+                {primaryNavItems.map(({ id, label, Icon }) => {
                   const isActive = activeView === id;
                   return (
                     <button

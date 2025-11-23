@@ -5,9 +5,9 @@ const StoreColumnsTab = ({
   loadingColumns = false,
   saving = false,
   message = "",
-  onToggleColumn = () => {},
-  onToggleAllColumns = () => {},
-  onSave = () => {},
+  onToggleColumn = () => { },
+  onToggleAllColumns = () => { },
+  onSave = () => { },
 }) => {
   return (
     <div className="p-3">
@@ -39,7 +39,7 @@ const StoreColumnsTab = ({
               <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-700 shadow-sm transition-colors hover:border-slate-300">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 cursor-pointer rounded border-slate-300 text-catalina-blue-600 focus:ring-catalina-blue-500"
                   checked={Boolean(column.active)}
                   onChange={() => onToggleColumn(column.value)}
                 />
@@ -54,7 +54,7 @@ const StoreColumnsTab = ({
         type="button"
         onClick={onSave}
         disabled={saving || loadingColumns}
-        className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
+        className="mt-4 rounded-lg bg-catalina-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-catalina-blue-500 disabled:cursor-not-allowed disabled:bg-catalina-blue-300"
       >
         {saving ? "Guardando..." : "Guardar columnas"}
       </button>

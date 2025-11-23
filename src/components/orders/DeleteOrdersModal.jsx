@@ -12,11 +12,11 @@ const DeleteOrdersModal = ({
   if (!isOpen) return null;
 
   const isDeleteAction = statusValue === "deleted";
-  const accentIconBg = isDeleteAction ? "bg-red-100" : "bg-indigo-100";
-  const accentIconColor = isDeleteAction ? "text-red-600" : "text-indigo-600";
+  const accentIconBg = isDeleteAction ? "bg-red-100" : "bg-catalina-blue-100";
+  const accentIconColor = isDeleteAction ? "text-red-600" : "text-catalina-blue-600";
   const confirmButtonClasses = isDeleteAction
     ? "inline-flex items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
-    : "inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-300 bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6";
+    : "inline-flex items-center justify-center gap-2 rounded-xl border border-catalina-blue-300 bg-catalina-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-catalina-blue-700 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6";
   const processingLabel = isDeleteAction ? "Eliminando..." : "Actualizando...";
   const confirmLabel = isDeleteAction ? "Eliminar" : "Confirmar";
   const title = isDeleteAction ? "Confirmar eliminación" : "Confirmar cambio de estado";
@@ -71,7 +71,7 @@ const DeleteOrdersModal = ({
                 type="button"
                 onClick={onClose}
                 disabled={isProcessing}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
               >
                 Cancelar
               </button>

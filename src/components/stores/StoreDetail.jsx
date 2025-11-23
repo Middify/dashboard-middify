@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { saveDashboardColumns } from "../../api/orders/postParamTable";
 import {
   DASHBOARD_COLUMNS_TEMPLATE,
@@ -19,8 +20,8 @@ const prepareColumns = (columns = []) =>
       column?.active !== undefined
         ? Boolean(column.active)
         : column?.hasFilter !== undefined
-        ? Boolean(column.hasFilter)
-        : true;
+          ? Boolean(column.hasFilter)
+          : true;
 
     return {
       ...column,
@@ -149,9 +150,10 @@ const StoreDetail = ({ token }) => {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors duration-150 hover:border-slate-300 hover:text-slate-800"
+        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors duration-150 hover:border-slate-300 hover:text-slate-800 hover:bg-slate-50"
       >
-        ← Volver
+        <ArrowBackIcon fontSize="small" />
+        Volver
       </button>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -163,11 +165,10 @@ const StoreDetail = ({ token }) => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isActive
+                    ? "bg-catalina-blue-600 text-white shadow-sm"
                     : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>

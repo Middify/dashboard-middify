@@ -4,9 +4,7 @@ const API_URL =
 
 export async function saveDashboardColumns({ token, tenantName, params, signal }) {
   if (!token) throw new Error("Falta token");
-  if (!tenantName) throw new Error("Falta tenantName");
-  if (!Array.isArray(params) || params.length === 0)
-    throw new Error("params debe ser un array");
+
 
   const response = await fetch(API_URL, {
     method: "POST",

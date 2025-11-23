@@ -46,14 +46,7 @@ export const getOrderDetails = async ({ token, orderId, signal } = {}) => {
     throw new Error(message);
   }
 
-  if (payload?.success === false) {
-    throw new Error(
-      payload?.message ??
-        "La API devolvió un estado de error al obtener los detalles de la orden."
-    );
-  }
-
-  return payload?.data ?? null;
+  return payload?.data || payload;
 };
 
 export const useOrderDetails = (

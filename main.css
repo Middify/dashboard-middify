@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+  --color-catalina-blue-50: #eaf8ff;
+  --color-catalina-blue-100: #d1f0ff;
+  --color-catalina-blue-200: #ace6ff;
+  --color-catalina-blue-300: #74d8ff;
+  --color-catalina-blue-400: #33bfff;
+  --color-catalina-blue-500: #049bff;
+  --color-catalina-blue-600: #0074ff;
+  --color-catalina-blue-700: #005bff;
+  --color-catalina-blue-800: #004ada;
+  --color-catalina-blue-900: #0045aa;
+  --color-catalina-blue-950: #063279;
+}
+
 .sidebar-scroll {
   scrollbar-width: thin; 
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;

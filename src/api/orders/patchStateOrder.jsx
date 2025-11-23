@@ -13,17 +13,7 @@ export const patchStateOrder = async ({
     throw new Error("Token de autenticación no proporcionado.");
   }
 
-  if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    throw new Error("Se requiere un array de ids no vacío.");
-  }
 
-  if (!status) {
-    throw new Error("Se requiere el campo status.");
-  }
-
-  if (!user) {
-    throw new Error("Se requiere el campo user.");
-  }
 
   const response = await fetch(API_URL, {
     method: "PATCH",

@@ -1,4 +1,4 @@
-import StoreCards from "../components/dashboard/StoreCards";
+import StoreCards from "../components/stores/StoreCards";
 
 const Stores = ({
   isLoading = false,

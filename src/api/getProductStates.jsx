@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 
-const API_URL ="https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getProductStates";
+const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getProductStates";
 
 export const getProductStates = async ({ token, signal } = {}) => {
   if (!token) {
@@ -44,12 +44,7 @@ export const useProductStates = (token, autoRefreshInterval = null) => {
       try {
         const data = await getProductStates({ token, signal: controller.signal });
         if (isMounted) {
-          const tenantList = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.tenants)
-            ? data.tenants
-            : [];
-          setTenants(tenantList);
+          setTenants(data.tenants || data || []);
           isInitialLoad.current = false;
         }
       } catch (err) {
