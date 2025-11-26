@@ -1,9 +1,10 @@
 import * as XLSX from "xlsx";
 
 const normalizeFileName = (fileName) => {
-  const safeName = typeof fileName === "string" && fileName.trim().length > 0
-    ? fileName.trim()
-    : "ordenes";
+  const safeName =
+    typeof fileName === "string" && fileName.trim().length > 0
+      ? fileName.trim()
+      : "ordenes";
   return safeName.toLowerCase().endsWith(".xlsx") ? safeName : `${safeName}.xlsx`;
 };
 

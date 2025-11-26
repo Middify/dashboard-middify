@@ -10,8 +10,9 @@ import {
   normalizeStatusKey,
   ORDER_STATE_LOOKUP,
 } from "./helpers";
+import { useExportOrders } from "./useExportOrders";
 
-const PAGE_SIZE_OPTIONS_BASE = [10, 20, 50, 100];
+const PAGE_SIZE_OPTIONS_BASE = [10, 20, 50, 100, 1000, 10000];
 
 const getColumnRawValue = (order, key) => {
   if (!order) return null;
@@ -67,10 +68,81 @@ const formatColumnValue = (key, order) => {
     case "itemQuantity":
       return Number.isFinite(Number(value)) ? Number(value).toString() : String(value);
     case "discounts":
-    case "errorDetail":
-    case "message":
-    case "marketPlace":
-    case "omniChannel":
+    case "message": {
+      if (typeof value === "object") {
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return "[object]";
+        }
+      }
+      return String(value);
+    }
+    case "errorDetail": {
+      if (typeof value === "object" && value !== null) {
+        if (typeof value.message === "string" && value.message.trim().length > 0) {
+          return value.message;
+        }
+        if (
+          typeof value.detail === "string" &&
+          value.detail.trim().length > 0
+        ) {
+          return value.detail;
+        }
+        if (
+          typeof value.error === "string" &&
+          value.error.trim().length > 0
+        ) {
+          return value.error;
+        }
+      }
+      if (typeof value === "string" && value.trim().length > 0) {
+        return value;
+      }
+      return "";
+    }
+    case "marketPlace": {
+      if (typeof value === "object" && value !== null) {
+        if (typeof value.name === "string" && value.name.trim().length > 0) {
+          return value.name;
+        }
+        if (
+          typeof value.displayName === "string" &&
+          value.displayName.trim().length > 0
+        ) {
+          return value.displayName;
+        }
+      }
+      if (typeof value === "string" && value.trim().length > 0) {
+        return value;
+      }
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return "[object]";
+      }
+    }
+    case "omniChannel": {
+      if (typeof value === "object" && value !== null) {
+        if (typeof value.name === "string" && value.name.trim().length > 0) {
+          return value.name;
+        }
+        if (
+          typeof value.displayName === "string" &&
+          value.displayName.trim().length > 0
+        ) {
+          return value.displayName;
+        }
+      }
+      if (typeof value === "string" && value.trim().length > 0) {
+        return value;
+      }
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return "[object]";
+      }
+    }
     case "taxes":
     case "extras":
     case "documents":
@@ -138,7 +210,8 @@ export const useOrdersTableLogic = ({
   selectedTenantId = null,
   selectedTenantName = null,
   selectedOrderState = null,
-  onSelectOrder = () => {},
+  onSelectOrder = () => { },
+  onExportSuccess = () => { },
 }) => {
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
@@ -161,6 +234,22 @@ export const useOrdersTableLogic = ({
     refreshTrigger
   );
 
+  const { isExporting, startExport } = useExportOrders({ token, onSuccess: onExportSuccess });
+
+  const handleExportOrders = useCallback(() => {
+    const filters = {
+      status: apiStatus,
+      tenantId: selectedTenantId,
+      tenantName: selectedTenantName,
+    };
+    // Remove undefined keys
+    Object.keys(filters).forEach(
+      (key) => filters[key] === undefined && delete filters[key]
+    );
+
+    startExport(filters);
+  }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);
+
   useEffect(() => {
     setPage(1);
   }, [selectedTenantId, selectedOrderState]);
@@ -182,8 +271,8 @@ export const useOrdersTableLogic = ({
           typeof column.sortOrder === "number"
             ? column.sortOrder
             : typeof column.originalIndex === "number"
-            ? column.originalIndex
-            : index;
+              ? column.originalIndex
+              : index;
         return { ...column, _computedOrder: computedOrder };
       })
       .sort((a, b) => a._computedOrder - b._computedOrder)
@@ -203,30 +292,30 @@ export const useOrdersTableLogic = ({
     return [...PAGE_SIZE_OPTIONS_BASE, pageSize].sort((a, b) => a - b);
   }, [pageSize]);
 
-const mapOrdersToGridRows = (orders, activeColumns) => {
-  if (!Array.isArray(orders) || orders.length === 0) {
-    return [];
-  }
+  const mapOrdersToGridRows = (orders, activeColumns) => {
+    if (!Array.isArray(orders) || orders.length === 0) {
+      return [];
+    }
 
-  return orders.map((order, index) => {
-    const orderId = order._id ?? order.id ?? `order-${index}`;
-    const tenantId = order.tennantId ?? order.tenantId ?? "";
-    const uniqueId = `${orderId}-${tenantId || index}`;
+    return orders.map((order, index) => {
+      const orderId = order._id ?? order.id ?? `order-${index}`;
+      const tenantId = order.tennantId ?? order.tenantId ?? "";
+      const uniqueId = `${orderId}-${tenantId || index}`;
 
-    const row = {
-      id: uniqueId,
-      internalId: orderId,
-      tenantId,
-      rawOrder: order,
-    };
+      const row = {
+        id: uniqueId,
+        internalId: orderId,
+        tenantId,
+        rawOrder: order,
+      };
 
-    activeColumns.forEach((column) => {
-      row[column.value] = formatColumnValue(column.value, order);
+      activeColumns.forEach((column) => {
+        row[column.value] = formatColumnValue(column.value, order);
+      });
+
+      return row;
     });
-
-    return row;
-  });
-};
+  };
   const dataGridRows = useMemo(
     () => mapOrdersToGridRows(displayOrders, activeColumns),
     [activeColumns, displayOrders]
@@ -443,6 +532,8 @@ const mapOrdersToGridRows = (orders, activeColumns) => {
     [activeColumns]
   );
 
+  const isLargePageSize = pageSize > 100;
+
   return {
     loading,
     error,
@@ -453,15 +544,20 @@ const mapOrdersToGridRows = (orders, activeColumns) => {
     clearSelection,
     refreshData,
     formatOrdersForExport,
+    exporting: isExporting,
+    onExport: handleExportOrders,
     grid: {
       rows: dataGridRows,
       columns,
       loading,
-      paginationModel,
+      paginationModel: isLargePageSize
+        ? { page: 0, pageSize: 100 }
+        : paginationModel,
       onPaginationModelChange: handlePaginationModelChange,
-      paginationMode: "server",
+      paginationMode: isLargePageSize ? "client" : "server",
       pageSizeOptions,
-      rowCount,
+
+      rowCount: isLargePageSize ? undefined : rowCount,
       onRowClick: handleRowClick,
     },
   };

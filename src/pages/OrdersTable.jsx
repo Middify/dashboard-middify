@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { Snackbar, Alert } from "@mui/material";
 import OrdersTableHeader from "../components/orders/OrdersTableHeader";
 import OrdersTableGrid from "../components/orders/OrdersTableGrid";
 import DeleteOrdersModal from "../components/orders/DeleteOrdersModal";
@@ -13,7 +14,7 @@ const OrdersTable = ({
   selectedTenantId = null,
   selectedTenantName = null,
   selectedOrderState = null,
-  onSelectOrder = () => {},
+  onSelectOrder = () => { },
   user = null,
 }) => {
   const {
@@ -28,20 +29,26 @@ const OrdersTable = ({
     onSearchIds,
     onSearchLoading,
     formatOrdersForExport,
+    exporting,
+    onExport,
   } = useOrdersTableLogic({
     token,
     selectedTenantId,
     selectedOrderState,
     selectedTenantName,
     onSelectOrder,
+    onExportSuccess: () => {
+      setSnackbar({ open: true, message: "Exportación lista. La descarga comenzará automáticamente.", severity: "success" });
+    },
   });
 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [selectedStatusValue, setSelectedStatusValue] = useState("");
-  const [isExporting, setIsExporting] = useState(false);
+  // const [isExporting, setIsExporting] = useState(false); // Now handled by hook
   const [isExportingSelection, setIsExportingSelection] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
   const stateOptions = useMemo(() => {
     const baseOptions =
@@ -188,54 +195,8 @@ const OrdersTable = ({
       alert("No hay token de autenticación para exportar.");
       return;
     }
-
-    setIsExporting(true);
-    try {
-      const statusParam = selectedOrderState
-        ? selectedOrderState.replace(/_/g, " ")
-        : undefined;
-      const preferredPageSize =
-        Array.isArray(grid?.pageSizeOptions) && grid.pageSizeOptions.length > 0
-          ? Math.max(...grid.pageSizeOptions)
-          : 500;
-
-      const { orders: allOrders } = await fetchOrdersByStateAllPages({
-        token,
-        params: {
-          tenantId: selectedTenantId ?? undefined,
-          tenantName: selectedTenantName ?? undefined,
-          status: statusParam,
-        },
-        pageSize: preferredPageSize,
-      });
-
-      if (!Array.isArray(allOrders) || allOrders.length === 0) {
-        alert("No hay órdenes disponibles para exportar.");
-        return;
-      }
-
-      const formattedRows = formatOrdersForExport(allOrders);
-      exportOrdersToExcel({
-        rows: formattedRows,
-        columns: grid.columns,
-        fileName: exportFileName,
-      });
-    } catch (error) {
-      console.error("Error al exportar las órdenes:", error);
-      alert(`No se pudo exportar las órdenes: ${error.message ?? "Error desconocido"}`);
-    } finally {
-      setIsExporting(false);
-    }
-  }, [
-    token,
-    selectedOrderState,
-    grid?.pageSizeOptions,
-    grid.columns,
-    selectedTenantId,
-    selectedTenantName,
-    exportFileName,
-    formatOrdersForExport,
-  ]);
+    onExport();
+  }, [token, onExport]);
 
   const handleExportSelectedOrders = useCallback(async () => {
     const selectedOrders = getSelectedOrders();
@@ -264,8 +225,7 @@ const OrdersTable = ({
     } catch (error) {
       console.error("Error al exportar la selección de órdenes:", error);
       alert(
-        `No se pudo exportar las órdenes seleccionadas: ${
-          error.message ?? "Error desconocido"
+        `No se pudo exportar las órdenes seleccionadas: ${error.message ?? "Error desconocido"
         }`
       );
     } finally {
@@ -283,7 +243,7 @@ const OrdersTable = ({
           stateOptions={stateOptions}
           selectedState={selectedStatusValue}
           onExportData={handleExportAllOrders}
-          isExportingData={isExporting}
+          isExportingData={exporting}
           exportDisabled={!token || grid.rowCount === 0}
           onExportSelectedData={handleExportSelectedOrders}
           isExportingSelectedData={isExportingSelection}
@@ -313,6 +273,20 @@ const OrdersTable = ({
         statusLabel={pendingStatus?.label}
         statusValue={pendingStatus?.value}
       />
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

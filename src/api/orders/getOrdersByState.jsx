@@ -113,14 +113,14 @@ export const fetchOrdersByState = async ({
 export const fetchOrdersByStateAllPages = async ({
   token,
   params = {},
-  pageSize = 500,
+  pageSize = 100,
   signal,
   onPage,
   maxPages,
 } = {}) => {
   if (!token) throw new Error("Falta token");
 
-  const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 500;
+  const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 50;
   const baseParams = { ...params };
   const accumulatedOrders = [];
   let currentPage = 1;
@@ -204,12 +204,74 @@ export const useOrdersByState = (token, params = {}, refreshTrigger = 0) => {
         setLoading(true);
         setError(null);
 
-        const [ordersResult, tenantColumns] = await Promise.all([
-          fetchOrdersByState({
+        // Determine if we need to do multi-fetching
+        const requestedPageSize = Number(params?.pageSize) || 20;
+        const requestedPage = Number(params?.page) || 1;
+        // AWS Infrastructure limit (Timeout/Payload size) requires small chunks
+        const API_LIMIT = 50;
+
+        let ordersResult;
+
+        if (requestedPageSize > API_LIMIT) {
+          // Calculate which API pages correspond to the requested "virtual" page
+          const startItemIndex = (requestedPage - 1) * requestedPageSize;
+          const endItemIndex = startItemIndex + requestedPageSize;
+
+          const startApiPage = Math.floor(startItemIndex / API_LIMIT) + 1;
+          const endApiPage = Math.ceil(endItemIndex / API_LIMIT);
+
+          const apiPagePromises = [];
+          for (let p = startApiPage; p <= endApiPage; p++) {
+            apiPagePromises.push(
+              fetchOrdersByState({
+                token,
+                params: {
+                  ...params,
+                  page: p,
+                  pageSize: API_LIMIT,
+                },
+                signal: controller.signal,
+              })
+            );
+          }
+
+          const results = await Promise.all(apiPagePromises);
+
+          // Combine orders
+          const allOrders = results.flatMap(r => r.orders);
+
+          // Slice to match the exact requested range
+          const fetchedStartIndex = (startApiPage - 1) * API_LIMIT;
+          const sliceStart = startItemIndex - fetchedStartIndex;
+          const sliceEnd = sliceStart + requestedPageSize;
+
+          const slicedOrders = allOrders.slice(sliceStart, sliceEnd);
+
+          // Construct a synthetic meta
+          const firstMeta = results[0]?.meta || {};
+          const total = firstMeta.total || firstMeta.totalOrders || 0;
+
+          ordersResult = {
+            orders: slicedOrders,
+            meta: {
+              ...firstMeta,
+              page: requestedPage,
+              pageSize: requestedPageSize,
+              totalPages: Math.ceil(total / requestedPageSize),
+            }
+          };
+
+        } else {
+          // Normal fetch
+          ordersResult = await fetchOrdersByState({
             token,
             params,
             signal: controller.signal,
-          }),
+          });
+        }
+
+        const [_, tenantColumns] = await Promise.all([
+          Promise.resolve(), // orders already fetched
           params?.tenantName || params?.tenantId
             ? fetchTenantColumns({
               token,
