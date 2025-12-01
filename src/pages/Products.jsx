@@ -26,18 +26,19 @@ const Products = () => {
         refreshTrigger
     );
 
-    // Filtrar productos con state "discard" y crear rows
-    const rows = useMemo(() => {
+    const filteredProducts = useMemo(() => {
         if (!Array.isArray(products?.products)) {
             return [];
         }
-        return products.products
-            .filter((product) => product.state !== "discard")
-            .map((product, index) => ({
-                id: product._id || index,
-                ...product,
-            }));
+        return products.products.filter((product) => product.state !== "discard");
     }, [products?.products]);
+
+    const rows = useMemo(() => {
+        return filteredProducts.map((product, index) => ({
+            id: product._id || index,
+            ...product,
+        }));
+    }, [filteredProducts]);
 
     const handleToggleRowSelection = useCallback((rowId) => {
         setSelectedRowIds((prevSelected) => {
@@ -178,15 +179,16 @@ const Products = () => {
 
     const selectedCount = selectedRowIds.size;
 
-    const infoChips = products
-        ? [
-              {
-                  id: "total",
-                  label: "Total",
-                  value: products.total || 0,
-              },
-          ]
-        : [];
+    const infoChips =
+        filteredProducts && filteredProducts.length > 0
+            ? [
+                  {
+                      id: "total",
+                      label: "Total",
+                      value: filteredProducts.length,
+                  },
+              ]
+            : [];
 
     if (error && !loading) {
         return (
