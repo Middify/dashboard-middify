@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useProducts } from "../api/products/getProducts";
 import { postExportProducts } from "../api/products/postExportProducts";
@@ -14,35 +13,146 @@ const NoRowsOverlay = () => (
 );
 
 const Products = () => {
-    const auth = useAuth();
-    const token = auth.user?.id_token;
-    const { selectedTenantId, selectedTenantName } = useOutletContext() || {};
+    const { token, selectedTenantId, selectedTenantName, user } = useOutletContext() || {};
+
+    const [isExporting, setIsExporting] = useState(false);
+    const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const { products, loading, error } = useProducts(
         token,
         selectedTenantId,
-        selectedTenantName
+        selectedTenantName,
+        refreshTrigger
     );
 
-    const [isExporting, setIsExporting] = useState(false);
+    // Filtrar productos con state "discard" y crear rows
+    const rows = useMemo(() => {
+        if (!Array.isArray(products?.products)) {
+            return [];
+        }
+        return products.products
+            .filter((product) => product.state !== "discard")
+            .map((product, index) => ({
+                id: product._id || index,
+                ...product,
+            }));
+    }, [products?.products]);
 
-    const columns = [
-        { field: "sku", headerName: "SKU", width: 150 },
-        { field: "name", headerName: "Nombre", width: 250 },
-        { field: "tenantName", headerName: "Tenant", width: 150 },
-        { field: "warehouse", headerName: "Bodega", width: 150 },
-        { field: "quantity", headerName: "Cantidad", width: 100, type: "number" },
-        { field: "price", headerName: "Precio", width: 100, type: "number" },
-        { field: "state", headerName: "Estado", width: 120 },
-        { field: "sync", headerName: "Sincronizado", width: 120, type: "boolean" },
-    ];
+    const handleToggleRowSelection = useCallback((rowId) => {
+        setSelectedRowIds((prevSelected) => {
+            const nextSelected = new Set(prevSelected);
+            if (nextSelected.has(rowId)) {
+                nextSelected.delete(rowId);
+            } else {
+                nextSelected.add(rowId);
+            }
+            return nextSelected;
+        });
+    }, []);
 
-    const rows = Array.isArray(products?.products)
-        ? products.products.map((product, index) => ({
-              id: product._id || index,
-              ...product,
-          }))
-        : [];
+    const allRowIds = useMemo(() => rows.map((row) => row.id), [rows]);
+
+    useEffect(() => {
+        setSelectedRowIds((prevSelected) => {
+            const nextSelected = new Set();
+            rows.forEach((row) => {
+                if (prevSelected.has(row.id)) {
+                    nextSelected.add(row.id);
+                }
+            });
+            return nextSelected;
+        });
+    }, [rows]);
+
+    const allSelected = useMemo(() => {
+        if (allRowIds.length === 0) {
+            return false;
+        }
+        return allRowIds.every((id) => selectedRowIds.has(id));
+    }, [allRowIds, selectedRowIds]);
+
+    const handleToggleAllRows = useCallback(() => {
+        setSelectedRowIds((prevSelected) => {
+            if (allSelected) {
+                return new Set();
+            }
+            return new Set(allRowIds);
+        });
+    }, [allSelected, allRowIds]);
+
+    const getSelectedProductIds = useCallback(() => {
+        const selectedIds = [];
+        rows.forEach((row) => {
+            if (selectedRowIds.has(row.id)) {
+                selectedIds.push(row._id || row.id);
+            }
+        });
+        return selectedIds;
+    }, [rows, selectedRowIds]);
+
+    const clearSelection = useCallback(() => {
+        setSelectedRowIds(new Set());
+    }, []);
+
+    const refreshData = useCallback(() => {
+        setRefreshTrigger((prev) => prev + 1);
+    }, []);
+
+    const columns = useMemo(() => {
+        const selectColumn = {
+            field: "select",
+            headerName: "",
+            width: 52,
+            sortable: false,
+            filterable: false,
+            disableColumnMenu: true,
+            renderHeader: () => (
+                <input
+                    type="checkbox"
+                    aria-label="Seleccionar todos los productos visibles"
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    checked={allSelected}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) => {
+                        event.stopPropagation();
+                        handleToggleAllRows();
+                    }}
+                />
+            ),
+            align: "center",
+            headerAlign: "center",
+            renderCell: ({ row }) => {
+                const isChecked = selectedRowIds.has(row.id);
+                return (
+                    <input
+                        type="checkbox"
+                        aria-label={`Seleccionar producto ${row._id ?? row.id}`}
+                        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        checked={isChecked}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => {
+                            event.stopPropagation();
+                            handleToggleRowSelection(row.id);
+                        }}
+                    />
+                );
+            },
+        };
+
+        const dataColumns = [
+            { field: "sku", headerName: "SKU", width: 150 },
+            { field: "name", headerName: "Nombre", width: 250 },
+            { field: "tenantName", headerName: "Tenant", width: 150 },
+            { field: "warehouse", headerName: "Bodega", width: 150 },
+            { field: "quantity", headerName: "Cantidad", width: 100, type: "number" },
+            { field: "price", headerName: "Precio", width: 100, type: "number" },
+            { field: "state", headerName: "Estado", width: 120 },
+            { field: "sync", headerName: "Sincronizado", width: 120, type: "boolean" },
+        ];
+
+        return [selectColumn, ...dataColumns];
+    }, [allSelected, handleToggleAllRows, handleToggleRowSelection, selectedRowIds]);
 
     const handleExportProducts = async () => {
         if (!token) return;
@@ -65,6 +175,8 @@ const Products = () => {
             setIsExporting(false);
         }
     };
+
+    const selectedCount = selectedRowIds.size;
 
     const infoChips = products
         ? [
@@ -97,6 +209,14 @@ const Products = () => {
                 onExportData={handleExportProducts}
                 isExportingData={isExporting}
                 exportDisabled={loading || !products?.products?.length}
+                selectedCount={selectedCount}
+                getSelectedProductIds={getSelectedProductIds}
+                token={token}
+                user={user}
+                onDeleteSuccess={() => {
+                    refreshData();
+                    clearSelection();
+                }}
             />
 
             <div className="p-4">

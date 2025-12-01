@@ -37,7 +37,7 @@ export const getProducts = async ({ token, tenantId, tenantName, signal } = {}) 
 };
 
 
-export const useProducts = (token, tenantId = null, tenantName = null) => {
+export const useProducts = (token, tenantId = null, tenantName = null, refreshTrigger = 0) => {
     const [products, setProducts] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -79,7 +79,7 @@ export const useProducts = (token, tenantId = null, tenantName = null) => {
             isMounted = false;
             controller.abort();
         };
-    }, [token, tenantId, tenantName]);
+    }, [token, tenantId, tenantName, refreshTrigger]);
 
     return { products, loading, error };
 };
