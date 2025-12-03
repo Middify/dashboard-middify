@@ -28,11 +28,9 @@ const ORDER_STATE_ITEMS = STATE_DEFINITIONS.map(({ key, label }) => {
 });
 
 const PRODUCT_STATE_ITEMS = [
-  { id: "ingresada", label: "Ingresada" },
-  { id: "pendiente", label: "Pendiente" },
-  { id: "procesada", label: "Procesada" },
-  { id: "error", label: "Error" },
-  { id: "en_proceso", label: "En proceso" },
+  { id: "created", label: "Creada" },
+  { id: "failed", label: "Error" },
+  { id: "success", label: "Procesada" },
 ];
 
 export const SIDEBAR_WIDTH = 280;

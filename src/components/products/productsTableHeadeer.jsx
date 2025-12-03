@@ -20,11 +20,9 @@ import { patchExportProducts } from "../../api/products/patchStateProduct";
 import ImportProductsModal from "./ImportProductsModal";
 
 const PRODUCT_STATES = [
-    { value: "ingresada", label: "Ingresada" },
-    { value: "pendiente", label: "Pendiente" },
-    { value: "procesada", label: "Procesada" },
-    { value: "error", label: "Error" },
-    { value: "en_proceso", label: "En proceso" },
+    { value: "created", label: "Creada" },
+    { value: "failed", label: "Error" },
+    { value: "success", label: "Procesada" },
 ];
 
 const ProductsTableHeader = ({
