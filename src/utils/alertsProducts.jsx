@@ -46,6 +46,7 @@ export const alertsProducts = {
     // Importación
     noDataToImport: () => showProductError("No hay datos válidos para importar."),
     noToken: () => showProductError("No hay token de autenticación disponible."),
+    noTenant: () => showProductError("Se requiere seleccionar un tenant."),
     importSuccess: (count) => showProductSuccess(`Importación exitosa: ${count} producto(s) procesado(s)`),
     importError: (error) => showProductError(`Error al importar productos: ${error || "Error desconocido"}`),
     parseError: (error) => showProductError(`Error al leer el archivo: ${error}`),
@@ -64,5 +65,9 @@ export const alertsProducts = {
     noDataToSync: () => showProductError("No hay datos válidos para sincronizar."),
     syncError: (error) => showProductError(`Error al sincronizar SKUs: ${error || "Error desconocido"}`),
     syncSuccess: (count) => showProductSuccess(`Sincronización exitosa: ${count} SKU(s) procesado(s)`),
+
+    // Exportación
+    exportSuccess: (message) => showProductSuccess(message || "Exportación iniciada correctamente"),
+    exportError: () => showProductError("Error al exportar productos."),
 };
 

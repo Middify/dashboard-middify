@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
 import IconButton from "@mui/material/IconButton";
@@ -19,14 +19,11 @@ const ProductsTableGrid = ({
     onToggleRowSelection,
     onToggleAllRows,
 }) => {
-    const allRowIds = useMemo(() => rows.map((row) => row.id), [rows]);
-
-    const allSelected = useMemo(() => {
-        if (allRowIds.length === 0) {
-            return false;
-        }
-        return allRowIds.every((id) => selectedRowIds.has(id));
-    }, [allRowIds, selectedRowIds]);
+    const allRowIds = useMemo(() => rows.map(r => r.id), [rows]);
+    const allSelected = useMemo(() => 
+        allRowIds.length > 0 && allRowIds.every(id => selectedRowIds.has(id)),
+        [allRowIds, selectedRowIds]
+    );
 
     const columns = useMemo(() => {
         const selectColumn = {
@@ -36,40 +33,36 @@ const ProductsTableGrid = ({
             sortable: false,
             filterable: false,
             disableColumnMenu: true,
+            align: "center",
+            headerAlign: "center",
             renderHeader: () => (
                 <input
                     type="checkbox"
-                    aria-label="Seleccionar todos los productos visibles"
                     className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     checked={allSelected}
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(event) => {
-                        event.stopPropagation();
-                        if (onToggleAllRows) onToggleAllRows();
+                    onClick={e => e.stopPropagation()}
+                    onChange={e => {
+                        e.stopPropagation();
+                        onToggleAllRows?.();
                     }}
                 />
             ),
-            align: "center",
-            headerAlign: "center",
-            renderCell: ({ row }) => {
-                const isChecked = selectedRowIds.has(row.id);
-                return (
-                    <input
-                        type="checkbox"
-                        aria-label={`Seleccionar producto ${row._id ?? row.id}`}
-                        className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                        checked={isChecked}
-                        onClick={(event) => event.stopPropagation()}
-                        onChange={(event) => {
-                            event.stopPropagation();
-                            if (onToggleRowSelection) onToggleRowSelection(row.id);
-                        }}
-                    />
-                );
-            },
+            renderCell: ({ row }) => (
+                <input
+                    type="checkbox"
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    checked={selectedRowIds.has(row.id)}
+                    onClick={e => e.stopPropagation()}
+                    onChange={e => {
+                        e.stopPropagation();
+                        onToggleRowSelection?.(row.id);
+                    }}
+                />
+            ),
         };
 
-        const dataColumns = [
+        return [
+            selectColumn,
             { field: "sku", headerName: "SKU", width: 150 },
             { field: "name", headerName: "Nombre", width: 250 },
             { field: "tenantName", headerName: "Tenant", width: 150 },
@@ -79,42 +72,30 @@ const ProductsTableGrid = ({
             { field: "state", headerName: "Estado", width: 120 },
             { field: "message", headerName: "Mensaje", width: 250 },
             {
-                field: "detalle",
+                field: "actions",
                 headerName: "Detalle",
-                width: 100,
+                width: 80,
                 sortable: false,
                 filterable: false,
                 disableColumnMenu: true,
                 align: "center",
-                headerAlign: "center",
                 renderCell: ({ row }) => (
                     <IconButton
                         size="small"
-                        aria-label={`Ver detalle del producto ${row.sku || row.id}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // TODO: Implementar funcionalidad de detalle
-                        }}
-                        sx={{
-                            color: "rgb(99, 102, 241)",
-                            "&:hover": {
-                                backgroundColor: "rgba(99, 102, 241, 0.08)",
-                            },
-                        }}
+                        onClick={e => e.stopPropagation()}
+                        sx={{ color: "rgb(99, 102, 241)" }}
                     >
                         <VisibilityIcon fontSize="small" />
                     </IconButton>
                 ),
             },
         ];
-
-        return [selectColumn, ...dataColumns];
     }, [allSelected, onToggleAllRows, onToggleRowSelection, selectedRowIds]);
 
     if (error && !loading) {
         return (
             <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-red-500">
-                Error al cargar los productos: {error.message}
+                Error: {error.message}
             </div>
         );
     }
@@ -123,43 +104,25 @@ const ProductsTableGrid = ({
         <div className="p-4">
             <div className="overflow-x-auto">
                 <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem]">
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            width: "100%",
-                            borderRadius: "16px",
-                            boxShadow: "none",
-                            overflow: "hidden",
-                        }}
-                    >
+                    <Paper elevation={0} sx={{ width: "100%", borderRadius: "16px", overflow: "hidden" }}>
                         <DataGrid
                             rows={rows}
                             columns={columns}
                             loading={loading}
                             autoHeight
                             paginationMode="client"
-                            initialState={{
-                                pagination: {
-                                    paginationModel: { pageSize: 25, page: 0 },
-                                },
-                            }}
+                            initialState={{ pagination: { paginationModel: { pageSize: 25, page: 0 } } }}
                             pageSizeOptions={[25, 50, 100]}
                             disableRowSelectionOnClick
                             disableColumnMenu
                             disableColumnSelector
                             disableDensitySelector
-                            localeText={{
-                                footerPaginationRowsPerPage: "Filas por página:",
-                            }}
-                            slots={{
-                                noRowsOverlay: NoRowsOverlay,
-                            }}
+                            localeText={{ footerPaginationRowsPerPage: "Filas por página:" }}
+                            slots={{ noRowsOverlay: NoRowsOverlay }}
                             sx={{
                                 border: 0,
                                 "--DataGrid-containerBackground": "transparent",
-                                "& .MuiDataGrid-columnHeaders": {
-                                    backgroundColor: "#f8fafc",
-                                },
+                                "& .MuiDataGrid-columnHeaders": { backgroundColor: "#f8fafc" },
                                 "& .MuiDataGrid-columnHeaderTitle": {
                                     fontWeight: 600,
                                     fontSize: "0.75rem",
@@ -167,16 +130,9 @@ const ProductsTableGrid = ({
                                     textTransform: "uppercase",
                                     color: "#475569",
                                 },
-                                "& .MuiDataGrid-row:hover": {
-                                    backgroundColor: "#eaf8ff",
-                                },
-                                "& .MuiDataGrid-cell": {
-                                    borderBottomColor: "#e2e8f0",
-                                },
-                                "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within":
-                                    {
-                                        outline: "none",
-                                    },
+                                "& .MuiDataGrid-row:hover": { backgroundColor: "#eaf8ff" },
+                                "& .MuiDataGrid-cell": { borderBottomColor: "#e2e8f0" },
+                                "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within": { outline: "none" },
                             }}
                         />
                     </Paper>
@@ -200,4 +156,3 @@ ProductsTableGrid.defaultProps = {
 };
 
 export default ProductsTableGrid;
-

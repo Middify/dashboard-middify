@@ -15,6 +15,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
 import { postImportProducts } from "../../api/products/importProducts";
+import { alertsProducts } from "../../utils/alertsProducts";
 
 const ACCEPTED_FORMATS = [".xlsx", ".xls", ".csv", ".json"];
 
@@ -200,6 +201,7 @@ const ImportProductsModal = ({
         } catch (error) {
             console.error("Error al parsear archivo:", error);
             setParseError(error.message);
+            alertsProducts.parseError(error.message);
         }
     }, []);
 
@@ -234,15 +236,15 @@ const ImportProductsModal = ({
 
     const handleImport = useCallback(async () => {
         if (!parsedData?.length) {
-            alert("No hay datos válidos para importar.");
+            alertsProducts.noDataToImport();
             return;
         }
         if (!token) {
-            alert("No hay token de autenticación disponible.");
+            alertsProducts.noToken();
             return;
         }
         if (!tenantId || !tenantName) {
-            alert("Se requiere información del tenant.");
+            alertsProducts.noTenant();
             return;
         }
 
@@ -259,11 +261,12 @@ const ImportProductsModal = ({
 
             setImportResult(response);
             if (response.success) {
+                alertsProducts.importSuccess(response.succeeded || response.processed || parsedData.length);
                 onImportSuccess?.(response);
             }
         } catch (error) {
             console.error("Error al importar productos:", error);
-            alert(`Error al importar productos: ${error.message || "Error desconocido"}`);
+            alertsProducts.importError(error.message);
         } finally {
             setIsImporting(false);
         }

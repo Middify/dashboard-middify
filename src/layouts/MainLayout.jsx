@@ -7,6 +7,8 @@ import {
     useMatch,
     Outlet,
 } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useProductStates } from "../api/products/getProductStates";
 import { useMarketplaceSummary } from "../api/getMarketplaceSummary";
 import { useUsers } from "../api/users/getUsers";
@@ -257,6 +259,17 @@ const MainLayout = () => {
                     </main>
                 </div>
             </div>
+            <ToastContainer
+                position="bottom-right"
+                autoClose={2000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
         </div>
     );
 };

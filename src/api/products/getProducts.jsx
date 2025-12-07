@@ -3,85 +3,54 @@ import { useEffect, useState } from "react";
 const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/products";
 
 export const getProducts = async ({ token, tenantId, tenantName, state, signal } = {}) => {
-    const headers = {
-        "Content-Type": "application/json",
-    };
+    const params = new URLSearchParams();
+    if (tenantId) params.append("tenantId", tenantId);
+    if (tenantName) params.append("tenantName", tenantName);
+    if (state) params.append("state", state);
 
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-    // Construcción de query params
-    const queryParams = new URLSearchParams();
-
-    if (tenantId) queryParams.append("tenantId", tenantId);
-    if (tenantName) queryParams.append("tenantName", tenantName);
-    if (state) queryParams.append("state", state); // Agregamos state
-
-    const url = `${API_URL}?${queryParams.toString()}`;
-
-    console.log("Fetching:", url);
-
-    const response = await fetch(url, {
-        method: "GET",
-        headers,
+    const response = await fetch(`${API_URL}?${params}`, {
+        headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+        },
         signal,
     });
 
-    const result = await response.json();
-
     if (!response.ok) {
-        throw new Error(result.message || `Error ${response.status}`);
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `Error ${response.status}`);
     }
 
-    return result;
+    return response.json();
 };
 
-
-export const useProducts = (token, tenantId = null, tenantName = null, refreshTrigger = 0, state = null) => {
-    const [products, setProducts] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+export const useProducts = (token, tenantId, tenantName, refreshTrigger, state) => {
+    const [data, setData] = useState({ products: null, loading: true, error: null });
 
     useEffect(() => {
         const controller = new AbortController();
-        let isMounted = true;
+        let mounted = true;
 
-        const loadProducts = async () => {
-            setLoading(true);
-            setError(null);
+        const fetchData = async () => {
+            setData(prev => ({ ...prev, loading: true, error: null }));
             try {
-                const data = await getProducts({
-                    token,
-                    tenantId,
-                    tenantName,
-                    state, // Pasamos state
-                    signal: controller.signal,
-                });
-                if (isMounted) {
-                    setProducts(data);
+                const result = await getProducts({ token, tenantId, tenantName, state, signal: controller.signal });
+                if (mounted) {
+                    setData({ products: result, loading: false, error: null });
                 }
             } catch (err) {
-                if (err.name === "AbortError") {
-                    return;
-                }
-                if (isMounted) {
-                    setError(err);
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
+                if (err.name !== "AbortError" && mounted) {
+                    setData({ products: null, loading: false, error: err });
                 }
             }
         };
 
-        loadProducts();
-
+        fetchData();
         return () => {
-            isMounted = false;
+            mounted = false;
             controller.abort();
         };
     }, [token, tenantId, tenantName, refreshTrigger, state]);
 
-    return { products, loading, error };
+    return data;
 };

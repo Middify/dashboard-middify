@@ -2,21 +2,16 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useProducts } from "../api/products/getProducts";
 import { postExportProducts } from "../api/products/postExportProducts";
-import { Snackbar, Alert } from "@mui/material";
 import ProductsTableHeader from "../components/products/productsTableHeadeer";
 import ProductsTableGrid from "../components/products/ProductsTableGrid";
+import { alertsProducts } from "../utils/alertsProducts";
 
 const Products = () => {
     const { token, selectedTenantId, selectedTenantName, user, resolvedProductState } = useOutletContext() || {};
-
+    
     const [isExporting, setIsExporting] = useState(false);
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [refreshTrigger, setRefreshTrigger] = useState(0);
-    const [snackbar, setSnackbar] = useState({
-        open: false,
-        message: "",
-        severity: "info",
-    });
 
     const { products, loading, error } = useProducts(
         token,
@@ -26,153 +21,101 @@ const Products = () => {
         resolvedProductState
     );
 
+    // Filtrado directo sin normalización extra
     const filteredProducts = useMemo(() => {
-        if (!Array.isArray(products?.products)) {
-            return [];
-        }
+        const productList = products?.products || [];
+        if (!productList.length) return [];
 
-        return products.products.filter((product) => {
-            if (resolvedProductState) {
-                const targetState = resolvedProductState === "descartada" ? "discard" : resolvedProductState;
-                return product.state === targetState;
-            }
-            return product.state !== "discard";
-        });
+        if (resolvedProductState) {
+            const targetState = resolvedProductState === "descartada" ? "discard" : resolvedProductState;
+            return productList.filter(p => p.state === targetState);
+        }
+        return productList.filter(p => p.state !== "discard");
     }, [products?.products, resolvedProductState]);
 
-    const rows = useMemo(() => {
-        return filteredProducts.map((product, index) => ({
-              id: product._id || index,
-              ...product,
-        }));
-    }, [filteredProducts]);
+    // Mapeo mínimo solo para agregar id (necesario para el DataGrid)
+    const rows = useMemo(() => 
+        filteredProducts.map((p, i) => ({ id: p._id || i, ...p })), 
+        [filteredProducts]
+    );
 
+    // Selección simplificada
     const handleToggleRowSelection = useCallback((rowId) => {
-        setSelectedRowIds((prevSelected) => {
-            const nextSelected = new Set(prevSelected);
-            if (nextSelected.has(rowId)) {
-                nextSelected.delete(rowId);
-            } else {
-                nextSelected.add(rowId);
-            }
-            return nextSelected;
+        setSelectedRowIds(prev => {
+            const next = new Set(prev);
+            next.has(rowId) ? next.delete(rowId) : next.add(rowId);
+            return next;
         });
     }, []);
 
+    // Sincronizar selección cuando cambian las filas
     useEffect(() => {
-        setSelectedRowIds((prevSelected) => {
-            const nextSelected = new Set();
-            rows.forEach((row) => {
-                if (prevSelected.has(row.id)) {
-                    nextSelected.add(row.id);
-                }
+        setSelectedRowIds(prev => {
+            const valid = new Set();
+            rows.forEach(row => {
+                if (prev.has(row.id)) valid.add(row.id);
             });
-            return nextSelected;
+            return valid;
         });
     }, [rows]);
 
     const handleToggleAllRows = useCallback(() => {
-        setSelectedRowIds((prevSelected) => {
-            const allRowIds = rows.map((row) => row.id);
-            if (allRowIds.every((id) => prevSelected.has(id))) {
-                return new Set();
-            }
-            return new Set(allRowIds);
+        setSelectedRowIds(prev => {
+            const allIds = new Set(rows.map(r => r.id));
+            return allIds.size > 0 && [...allIds].every(id => prev.has(id)) 
+                ? new Set() 
+                : allIds;
         });
     }, [rows]);
 
-    const getSelectedProductIds = useCallback(() => {
-        const selectedIds = [];
-        rows.forEach((row) => {
-            if (selectedRowIds.has(row.id)) {
-                selectedIds.push(row._id || row.id);
-            }
-        });
-        return selectedIds;
-    }, [rows, selectedRowIds]);
-
-    const clearSelection = useCallback(() => {
-        setSelectedRowIds(new Set());
-    }, []);
+    const getSelectedProductIds = useCallback(() => 
+        rows.filter(r => selectedRowIds.has(r.id)).map(r => r._id || r.id),
+        [rows, selectedRowIds]
+    );
 
     const refreshData = useCallback(() => {
-        setRefreshTrigger((prev) => prev + 1);
+        setRefreshTrigger(prev => prev + 1);
+        setSelectedRowIds(new Set());
     }, []);
 
     const handleExportProducts = async () => {
         if (!token) return;
-
         setIsExporting(true);
         try {
-            const body = {
-                tenantId: selectedTenantId || null,
-                tenantName: selectedTenantName || null,
-            };
-
-            const response = await postExportProducts(token, body);
-
+            const response = await postExportProducts(token, {
+                tenantId: selectedTenantId,
+                tenantName: selectedTenantName,
+            });
             if (response?.message) {
-                setSnackbar({
-                    open: true,
-                    message: response.message,
-                    severity: "success",
-                });
+                alertsProducts.exportSuccess(response.message);
             }
         } catch (err) {
-            setSnackbar({
-                open: true,
-                message: "Error al exportar productos. Por favor intenta de nuevo.",
-                severity: "error",
-            });
+            alertsProducts.exportError();
         } finally {
             setIsExporting(false);
         }
     };
 
-    const selectedCount = selectedRowIds.size;
-
-    const infoChips =
-        filteredProducts && filteredProducts.length > 0
-        ? [
-              {
-                  id: "total",
-                  label: "Total",
-                      value: filteredProducts.length,
-              },
-          ]
-        : [];
-
     if (error && !loading) {
-        return (
-            <div className="px-6 py-12 text-center text-sm text-red-500">
-                Error al cargar los productos: {error.message}
-            </div>
-        );
+        return <div className="px-6 py-12 text-center text-sm text-red-500">Error: {error.message}</div>;
     }
 
     return (
         <div className="space-y-4">
             <ProductsTableHeader
                 title="Productos"
-                subtitle={
-                    selectedTenantName
-                        ? `Productos de ${selectedTenantName}`
-                        : "Gestión de productos del inventario"
-                }
-                infoChips={infoChips}
+                subtitle={selectedTenantName ? `Productos de ${selectedTenantName}` : "Gestión de productos"}
+                infoChips={filteredProducts.length > 0 ? [{ id: "total", label: "Total", value: filteredProducts.length }] : []}
                 onExportData={handleExportProducts}
                 isExportingData={isExporting}
-                exportDisabled={loading || !products?.products?.length}
-                selectedCount={selectedCount}
+                exportDisabled={loading || !filteredProducts.length}
+                selectedCount={selectedRowIds.size}
                 getSelectedProductIds={getSelectedProductIds}
                 token={token}
                 user={user}
                 tenantId={selectedTenantId}
                 tenantName={selectedTenantName}
-                onDeleteSuccess={() => {
-                    refreshData();
-                    clearSelection();
-                }}
+                onDeleteSuccess={refreshData}
             />
 
             <ProductsTableGrid
@@ -183,22 +126,6 @@ const Products = () => {
                 onToggleRowSelection={handleToggleRowSelection}
                 onToggleAllRows={handleToggleAllRows}
             />
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={3000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            >
-                <Alert
-                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                    severity={snackbar.severity}
-                    sx={{ width: "100%" }}
-                    variant="filled"
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
         </div>
     );
 };
