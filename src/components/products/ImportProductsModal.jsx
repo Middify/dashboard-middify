@@ -14,6 +14,8 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
+import CancelIcon from "@mui/icons-material/Cancel";
+import InventoryIcon from "@mui/icons-material/Inventory";
 import { postImportProducts } from "../../api/products/importProducts";
 import { alertsProducts } from "../../utils/alertsProducts";
 
@@ -405,13 +407,18 @@ const ImportProductsModal = ({
                             title="Importación completada"
                         >
                             <div className="space-y-1 text-xs">
-                                <p>
-                                    ✅ Exitosos: <strong>{importResult.succeeded}</strong>
+                                <p className="flex items-center gap-2">
+                                    <CheckCircleIcon sx={{ fontSize: 16, color: "green" }} />
+                                    Exitosos: <strong>{importResult.succeeded}</strong>
                                 </p>
-                                <p>
-                                    ❌ Fallidos: <strong>{importResult.failed}</strong>
+                                <p className="flex items-center gap-2">
+                                    <CancelIcon sx={{ fontSize: 16, color: "red" }} />
+                                    Fallidos: <strong>{importResult.failed}</strong>
                                 </p>
-                                <p>📦 Total procesados: {importResult.processed}</p>
+                                <p className="flex items-center gap-2">
+                                    <InventoryIcon sx={{ fontSize: 16, color: "rgb(99, 102, 241)" }} />
+                                    Total procesados: {importResult.processed}
+                                </p>
                             </div>
                             {importResult.results?.some((r) => r.status === "error") && (
                                 <div className="mt-2 max-h-24 overflow-y-auto rounded border border-red-200 bg-white p-2">
