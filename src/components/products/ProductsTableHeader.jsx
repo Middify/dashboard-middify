@@ -6,6 +6,8 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import SyncIcon from "@mui/icons-material/Sync";
 import WarningIcon from "@mui/icons-material/Warning";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 import CircularProgress from "@mui/material/CircularProgress";
 import {
     Dialog,
@@ -126,6 +128,7 @@ const ProductsTableHeader = ({
     const [showImportModal, setShowImportModal] = useState(false);
     const [showSyncModal, setShowSyncModal] = useState(false);
     const [selectedState, setSelectedState] = useState("");
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const hasSelection = selectedCount > 0;
     const canTriggerExport = typeof onExportData === "function" && !exportDisabled;
@@ -203,7 +206,105 @@ const ProductsTableHeader = ({
 
     return (
         <>
-            <header className="rounded-xl mt-4 border border-slate-200 bg-white p-4 shadow-sm">
+            {/* Encabezado Móvil Sticky */}
+            <div className="sticky top-20 mt-4 z-40 md:hidden">
+                <header className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] rounded-xl border-b border-slate-200 bg-white shadow-sm">
+                    {/* Barra superior compacta */}
+                    <div className="flex items-center justify-between px-4 py-3">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <h1 className="text-base font-semibold text-slate-800 truncate">{title}</h1>
+                            {selectedCount > 0 && (
+                                <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                                    {selectedCount}
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                            aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                        >
+                            {isMobileMenuOpen ? <CloseIcon fontSize="small" /> : <MenuIcon fontSize="small" />}
+                        </button>
+                    </div>
+
+                    {/* Menú desplegable de acciones */}
+                    {isMobileMenuOpen && (
+                        <div className="border-t border-slate-100 bg-slate-50 p-3">
+                            <div className="flex flex-col gap-2">
+                                {hasSelection && (
+                                    <>
+                                        <ActionButton
+                                            icon={EditIcon}
+                                            label="Cambiar Estado"
+                                            onClick={() => {
+                                                setShowUpdateModal(true);
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            disabled={isLoading}
+                                            variant="default"
+                                            className="w-full"
+                                        />
+                                        <ActionButton
+                                            icon={DeleteOutlineIcon}
+                                            label={`Eliminar (${selectedCount})`}
+                                            onClick={() => {
+                                                handleDeleteClick();
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            disabled={isLoading}
+                                            variant="danger"
+                                            loading={isDeleting}
+                                            loadingLabel="Eliminando..."
+                                            className="w-full"
+                                            aria-label={`Eliminar ${selectedCount} producto(s) seleccionado(s)`}
+                                        />
+                                    </>
+                                )}
+                                <ActionButton
+                                    icon={FileUploadOutlinedIcon}
+                                    label="Importar"
+                                    onClick={() => {
+                                        setShowImportModal(true);
+                                        setIsMobileMenuOpen(false);
+                                    }}
+                                    variant="success"
+                                    className="w-full"
+                                    aria-label="Importar productos desde archivo"
+                                />
+                                <ActionButton
+                                    icon={SyncIcon}
+                                    label="Sincronizar SKU"
+                                    onClick={() => {
+                                        setShowSyncModal(true);
+                                        setIsMobileMenuOpen(false);
+                                    }}
+                                    variant="primary"
+                                    className="w-full"
+                                    aria-label="Sincronizar SKU"
+                                />
+                                <ActionButton
+                                    icon={FileDownloadOutlinedIcon}
+                                    label="Exportar"
+                                    onClick={() => {
+                                        onExportData?.();
+                                        setIsMobileMenuOpen(false);
+                                    }}
+                                    disabled={!canTriggerExport || isExportingData}
+                                    variant="default"
+                                    loading={isExportingData}
+                                    loadingLabel="Exportando..."
+                                    className="w-full"
+                                    aria-label="Exportar productos a Excel"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </header>
+            </div>
+
+            {/* Encabezado Escritorio */}
+            <header className="hidden md:block mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] rounded-xl mt-4 border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-baseline gap-3">
@@ -232,7 +333,7 @@ const ProductsTableHeader = ({
                     </div>
                 </div>
 
-                <div className="mt-4 flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                <div className="mt-4 grid w-full grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center sm:justify-end">
                     {hasSelection && (
                         <>
                             <ActionButton

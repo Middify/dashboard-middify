@@ -35,153 +35,125 @@ const OrdersTableHeader = ({
     !exportSelectedDisabled;
 
   return (
-    <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-800">{title}</h1>
-            {subtitle ? (
-              <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
-            ) : null}
-          </div>
-          {Array.isArray(infoChips) && infoChips.length > 0 ? (
-            <div className="flex flex-wrap gap-3 text-sm font-medium text-slate-600">
-              {infoChips.map((chip) => (
-                <div
-                  key={chip.id}
-                  className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2"
-                >
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-slate-400">
-                    {chip.label}
-                  </span>
-                  <span
-                    className={`text-sm font-semibold text-slate-700 ${chip.accentClass ?? ""}`}
-                  >
-                    {chip.value}
-                  </span>
-                </div>
-              ))}
+    <div className="w-full overflow-x-auto pb-1">
+      <header className="mx-auto min-w-[800px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:min-w-full">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-lg font-semibold text-slate-800 whitespace-nowrap">{title}</h1>
+              {subtitle && <p className="text-xs text-slate-500 whitespace-nowrap">{subtitle}</p>}
             </div>
-          ) : null}
-        </div>
-        <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-          <div className="w-full max-w-xs sm:max-w-sm">
-            {hasSelection ? (
-              <>
-                <label className="block text-sm font-medium text-slate-700">
-                  Cambiar estado
-                  <div className="relative mt-1">
-                    <select
-                      className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-700 shadow-sm transition focus:border-catalina-blue-500 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-                      onChange={(event) => onChangeState(event.target.value)}
-                      value={selectedState}
-                      disabled={isProcessing || stateOptions.length === 0}
+            {Array.isArray(infoChips) && infoChips.length > 0 && (
+              <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-600">
+                {infoChips.map((chip) => (
+                  <div
+                    key={chip.id}
+                    className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 whitespace-nowrap"
+                  >
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400">
+                      {chip.label}
+                    </span>
+                    <span
+                      className={`text-xs font-semibold text-slate-700 ${chip.accentClass ?? ""}`}
                     >
-                      <option value="">Seleccionar estado…</option>
-                      {stateOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    {isProcessing ? (
-                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-catalina-blue-500">
-                        <CircularProgress size={16} />
-                      </span>
-                    ) : null}
+                      {chip.value}
+                    </span>
                   </div>
-                </label>
-                <p className="mt-1 text-xs text-slate-500">
-                  {`${selectedCount} ${selectedCount === 1 ? "orden seleccionada" : "órdenes seleccionadas"
-                    }`}
-                </p>
-              </>
-            ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                Selecciona órdenes para cambiar su estado
+                ))}
               </div>
             )}
           </div>
-          <div className="w-full max-w-md">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-nowrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!canTriggerExport || isExportingData) {
-                      return;
-                    }
-                    onExportData();
-                  }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-catalina-blue-500 hover:text-catalina-blue-600 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                  disabled={!canTriggerExport || isExportingData}
-                  aria-label="Exportar órdenes filtradas a Excel"
-                  title="Exportar órdenes a Excel"
-                >
-                  {isExportingData ? (
-                    <>
-                      <CircularProgress size={16} />
-                      Exportando...
-                    </>
-                  ) : (
-                    <>
-                      <FileDownloadOutlinedIcon fontSize="small" />
-                      Exportar Excel
-                    </>
-                  )}
-                </button>
-                {hasSelection ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!canTriggerExportSelected || isExportingSelectedData) {
-                        return;
-                      }
-                      onExportSelectedData();
-                    }}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-catalina-blue-500 hover:text-catalina-blue-600 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                    disabled={!canTriggerExportSelected || isExportingSelectedData}
-                    aria-label="Exportar órdenes seleccionadas a Excel"
-                    title="Exportar órdenes seleccionadas a Excel"
+
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            {/* Selección de Estado */}
+            <div className="w-full max-w-xs sm:w-auto">
+              {hasSelection ? (
+                <div className="relative">
+                  <select
+                    className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-8 text-xs font-semibold text-slate-700 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    onChange={(event) => onChangeState(event.target.value)}
+                    value={selectedState}
+                    disabled={isProcessing || stateOptions.length === 0}
                   >
-                    {isExportingSelectedData ? (
-                      <>
-                        <CircularProgress size={16} />
-                        Exportando selección...
-                      </>
-                    ) : (
-                      <>
-                        <FileDownloadOutlinedIcon fontSize="small" />
-                        Exportar selección
-                      </>
-                    )}
-                  </button>
-                ) : null}
-              </div>
-              <label className="relative block flex-1">
-                <span className="sr-only">Buscar órdenes</span>
+                    <option value="">Cambiar estado...</option>
+                    {stateOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {isProcessing && (
+                    <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                      <CircularProgress size={12} />
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="hidden sm:block rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-400 whitespace-nowrap">
+                  Selecciona órdenes para editar
+                </div>
+              )}
+            </div>
+
+            {/* Buscador */}
+            <div className="w-full sm:max-w-xs">
+              <label className="relative block w-full">
+                <span className="sr-only">Buscar</span>
                 <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <SearchIcon fontSize="small" />
+                  <SearchIcon sx={{ fontSize: 18 }} />
                 </span>
                 <input
                   type="search"
                   placeholder={searchPlaceholder}
                   value={searchValue}
                   onChange={(event) => {
-                    if (shouldDisableSearch) {
-                      return;
-                    }
+                    if (shouldDisableSearch) return;
                     onSearchChange(event);
                   }}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-catalina-blue-500 focus:outline-none focus:ring-2 focus:ring-catalina-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-xs text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-500"
                   disabled={shouldDisableSearch}
                 />
               </label>
             </div>
+
+            {/* Botones de Exportación */}
+            <div className="flex flex-nowrap gap-2">
+              <button
+                type="button"
+                onClick={() => canTriggerExport && !isExportingData && onExportData()}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+                disabled={!canTriggerExport || isExportingData}
+                title="Exportar órdenes a Excel"
+              >
+                {isExportingData ? (
+                  <CircularProgress size={14} />
+                ) : (
+                  <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                )}
+                <span>Exportar</span>
+              </button>
+
+              {hasSelection && (
+                <button
+                  type="button"
+                  onClick={() => canTriggerExportSelected && !isExportingSelectedData && onExportSelectedData()}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+                  disabled={!canTriggerExportSelected || isExportingSelectedData}
+                  title="Exportar selección"
+                >
+                  {isExportingSelectedData ? (
+                    <CircularProgress size={14} />
+                  ) : (
+                    <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                  )}
+                  <span>Sel.</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 };
 
@@ -229,7 +201,7 @@ OrdersTableHeader.defaultProps = {
   selectedState: "",
   searchValue: "",
   onSearchChange: undefined,
-  searchPlaceholder: "Buscar en cualquier campo...",
+  searchPlaceholder: "Buscar...",
   searchDisabled: true,
   onExportData: undefined,
   isExportingData: false,

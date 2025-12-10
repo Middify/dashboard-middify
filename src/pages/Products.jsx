@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { useProducts } from "../api/products/getProducts";
 import { postExportProducts } from "../api/products/postExportProducts";
-import ProductsTableHeader from "../components/products/productsTableHeadeer";
+import ProductsTableHeader from "../components/products/ProductsTableHeader";
 import ProductsTableGrid from "../components/products/ProductsTableGrid";
 import { alertsProducts } from "../utils/alertsProducts";
 
@@ -109,7 +109,7 @@ const Products = () => {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 md:space-y-4">
             <ProductsTableHeader
                 title="Productos"
                 subtitle={selectedTenantName ? `Productos de ${selectedTenantName}` : "Gestión de productos"}
@@ -126,15 +126,17 @@ const Products = () => {
                 onDeleteSuccess={refreshData}
             />
 
-            <ProductsTableGrid
-                rows={rows}
-                loading={loading}
-                error={error}
-                selectedRowIds={selectedRowIds}
-                onToggleRowSelection={handleToggleRowSelection}
-                onToggleAllRows={handleToggleAllRows}
-                onViewDetails={handleViewDetails}
-            />
+            <div className="md:mt-0">
+                <ProductsTableGrid
+                    rows={rows}
+                    loading={loading}
+                    error={error}
+                    selectedRowIds={selectedRowIds}
+                    onToggleRowSelection={handleToggleRowSelection}
+                    onToggleAllRows={handleToggleAllRows}
+                    onViewDetails={handleViewDetails}
+                />
+            </div>
         </div>
     );
 };

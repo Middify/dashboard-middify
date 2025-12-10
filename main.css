@@ -31,3 +31,9 @@
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.28);
 }
+
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
