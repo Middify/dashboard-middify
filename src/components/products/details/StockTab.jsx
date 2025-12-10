@@ -82,7 +82,17 @@ const StockTab = ({ history }) => {
     }, [history]);
 
     const chartData = useMemo(() => {
-        return [...sortedHistory].reverse();
+        if (!sortedHistory || sortedHistory.length === 0) return [];
+        // Invertir para mostrar cronológicamente (antiguo -> reciente)
+        const reversed = [...sortedHistory].reverse();
+        // Asegurar que los datos tengan el formato correcto
+        return reversed.map(item => ({
+            fecha: item.fecha || item.date || new Date().toISOString(),
+            stockAnterior: typeof item.stockAnterior === 'number' ? item.stockAnterior : parseInt(item.stockAnterior) || 0,
+            stockNuevo: typeof item.stockNuevo === 'number' ? item.stockNuevo : parseInt(item.stockNuevo) || 0,
+            operacion: item.operacion || item.operation || 'Desconocido',
+            usuario: item.usuario || item.user || 'Sistema'
+        }));
     }, [sortedHistory]);
 
     const handleViewChange = (event, nextView) => {
@@ -108,7 +118,7 @@ const StockTab = ({ history }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-2 md:space-y-4">
             <div className="flex justify-end">
                 <ToggleButtonGroup
                     value={viewMode}
@@ -120,90 +130,143 @@ const StockTab = ({ history }) => {
                         bgcolor: 'white',
                         '& .MuiToggleButton-root': {
                             border: '1px solid #e2e8f0',
-                            px: 2,
+                            px: { xs: 1.25, md: 1.5 },
                             py: 0.5,
                             textTransform: 'none',
                             fontWeight: 600,
+                            fontSize: { xs: '0.7rem', md: '0.75rem' },
                             color: '#64748b',
                             '&.Mui-selected': {
                                 bgcolor: '#eff6ff',
                                 color: '#3b82f6',
                                 borderColor: '#bfdbfe',
                                 '&:hover': { bgcolor: '#dbeafe' }
+                            },
+                            '& .MuiSvgIcon-root': {
+                                fontSize: { xs: '14px', md: '16px' },
+                                marginRight: { xs: '3px', md: '6px' }
                             }
                         }
                     }}
                 >
                     <ToggleButton value="table" aria-label="table view">
-                        <TableChartIcon fontSize="small" className="mr-2" />
-                        Tabla
+                        <TableChartIcon fontSize="small" />
+                        <span className="hidden sm:inline ml-1">Tabla</span>
                     </ToggleButton>
                     <ToggleButton value="chart" aria-label="chart view">
-                        <ShowChartIcon fontSize="small" className="mr-2" />
-                        Gráfico
+                        <ShowChartIcon fontSize="small" />
+                        <span className="hidden sm:inline ml-1">Gráfico</span>
                     </ToggleButton>
                 </ToggleButtonGroup>
             </div>
 
             {viewMode === 'table' ? (
-                <TableContainer component={Paper} elevation={0} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-                    <Table sx={{ minWidth: 650 }} aria-label="historial stock table">
-                        <TableHead>
-                            <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Fecha</TableCell>
-                                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Operación</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Anterior</TableCell>
-                                <TableCell align="center" sx={{ width: 50 }}></TableCell>
-                                <TableCell align="left" sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Nuevo</TableCell>
-                                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Usuario</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {sortedHistory.map((log, index) => {
-                                const stockDiff = log.stockNuevo - log.stockAnterior;
-                                return (
-                                    <TableRow
-                                        key={index}
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { bgcolor: '#f8fafc' } }}
-                                    >
-                                        <TableCell component="th" scope="row" className="text-slate-600 font-medium">
-                                            {new Date(log.fecha).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
+                <>
+                    {/* Vista móvil: Cards */}
+                    <div className="block md:hidden space-y-1.5">
+                        {sortedHistory.map((log, index) => {
+                            const stockDiff = log.stockNuevo - log.stockAnterior;
+                            return (
+                                <div key={index} className="bg-white border border-slate-200 rounded-lg p-2.5 shadow-sm">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1">
+                                            <div className="text-xs text-slate-500 font-medium mb-1">
+                                                {new Date(log.fecha).toLocaleString()}
+                                            </div>
                                             <Chip 
                                                 label={log.operacion} 
                                                 size="small" 
                                                 variant="outlined"
-                                                className="capitalize font-bold bg-slate-50 border-slate-200 text-slate-700"
+                                                className="capitalize font-bold bg-slate-50 border-slate-200 text-slate-700 text-[10px] h-5"
                                             />
-                                        </TableCell>
-                                        <TableCell align="right" className="text-slate-500 font-mono">
-                                            {log.stockAnterior}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            {getTrendIcon(log.stockAnterior, log.stockNuevo)}
-                                        </TableCell>
-                                        <TableCell align="left">
-                                            <span className={`font-mono font-bold text-base ${stockDiff > 0 ? 'text-emerald-600' : stockDiff < 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                                        </div>
+                                        {getTrendIcon(log.stockAnterior, log.stockNuevo)}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+                                        <div>
+                                            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Anterior</div>
+                                            <div className="text-slate-500 font-mono text-sm">{log.stockAnterior}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Nuevo</div>
+                                            <div className={`font-mono font-bold text-sm ${stockDiff > 0 ? 'text-emerald-600' : stockDiff < 0 ? 'text-red-600' : 'text-slate-700'}`}>
                                                 {log.stockNuevo}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-slate-600">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm">
-                                                    {log.usuario ? log.usuario.charAt(0).toUpperCase() : '?'}
-                                                </div>
-                                                <span className="text-sm font-medium">{log.usuario || 'Sistema'}</span>
                                             </div>
-                                        </TableCell>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                                        <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm">
+                                            {log.usuario ? log.usuario.charAt(0).toUpperCase() : '?'}
+                                        </div>
+                                        <span className="text-xs font-medium text-slate-600">{log.usuario || 'Sistema'}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Vista escritorio: Tabla */}
+                    <div className="hidden md:block">
+                        <TableContainer component={Paper} elevation={0} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                            <Table sx={{ minWidth: 650 }} aria-label="historial stock table">
+                                <TableHead>
+                                    <TableRow sx={{ bgcolor: '#f8fafc' }}>
+                                        <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Fecha</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Operación</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Anterior</TableCell>
+                                        <TableCell align="center" sx={{ width: 50 }}></TableCell>
+                                        <TableCell align="left" sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Nuevo</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Usuario</TableCell>
                                     </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                </TableHead>
+                                <TableBody>
+                                    {sortedHistory.map((log, index) => {
+                                        const stockDiff = log.stockNuevo - log.stockAnterior;
+                                        return (
+                                            <TableRow
+                                                key={index}
+                                                sx={{ '&:last-child td, &:last-child th': { border: 0 }, '&:hover': { bgcolor: '#f8fafc' } }}
+                                            >
+                                                <TableCell component="th" scope="row" className="text-slate-600 font-medium">
+                                                    {new Date(log.fecha).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip 
+                                                        label={log.operacion} 
+                                                        size="small" 
+                                                        variant="outlined"
+                                                        className="capitalize font-bold bg-slate-50 border-slate-200 text-slate-700"
+                                                    />
+                                                </TableCell>
+                                                <TableCell align="right" className="text-slate-500 font-mono">
+                                                    {log.stockAnterior}
+                                                </TableCell>
+                                                <TableCell align="center">
+                                                    {getTrendIcon(log.stockAnterior, log.stockNuevo)}
+                                                </TableCell>
+                                                <TableCell align="left">
+                                                    <span className={`font-mono font-bold text-base ${stockDiff > 0 ? 'text-emerald-600' : stockDiff < 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                                                        {log.stockNuevo}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-slate-600">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm">
+                                                            {log.usuario ? log.usuario.charAt(0).toUpperCase() : '?'}
+                                                        </div>
+                                                        <span className="text-sm font-medium">{log.usuario || 'Sistema'}</span>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>
+                </>
             ) : (
-                <div className="h-[500px] w-full bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="h-[400px] md:h-[500px] w-full bg-white rounded-xl md:rounded-2xl border border-slate-200 p-4 md:p-6 shadow-sm">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                             data={chartData}
@@ -217,17 +280,27 @@ const StockTab = ({ history }) => {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                             <XAxis 
                                 dataKey="fecha" 
-                                tickFormatter={(date) => new Date(date).toLocaleDateString()}
+                                tickFormatter={(date) => {
+                                    if (!date) return '';
+                                    try {
+                                        return new Date(date).toLocaleDateString('es-ES', { 
+                                            day: '2-digit', 
+                                            month: '2-digit' 
+                                        });
+                                    } catch {
+                                        return date;
+                                    }
+                                }}
                                 stroke="#94a3b8"
-                                tick={{fontSize: 12}}
+                                tick={{ fontSize: 12 }}
                                 tickMargin={10}
                             />
                             <YAxis 
                                 stroke="#94a3b8"
-                                tick={{fontSize: 12}}
+                                tick={{ fontSize: 12 }}
                             />
                             <Tooltip content={<CustomTooltip />} />
-                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                            <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }} />
                             
                             <Line 
                                 type="monotone" 
@@ -245,8 +318,8 @@ const StockTab = ({ history }) => {
                                 name="Stock Nuevo"
                                 stroke="#4f46e5" 
                                 strokeWidth={3}
-                                dot={{ fill: '#4f46e5', r: 6, strokeWidth: 2, stroke: '#fff' }}
-                                activeDot={{ r: 8 }}
+                                dot={{ fill: '#4f46e5', r: 5, strokeWidth: 2, stroke: '#fff' }}
+                                activeDot={{ r: 7 }}
                             />
                         </LineChart>
                     </ResponsiveContainer>

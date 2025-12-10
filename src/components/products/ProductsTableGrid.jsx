@@ -8,9 +8,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { formatCurrency } from "../../utils/formatCurrency";
 
 const NoRowsOverlay = () => (
-    <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500">
-        <p className="text-sm font-medium">No se encontraron productos</p>
-        <p className="text-xs text-slate-400">Intenta ajustar los filtros o agrega nuevos productos.</p>
+    <div className="flex h-full items-center justify-center text-sm text-slate-500">
+        No se encontraron productos disponibles para los filtros seleccionados.
     </div>
 );
 
@@ -173,11 +172,36 @@ const ProductsTableGrid = ({
         };
 
         const dataColumns = [
-            { field: "sku", headerName: "SKU", width: 140, renderCell: (params) => <span className="font-medium text-slate-700">{params.value}</span> },
-            { field: "name", headerName: "Nombre", flex: 1, minWidth: 200, renderCell: (params) => <span className="text-slate-800 font-medium">{params.value}</span> },
-            { field: "tenantName", headerName: "Tenant", width: 120 },
-            { field: "warehouse", headerName: "Bodega", width: 120 },
-            { field: "quantity", headerName: "Cant.", width: 90, type: "number", align: "center", headerAlign: "center" },
+            { 
+                field: "sku", 
+                headerName: "SKU", 
+                width: 140,
+                renderCell: (params) => <span className="font-medium text-slate-700">{params.value}</span> 
+            },
+            { 
+                field: "name", 
+                headerName: "Nombre", 
+                width: 200,
+                renderCell: (params) => <span className="text-slate-800 font-medium">{params.value}</span> 
+            },
+            { 
+                field: "tenantName", 
+                headerName: "Tenant", 
+                width: 120,
+            },
+            { 
+                field: "warehouse", 
+                headerName: "Bodega", 
+                width: 120,
+            },
+            { 
+                field: "quantity", 
+                headerName: "Cant.", 
+                width: 90,
+                type: "number", 
+                align: "center", 
+                headerAlign: "center" 
+            },
             {
                 field: "price",
                 headerName: "Precio",
@@ -233,15 +257,14 @@ const ProductsTableGrid = ({
 
     if (error && !loading) {
         return (
-            <div className="mx-auto max-w-lg rounded-xl border border-red-100 bg-red-50 p-6 text-center shadow-sm">
-                <p className="text-sm font-semibold text-red-600">Error al cargar productos</p>
-                <p className="mt-1 text-xs text-red-500">{error.message || "Ha ocurrido un error inesperado."}</p>
+            <div className="px-6 py-12 text-center text-sm text-red-500">
+                Error al cargar los productos: {error.message}
             </div>
         );
     }
 
     return (
-        <div className="w-full">
+        <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] md:block overflow-hidden">
             {/* Vista Móvil: Cards (SOLO en móvil) */}
             <div className="block md:hidden">
                 <div className="mb-3 flex items-center justify-between px-1">
@@ -330,76 +353,74 @@ const ProductsTableGrid = ({
                 )}
             </div>
 
-            {/* Vista Escritorio: DataGrid con Scroll Horizontal FIXED */}
-            <div className="hidden md:block">
-                <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div style={{ 
-                        height: containerHeight, 
-                        minWidth: "max-content", // Forza el ancho mínimo
-                        maxHeight: 'calc(100vh - 240px)',
-                    }}>
-                        <DataGrid
-                            rows={rows}
-                            columns={columns}
-                            loading={loading}
-                            paginationMode="client"
-                            initialState={{
-                                pagination: {
-                                    paginationModel: { pageSize: 25, page: 0 },
-                                },
-                            }}
-                            pageSizeOptions={[25, 50, 100]}
-                            disableRowSelectionOnClick
-                            disableColumnMenu
-                            disableColumnSelector
-                            disableDensitySelector
-                            rowHeight={52}
-                            columnHeaderHeight={48}
-                            slots={{
-                                noRowsOverlay: NoRowsOverlay,
-                            }}
-                            sx={{
-                                border: 0,
-                                minWidth: "max-content", // IMPORTANTE para scroll horizontal
-                                "& .MuiDataGrid-main": {
-                                    overflow: "auto", // Permite scroll
-                                },
-                                "& .MuiDataGrid-virtualScroller": {
-                                    overflowX: "auto", // Scroll horizontal específico
-                                },
-                                "& .MuiDataGrid-columnHeaders": {
-                                    backgroundColor: "#f8fafc",
-                                    borderBottom: "1px solid #e2e8f0",
-                                    position: "sticky", // Cabeceras fijas
-                                    top: 0,
-                                    zIndex: 1,
-                                },
-                                "& .MuiDataGrid-columnHeaderTitle": {
-                                    fontWeight: 600,
-                                    fontSize: "0.75rem",
-                                    letterSpacing: "0.05em",
-                                    textTransform: "uppercase",
-                                    color: "#64748b",
-                                    whiteSpace: "nowrap", // Evita que el texto se rompa
-                                },
-                                "& .MuiDataGrid-cell": {
-                                    borderBottom: "1px solid #f1f5f9",
-                                    whiteSpace: "nowrap", // Mantiene el texto en una línea
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis", // Puntos suspensivos si es muy largo
-                                },
-                                "& .MuiDataGrid-row:hover": {
-                                    backgroundColor: "#f8fafc",
-                                },
-                                "& .MuiDataGrid-footerContainer": {
-                                    borderTop: "1px solid #e2e8f0",
-                                    position: "sticky",
-                                    bottom: 0,
-                                    backgroundColor: "white",
-                                },
-                            }}
-                        />
-                    </div>
+            {/* Vista Escritorio: DataGrid */}
+            <div className="hidden md:block mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem]">
+                <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem]">
+                    <Paper
+                        elevation={0}
+                        className="w-full bg-white"
+                        sx={{
+                            width: "100%",
+                            overflow: "hidden",
+                        }}
+                    >
+                        <div style={{ height: containerHeight, width: '100%', maxHeight: 'calc(100vh - 240px)' }}>
+                            <DataGrid
+                                rows={rows}
+                                columns={columns}
+                                loading={loading}
+                                paginationMode="client"
+                                initialState={{
+                                    pagination: {
+                                        paginationModel: { pageSize: 25, page: 0 },
+                                    },
+                                }}
+                                pageSizeOptions={[25, 50, 100]}
+                                disableRowSelectionOnClick
+                                disableColumnMenu
+                                disableColumnSelector
+                                disableDensitySelector
+                                rowHeight={52}
+                                columnHeaderHeight={48}
+                                localeText={{
+                                    footerPaginationRowsPerPage: "Filas por página:",
+                                }}
+                                slots={{
+                                    noRowsOverlay: NoRowsOverlay,
+                                }}
+                                sx={{
+                                    border: 0,
+                                    "--DataGrid-containerBackground": "transparent",
+                                    "& .MuiDataGrid-columnHeaders": {
+                                        backgroundColor: "#f8fafc",
+                                        borderBottom: "1px solid #e2e8f0",
+                                    },
+                                    "& .MuiDataGrid-columnHeaderTitle": {
+                                        fontWeight: 600,
+                                        fontSize: "0.75rem",
+                                        letterSpacing: "0.05em",
+                                        textTransform: "uppercase",
+                                        color: "#64748b",
+                                    },
+                                    "& .MuiDataGrid-row": {
+                                        cursor: "pointer",
+                                    },
+                                    "& .MuiDataGrid-row:hover": {
+                                        backgroundColor: "#f8fafc",
+                                    },
+                                    "& .MuiDataGrid-cell": {
+                                        borderBottom: "1px solid #f1f5f9",
+                                    },
+                                    "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within": {
+                                        outline: "none",
+                                    },
+                                    "& .MuiDataGrid-footerContainer": {
+                                        borderTop: "1px solid #e2e8f0",
+                                    },
+                                }}
+                            />
+                        </div>
+                    </Paper>
                 </div>
             </div>
         </div>

@@ -38,8 +38,6 @@ const ProductDetails = ({ productId, token, onClose }) => {
             try {
                 setLoading(true);
                 setError(null);
-                setProduct(null);
-
                 const data = await getProductDetails(token, productId);
                 setProduct(data);
             } catch (err) {
@@ -56,159 +54,212 @@ const ProductDetails = ({ productId, token, onClose }) => {
         setActiveTab(newValue);
     };
 
-    if (loading) {
-        return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-                <CircularProgress size={40} thickness={4} sx={{ color: '#6366f1' }} />
-            </Box>
-        );
-    }
+    // Estados de carga y error simplificados
+    if (loading) return (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+            <CircularProgress size={40} thickness={4} sx={{ color: '#6366f1' }} />
+        </Box>
+    );
 
-    if (error) {
-        return (
-            <div className="mx-6 mt-6 rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-600 shadow-sm">
-                <strong className="font-bold">Error:</strong> {error}
-            </div>
-        );
-    }
+    if (error) return (
+        <Box className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 shadow-sm">
+            <strong>Error:</strong> {error}
+        </Box>
+    );
 
-    if (!product) {
-        return (
-             <div className="px-6 py-12 text-center text-slate-500">
-                <Typography variant="body1">No se encontró el producto o no se ha seleccionado ninguno.</Typography>
-                <button
-                    onClick={onClose}
-                    className="mt-4 text-indigo-600 hover:text-indigo-800 font-medium underline"
-                >
-                    Volver
-                </button>
-            </div>
-        );
-    }
+    if (!product) return (
+        <Box className="px-4 py-8 text-center text-slate-500">
+            <Typography>No se encontró el producto o no se ha seleccionado ninguno.</Typography>
+            <button onClick={onClose} className="mt-4 text-indigo-600 hover:text-indigo-800 font-medium underline">
+                Volver
+            </button>
+        </Box>
+    );
+
+    // Estilos reutilizables
+    const styles = {
+        iconButton: {
+            bgcolor: 'white',
+            border: '1px solid #e2e8f0',
+            width: { xs: 36, md: 44 },
+            height: { xs: 36, md: 44 },
+            borderRadius: '10px',
+            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' }
+        },
+        chip: {
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' },
+            letterSpacing: '0.05em',
+            height: { xs: 18, sm: 20, md: 22 },
+            px: { xs: 0.75, md: 1 },
+            bgcolor: product.state === 'active' ? '#dcfce7' : '#f1f5f9',
+            color: product.state === 'active' ? '#166534' : '#64748b',
+            border: '1px solid',
+            borderColor: product.state === 'active' ? '#bbf7d0' : '#e2e8f0'
+        },
+        title: {
+            fontWeight: 700,
+            color: '#1e293b',
+            fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' },
+            lineHeight: { xs: '1.25rem', md: '1.5rem' },
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+        },
+        tabContainer: {
+            position: { xs: 'fixed', md: 'static' },
+            top: { xs: 'calc(4rem + 5.5rem)', md: 'auto' },
+            left: 0,
+            right: 0,
+            zIndex: { xs: 30, md: 'auto' },
+            bgcolor: { xs: 'rgba(255, 255, 255, 0.98)', md: 'transparent' },
+            backdropFilter: { xs: 'blur(8px)', md: 'none' },
+            borderBottom: { xs: '1px solid #f1f5f9', md: 'none' },
+            width: { xs: '100%', md: 'auto' }
+        },
+        tabs: {
+            minHeight: 'auto',
+            '& .MuiTabs-indicator': { display: 'none' },
+            '& .MuiTabs-flexContainer': {
+                gap: { xs: 0.75, sm: 1, md: 1.5 },
+                justifyContent: { xs: 'flex-start', md: 'center' }
+            }
+        },
+        tab: {
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' },
+            minHeight: { xs: 32, sm: 36, md: 38 },
+            px: { xs: 1, sm: 1.25, md: 1.5 },
+            py: { xs: 0.375, md: 0.5 },
+            borderRadius: '10px',
+            color: '#64748b',
+            border: '1px solid transparent',
+            '&.Mui-selected': {
+                color: '#4f46e5',
+                backgroundColor: '#eef2ff',
+                borderColor: '#e0e7ff',
+            },
+            '&:hover:not(.Mui-selected)': {
+                backgroundColor: '#f8fafc',
+                color: '#334155',
+                borderColor: '#e2e8f0'
+            }
+        },
+        contentContainer: {
+            overflowY: 'auto',
+            flex: 1,
+            maxHeight: { xs: 'calc(100vh - 4rem - 3.5rem - 2.5rem)', md: 'calc(100vh - 8rem - 4rem - 3.5rem)' },
+            bgcolor: '#fafbfc',
+            px: { xs: 2, md: 3, lg: 4 },
+            py: { xs: 2, md: 3, lg: 4 }
+        }
+    };
 
     return (
-        <div className="flex flex-col gap-6 w-full h-[calc(100vh-8rem)]">
-            {/* Header Section */}
-            <div className="flex-none flex items-center gap-5 px-1">
-                <IconButton 
-                    onClick={onClose} 
-                    sx={{ 
-                        bgcolor: 'white', 
-                        border: '1px solid', 
-                        borderColor: '#e2e8f0',
-                        width: 44,
-                        height: 44,
-                        borderRadius: '12px',
-                        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-                        '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1', transform: 'translateY(-1px)' },
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    <ArrowBackIcon fontSize="small" className="text-slate-600" />
-                </IconButton>
-                <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1.5">
-                        <Typography variant="h5" className="font-bold text-slate-800 tracking-tight">
-                            {product.name}
-                        </Typography>
-                        <Chip 
-                            label={product.state === 'active' ? 'Activo' : product.estado || 'Desconocido'} 
-                            size="small" 
-                            sx={{
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                fontSize: '0.65rem',
-                                letterSpacing: '0.05em',
-                                height: 24,
-                                bgcolor: product.state === 'active' ? '#dcfce7' : '#f1f5f9',
-                                color: product.state === 'active' ? '#166534' : '#64748b',
-                                border: '1px solid',
-                                borderColor: product.state === 'active' ? '#bbf7d0' : '#e2e8f0'
-                            }}
-                        />
-                    </div>
-                    <Typography variant="body2" className="text-slate-500 flex items-center gap-2">
-                        <span className="font-mono bg-white border border-slate-200 px-2 py-0.5 rounded-md text-slate-600 text-xs shadow-sm">
-                            ID: {productId}
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="font-medium">{product.brand || 'Sin Marca'}</span>
-                    </Typography>
-                </div>
-            </div>
+        <Box className="flex mt-4 mb-4 flex-col w-full md:h-[calc(100vh-8rem)] md:max-w-7xl md:mx-auto">
+            {/* Header */}
+            <Box className="fixed top-14 left-0 right-0 z-40 md:relative md:top-0 md:left-auto md:right-auto md:z-auto bg-white border-b border-slate-200 md:border-b-0 md:bg-transparent md:mb-4">
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: { xs: 2, md: 3 },  
+                    px: { xs: 4, md: 0 }, 
+                    py: { xs: 3, md: 0 },
+                    pt: { xs: 4, md: 0 },
+                    justifyContent: 'flex-start',
+                    maxWidth: { md: '7xl' },
+                    mx: { md: 'auto' }
+                }}>
+                    <IconButton onClick={onClose} sx={styles.iconButton}>
+                        <ArrowBackIcon sx={{ fontSize: { xs: '18px', md: '20px' } }} />
+                    </IconButton>
+                    <Box className="flex-1 min-w-0">
+                        <Box className="flex items-center gap-1.5 md:gap-2 mb-0.5 flex-wrap">
+                            <Typography sx={styles.title}>
+                                {product.name}
+                            </Typography>
+                            <Chip label={product.state === 'active' ? 'Activo' : product.estado || 'Desconocido'} 
+                                  size="small" sx={styles.chip} />
+                        </Box>
+                        <Box className="flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-500">
+                            <span className="font-mono bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded text-slate-600">
+                                ID: {product._id || productId}
+                            </span>
+                            <span className="hidden sm:inline text-slate-300">•</span>
+                            <span className="font-medium truncate">{product.brand || 'Sin Marca'}</span>
+                        </Box>
+                    </Box>
+                </Box>
+            </Box>
 
-            <Paper 
-                elevation={0} 
-                className="flex-1 flex flex-col rounded-[24px] border border-slate-200/60 overflow-hidden bg-white shadow-xl shadow-slate-200/40 min-h-0"
-            >
-                <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid', borderColor: '#f1f5f9' }}>
+            <Box className="h-[5.5rem] md:hidden" />
+
+            {/* Tabs */}
+            <Box sx={styles.tabContainer}>
+                <Box sx={{ 
+                    px: { xs: 1, md: 2 }, 
+                    py: { xs: 0.75, md: 1 }, 
+                    bgcolor: 'white',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    width: '100%',
+                    minHeight: { xs: '3rem', md: 'auto' }
+                }}>
                     <Tabs 
                         value={activeTab} 
-                        onChange={handleTabChange}
-                        variant="scrollable"
+                        onChange={handleTabChange} 
+                        variant="scrollable" 
                         scrollButtons="auto"
-                        aria-label="product details tabs"
                         sx={{
-                            minHeight: 'auto',
-                            '& .MuiTabs-indicator': {
-                                display: 'none',
-                            },
-                            '& .MuiTabs-flexContainer': {
-                                gap: 1.5
-                            },
-                            '& .MuiTab-root': {
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                fontSize: '0.9rem',
-                                minHeight: 44,
-                                px: 2.5,
-                                borderRadius: '12px',
-                                color: '#64748b',
-                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                border: '1px solid transparent',
-                                '&.Mui-selected': {
-                                    color: '#4f46e5',
-                                    backgroundColor: '#eef2ff',
-                                    borderColor: '#e0e7ff',
-                                },
-                                '&:hover:not(.Mui-selected)': {
-                                    backgroundColor: '#f8fafc',
-                                    color: '#334155',
-                                    borderColor: '#e2e8f0'
-                                }
+                            ...styles.tabs,
+                            width: { xs: '100%', md: 'auto' },
+                            '& .MuiTabs-scrollButtons': {
+                                display: { xs: 'flex', md: 'none' }
                             }
                         }}
                     >
                         {TABS.map((tab) => (
                             <Tab 
                                 key={tab.id} 
-                                label={tab.label} 
+                                label={<span className="hidden sm:inline">{tab.label}</span>}
                                 value={tab.id} 
                                 icon={tab.icon} 
                                 iconPosition="start"
+                                sx={styles.tab}
                                 disableRipple
                             />
                         ))}
                     </Tabs>
                 </Box>
+            </Box>
 
-                <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-[#fafbfc]">
-                    <div className="max-w-7xl mx-auto">
-                        {activeTab === "general" && (
-                            <GeneralTab product={product} />
-                        )}
+            <Box className="h-[4rem] md:hidden" />
 
-                        {activeTab === "stock" && (
-                            <StockTab history={product.historialStock} />
-                        )}
-
-                        {activeTab === "status" && (
-                            <StatusTab history={product.historialEstados} />
-                        )}
-                    </div>
-                </div>
+            {/* Content */}
+            <Paper elevation={0} sx={{
+                borderRadius: { xs: 0, md: '24px' },
+                border: { xs: 'none', md: '1px solid #e2e8f0' },
+                overflow: 'hidden',
+                bgcolor: 'white',
+                boxShadow: { xs: 'none', md: '0 4px 6px -1px rgb(0 0 0 / 0.1)' },
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                mx: { xs: 0, md: 'auto' },
+                width: { xs: '100%', md: '100%' }
+            }}>
+                <Box sx={styles.contentContainer}>
+                    <Box className="w-full mx-auto">
+                        {activeTab === "general" && <GeneralTab product={product} />}
+                        {activeTab === "stock" && <StockTab history={product.historialStock} />}
+                        {activeTab === "status" && <StatusTab history={product.historialEstados} />}
+                    </Box>
+                </Box>
             </Paper>
-        </div>
+        </Box>
     );
 };
 
