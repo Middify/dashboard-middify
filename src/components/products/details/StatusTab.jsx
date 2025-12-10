@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Typography, Paper, Box } from '@mui/material';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
@@ -6,6 +6,12 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import HistoryToggleOffIcon from '@mui/icons-material/HistoryToggleOff';
 
 const StatusTab = ({ history }) => {
+    // Ordenar historial: Reciente -> Antiguo
+    const sortedHistory = useMemo(() => {
+        if (!history) return [];
+        return [...history].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    }, [history]);
+
     if (!history || history.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
@@ -17,8 +23,8 @@ const StatusTab = ({ history }) => {
 
     return (
         <div className="max-w-4xl mx-auto py-4">
-            {history.map((log, index) => {
-                const isLast = index === history.length - 1;
+            {sortedHistory.map((log, index) => {
+                const isLast = index === sortedHistory.length - 1;
                 const isFirst = index === 0;
 
                 return (
