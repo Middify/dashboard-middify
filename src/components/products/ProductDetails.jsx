@@ -54,10 +54,9 @@ const ProductDetails = ({ productId, token, onClose }) => {
         setActiveTab(newValue);
     };
 
-    // Estados de carga y error simplificados
     if (loading) return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-            <CircularProgress size={40} thickness={4} sx={{ color: '#6366f1' }} />
+        <Box className="flex justify-center items-center min-h-[50vh]">
+            <CircularProgress size={40} thickness={4} className="text-indigo-500" />
         </Box>
     );
 
@@ -76,113 +75,32 @@ const ProductDetails = ({ productId, token, onClose }) => {
         </Box>
     );
 
-    // Estilos reutilizables
-    const styles = {
-        iconButton: {
-            bgcolor: 'white',
-            border: '1px solid #e2e8f0',
-            width: { xs: 36, md: 44 },
-            height: { xs: 36, md: 44 },
-            borderRadius: '10px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-            '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' }
-        },
-        chip: {
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            fontSize: { xs: '0.55rem', sm: '0.6rem', md: '0.65rem' },
-            letterSpacing: '0.05em',
-            height: { xs: 18, sm: 20, md: 22 },
-            px: { xs: 0.75, md: 1 },
-            bgcolor: product.state === 'active' ? '#dcfce7' : '#f1f5f9',
-            color: product.state === 'active' ? '#166534' : '#64748b',
-            border: '1px solid',
-            borderColor: product.state === 'active' ? '#bbf7d0' : '#e2e8f0'
-        },
-        title: {
-            fontWeight: 700,
-            color: '#1e293b',
-            fontSize: { xs: '0.875rem', sm: '1rem', md: '1.25rem' },
-            lineHeight: { xs: '1.25rem', md: '1.5rem' },
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-        },
-        tabContainer: {
-            position: { xs: 'fixed', md: 'static' },
-            top: { xs: 'calc(4rem + 5.5rem)', md: 'auto' },
-            left: 0,
-            right: 0,
-            zIndex: { xs: 30, md: 'auto' },
-            bgcolor: { xs: 'rgba(255, 255, 255, 0.98)', md: 'transparent' },
-            backdropFilter: { xs: 'blur(8px)', md: 'none' },
-            borderBottom: { xs: '1px solid #f1f5f9', md: 'none' },
-            width: { xs: '100%', md: 'auto' }
-        },
-        tabs: {
-            minHeight: 'auto',
-            '& .MuiTabs-indicator': { display: 'none' },
-            '& .MuiTabs-flexContainer': {
-                gap: { xs: 0.75, sm: 1, md: 1.5 },
-                justifyContent: { xs: 'flex-start', md: 'center' }
-            }
-        },
-        tab: {
-            textTransform: 'none',
-            fontWeight: 600,
-            fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' },
-            minHeight: { xs: 32, sm: 36, md: 38 },
-            px: { xs: 1, sm: 1.25, md: 1.5 },
-            py: { xs: 0.375, md: 0.5 },
-            borderRadius: '10px',
-            color: '#64748b',
-            border: '1px solid transparent',
-            '&.Mui-selected': {
-                color: '#4f46e5',
-                backgroundColor: '#eef2ff',
-                borderColor: '#e0e7ff',
-            },
-            '&:hover:not(.Mui-selected)': {
-                backgroundColor: '#f8fafc',
-                color: '#334155',
-                borderColor: '#e2e8f0'
-            }
-        },
-        contentContainer: {
-            overflowY: 'auto',
-            flex: 1,
-            maxHeight: { xs: 'calc(100vh - 4rem - 3.5rem - 2.5rem)', md: 'calc(100vh - 8rem - 4rem - 3.5rem)' },
-            bgcolor: '#fafbfc',
-            px: { xs: 2, md: 3, lg: 4 },
-            py: { xs: 2, md: 3, lg: 4 }
-        }
-    };
 
     return (
         <Box className="flex mt-4 mb-4 flex-col w-full md:h-[calc(100vh-8rem)] md:max-w-7xl md:mx-auto">
             {/* Header */}
             <Box className="fixed top-14 left-0 right-0 z-40 md:relative md:top-0 md:left-auto md:right-auto md:z-auto bg-white border-b border-slate-200 md:border-b-0 md:bg-transparent md:mb-4">
-                <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: { xs: 2, md: 3 },  
-                    px: { xs: 4, md: 0 }, 
-                    py: { xs: 3, md: 0 },
-                    pt: { xs: 4, md: 0 },
-                    justifyContent: 'flex-start',
-                    maxWidth: { md: '7xl' },
-                    mx: { md: 'auto' }
-                }}>
-                    <IconButton onClick={onClose} sx={styles.iconButton}>
-                        <ArrowBackIcon sx={{ fontSize: { xs: '18px', md: '20px' } }} />
+                <Box className="flex items-center gap-2 md:gap-3 px-4 md:px-0 py-3 md:py-0 pt-4 md:pt-0 justify-start max-w-7xl mx-auto">
+                    <IconButton 
+                        onClick={onClose} 
+                        className="bg-white border border-slate-200 w-9 h-9 md:w-11 md:h-11 rounded-[10px] shadow-sm hover:bg-slate-50 hover:border-slate-300"
+                    >
+                        <ArrowBackIcon className="text-[18px] md:text-[20px]" />
                     </IconButton>
                     <Box className="flex-1 min-w-0">
                         <Box className="flex items-center gap-1.5 md:gap-2 mb-0.5 flex-wrap">
-                            <Typography sx={styles.title}>
+                            <Typography className="font-bold text-slate-800 text-sm sm:text-base md:text-xl leading-tight sm:leading-tight md:leading-normal overflow-hidden text-ellipsis whitespace-nowrap">
                                 {product.name}
                             </Typography>
-                            <Chip label={product.state === 'active' ? 'Activo' : product.estado || 'Desconocido'} 
-                                  size="small" sx={styles.chip} />
+                            <Chip 
+                                label={product.state === 'active' ? 'Activo' : product.estado || 'Desconocido'} 
+                                size="small" 
+                                className={`font-bold uppercase text-[0.55rem] sm:text-[0.6rem] md:text-[0.65rem] tracking-wider h-[18px] sm:h-5 md:h-[22px] px-1 md:px-1 border ${
+                                    product.state === 'active' 
+                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+                                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                                }`}
+                            />
                         </Box>
                         <Box className="flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-500">
                             <span className="font-mono bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded text-slate-600">
@@ -198,28 +116,14 @@ const ProductDetails = ({ productId, token, onClose }) => {
             <Box className="h-[5.5rem] md:hidden" />
 
             {/* Tabs */}
-            <Box sx={styles.tabContainer}>
-                <Box sx={{ 
-                    px: { xs: 1, md: 2 }, 
-                    py: { xs: 0.75, md: 1 }, 
-                    bgcolor: 'white',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    width: '100%',
-                    minHeight: { xs: '3rem', md: 'auto' }
-                }}>
+            <Box className="fixed top-[calc(4rem+5.5rem)] left-0 right-0 z-30 md:static md:top-auto md:left-auto md:right-auto md:z-auto bg-white/98 md:bg-transparent backdrop-blur-sm md:backdrop-blur-none border-b border-slate-200 md:border-b-0 w-full md:w-auto">
+                <Box className="px-1 md:px-2 py-1 md:py-1 bg-white flex justify-center w-full min-h-[3rem] md:min-h-0">
                     <Tabs 
                         value={activeTab} 
                         onChange={handleTabChange} 
                         variant="scrollable" 
                         scrollButtons="auto"
-                        sx={{
-                            ...styles.tabs,
-                            width: { xs: '100%', md: 'auto' },
-                            '& .MuiTabs-scrollButtons': {
-                                display: { xs: 'flex', md: 'none' }
-                            }
-                        }}
+                        className="w-full md:w-auto [&_.MuiTabs-indicator]:hidden [&_.MuiTabs-flexContainer]:gap-1 sm:[&_.MuiTabs-flexContainer]:gap-1.5 md:[&_.MuiTabs-flexContainer]:gap-2 [&_.MuiTabs-flexContainer]:justify-start md:[&_.MuiTabs-flexContainer]:justify-center [&_.MuiTabs-scrollButtons]:flex md:[&_.MuiTabs-scrollButtons]:hidden"
                     >
                         {TABS.map((tab) => (
                             <Tab 
@@ -228,7 +132,7 @@ const ProductDetails = ({ productId, token, onClose }) => {
                                 value={tab.id} 
                                 icon={tab.icon} 
                                 iconPosition="start"
-                                sx={styles.tab}
+                                className="normal-case font-semibold text-[0.7rem] sm:text-xs md:text-sm min-h-8 sm:min-h-9 md:min-h-[38px] px-2 sm:px-2.5 md:px-3 py-1 md:py-1 rounded-[10px] text-slate-600 border border-transparent [&.Mui-selected]:text-indigo-600 [&.Mui-selected]:bg-indigo-50 [&.Mui-selected]:border-indigo-200 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-200"
                                 disableRipple
                             />
                         ))}
@@ -239,19 +143,11 @@ const ProductDetails = ({ productId, token, onClose }) => {
             <Box className="h-[4rem] md:hidden" />
 
             {/* Content */}
-            <Paper elevation={0} sx={{
-                borderRadius: { xs: 0, md: '24px' },
-                border: { xs: 'none', md: '1px solid #e2e8f0' },
-                overflow: 'hidden',
-                bgcolor: 'white',
-                boxShadow: { xs: 'none', md: '0 4px 6px -1px rgb(0 0 0 / 0.1)' },
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                mx: { xs: 0, md: 'auto' },
-                width: { xs: '100%', md: '100%' }
-            }}>
-                <Box sx={styles.contentContainer}>
+            <Paper 
+                elevation={0} 
+                className="rounded-none md:rounded-3xl border-0 md:border border-slate-200 overflow-hidden bg-white shadow-none md:shadow-md flex flex-col mx-0 md:mx-auto w-full"
+            >
+                <Box className="overflow-y-auto flex-1 max-h-[calc(100vh-4rem-3.5rem-2.5rem)] md:max-h-[calc(100vh-8rem-4rem-3.5rem)] bg-slate-50 px-2 md:px-3 lg:px-4 py-2 md:py-3 lg:py-4">
                     <Box className="w-full mx-auto">
                         {activeTab === "general" && <GeneralTab product={product} />}
                         {activeTab === "stock" && <StockTab history={product.historialStock} />}

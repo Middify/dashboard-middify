@@ -96,7 +96,7 @@ const SyncSkuModal = ({ open, onClose, token, tenantId, tenantName, onSyncSucces
         >
             <DialogTitle className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <div className="flex items-center gap-2">
-                    <SyncIcon className="text-indigo-600" sx={{ fontSize: 24 }} />
+                    <SyncIcon className="text-indigo-600 text-[24px]" />
                     <span className="text-lg font-semibold text-slate-800">
                         Sincronizar SKU
                     </span>
@@ -113,24 +113,15 @@ const SyncSkuModal = ({ open, onClose, token, tenantId, tenantName, onSyncSucces
                 <Tabs
                     value={activeTab}
                     onChange={handleTabChange}
-                    sx={{
-                        borderBottom: 1,
-                        borderColor: "divider",
-                        mb: 3,
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: 600,
-                            minHeight: 48,
-                        },
-                    }}
+                    className="border-b border-slate-200 mb-3 [&_.MuiTab-root]:normal-case [&_.MuiTab-root]:font-semibold [&_.MuiTab-root]:min-h-[48px]"
                 >
                     <Tab
-                        icon={<CloudUploadIcon sx={{ fontSize: 18 }} />}
+                        icon={<CloudUploadIcon className="text-[18px]" />}
                         iconPosition="start"
                         label="Importar desde archivo"
                     />
                     <Tab
-                        icon={<EditIcon sx={{ fontSize: 18 }} />}
+                        icon={<EditIcon className="text-[18px]" />}
                         iconPosition="start"
                         label="Escribir manualmente"
                     />
@@ -163,8 +154,7 @@ const SyncSkuModal = ({ open, onClose, token, tenantId, tenantName, onSyncSucces
                                 {!selectedFile ? (
                                     <>
                                         <CloudUploadIcon
-                                            sx={{ fontSize: 48 }}
-                                            className="mx-auto mb-3 text-slate-400"
+                                            className="mx-auto mb-3 text-slate-400 text-[48px]"
                                         />
                                         <p className="mb-2 text-sm font-medium text-slate-700">
                                             Arrastra y suelta tu archivo aquí
@@ -176,7 +166,7 @@ const SyncSkuModal = ({ open, onClose, token, tenantId, tenantName, onSyncSucces
                                             htmlFor="sync-file-upload"
                                             className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         >
-                                            <CloudUploadIcon sx={{ fontSize: 18 }} />
+                                            <CloudUploadIcon className="text-[18px]" />
                                             Seleccionar archivo
                                         </label>
                                         <input
@@ -254,18 +244,14 @@ const SyncSkuModal = ({ open, onClose, token, tenantId, tenantName, onSyncSucces
                                 onChange={(e) => setManualSkus(e.target.value)}
                                 placeholder="Ejemplo:&#10;SKU-001&#10;SKU-002&#10;SKU-003&#10;&#10;O separados por comas:&#10;SKU-001, SKU-002, SKU-003"
                                 variant="outlined"
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        borderRadius: "8px",
-                                    },
-                                }}
+                                className="[&_.M uiOutlinedInput-root]:rounded-lg"
                             />
 
                             {/* Preview de SKUs ingresados */}
                             {parseManualSkus().length > 0 && (
                                 <div className="rounded-lg border border-green-200 bg-green-50 p-3">
                                     <div className="mb-2 flex items-center gap-2">
-                                        <CheckCircleIcon className="text-green-600" sx={{ fontSize: 20 }} />
+                                        <CheckCircleIcon className="text-green-600 text-[20px]" />
                                         <p className="text-xs font-semibold text-green-700">
                                             {parseManualSkus().length} SKU(s) detectado(s)
                                         </p>
@@ -295,7 +281,7 @@ const SyncSkuModal = ({ open, onClose, token, tenantId, tenantName, onSyncSucces
                 <Button
                     onClick={handleClose}
                     color="inherit"
-                    sx={{ textTransform: "none", fontWeight: 600 }}
+                    className="normal-case font-semibold"
                 >
                     Cancelar
                 </Button>
@@ -303,11 +289,7 @@ const SyncSkuModal = ({ open, onClose, token, tenantId, tenantName, onSyncSucces
                     onClick={handleSync}
                     variant="contained"
                     color="primary"
-                    sx={{
-                        textTransform: "none",
-                        fontWeight: 600,
-                        borderRadius: "8px",
-                    }}
+                    className="normal-case font-semibold rounded-lg"
                 >
                     Sincronizar SKUs
                 </Button>

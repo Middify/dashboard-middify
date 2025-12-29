@@ -77,7 +77,7 @@ const ActionButton = ({
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${variants[variant]} ${className}`}
+            className={`flex w-full items-center justify-center gap-1.5 rounded-lg border bg-white px-2.5 py-1 text-xs font-semibold shadow-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${variants[variant]} ${className}`}
             {...props}
         >
             {loading ? (
@@ -87,7 +87,7 @@ const ActionButton = ({
                 </>
             ) : (
                 <>
-                    {Icon && <Icon sx={{ fontSize: 16 }} />}
+                    {Icon && <Icon className="text-[16px]" />}
                     {label}
                 </>
             )}
@@ -207,12 +207,12 @@ const ProductsTableHeader = ({
     return (
         <>
             {/* Encabezado Móvil Sticky */}
-            <div className="sticky top-20 mt-4 z-40 md:hidden">
+            <div className="sticky top-20 mt-2 z-40 md:hidden">
                 <header className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] rounded-xl border-b border-slate-200 bg-white shadow-sm">
                     {/* Barra superior compacta */}
-                    <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center justify-between px-4 py-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <h1 className="text-base font-semibold text-slate-800 truncate">{title}</h1>
+                            <h1 className="text-sm font-semibold text-slate-800 truncate">{title}</h1>
                             {selectedCount > 0 && (
                                 <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
                                     {selectedCount}
@@ -221,7 +221,7 @@ const ProductsTableHeader = ({
                         </div>
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                            className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                             aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                         >
                             {isMobileMenuOpen ? <CloseIcon fontSize="small" /> : <MenuIcon fontSize="small" />}
@@ -230,8 +230,8 @@ const ProductsTableHeader = ({
 
                     {/* Menú desplegable de acciones */}
                     {isMobileMenuOpen && (
-                        <div className="border-t border-slate-100 bg-slate-50 p-3">
-                            <div className="flex flex-col gap-2">
+                        <div className="border-t border-slate-100 bg-slate-50 p-2">
+                            <div className="flex flex-col gap-1.5">
                                 {hasSelection && (
                                     <>
                                         <ActionButton
@@ -304,19 +304,19 @@ const ProductsTableHeader = ({
             </div>
 
             {/* Encabezado Escritorio */}
-            <header className="hidden md:block mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] rounded-xl mt-4 border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-baseline gap-3">
-                            <h1 className="text-lg font-semibold text-slate-800">{title}</h1>
+            <header className="hidden md:block mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] rounded-xl mt-2 border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex items-baseline gap-2">
+                            <h1 className="text-base font-semibold text-slate-800">{title}</h1>
                             {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
                         </div>
                         {infoChips.length > 0 && (
-                            <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-600">
+                            <div className="flex flex-wrap gap-1.5 text-xs font-medium text-slate-600">
                                 {infoChips.map((chip) => (
                                     <div
                                         key={chip.id}
-                                        className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1"
+                                        className="flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-0.5"
                                     >
                                         <span className="text-[10px] uppercase tracking-wider text-slate-400">
                                             {chip.label}
@@ -333,7 +333,7 @@ const ProductsTableHeader = ({
                     </div>
                 </div>
 
-                <div className="mt-4 grid w-full grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center sm:justify-end">
+                <div className="mt-2 grid w-full grid-cols-2 gap-1.5 sm:flex sm:flex-row sm:items-center sm:justify-end">
                     {hasSelection && (
                         <>
                             <ActionButton

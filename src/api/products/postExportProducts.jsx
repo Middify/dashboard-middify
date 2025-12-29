@@ -9,7 +9,7 @@ export const postExportProducts = async (token, body) => {
 
     const response = await axios.post(API_URL, body, {
       headers: {
-        Authorization: `Bearer ${token}`, // ← FIX
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });

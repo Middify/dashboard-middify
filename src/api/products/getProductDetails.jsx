@@ -1,4 +1,3 @@
-// URL completa de la API
 const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getProductsDetails";
 
 export const getProductDetails = async (token, productId) => {

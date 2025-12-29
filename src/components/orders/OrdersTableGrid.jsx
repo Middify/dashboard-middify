@@ -39,11 +39,7 @@ const OrdersTableGrid = ({
       <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] md:block">
         <Paper
           elevation={0}
-          className="w-full bg-white"
-          sx={{
-            width: "100%",
-            overflow: "hidden",
-          }}
+          className="w-full bg-white overflow-hidden"
         >
           <div style={{ height: containerHeight, width: '100%', maxHeight: 'calc(100vh - 240px)' }}>
             <DataGrid

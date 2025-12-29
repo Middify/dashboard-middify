@@ -5,7 +5,6 @@ import Paper from "@mui/material/Paper";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { formatCurrency } from "../../utils/formatCurrency";
 
 const NoRowsOverlay = () => (
     <div className="flex h-full items-center justify-center text-sm text-slate-500">
@@ -13,7 +12,6 @@ const NoRowsOverlay = () => (
     </div>
 );
 
-// Componente para tarjeta móvil (SOLO en móvil)
 const MobileProductCard = ({ row, isSelected, onToggleSelection, onViewDetails }) => {
     return (
         <div
@@ -46,7 +44,7 @@ const MobileProductCard = ({ row, isSelected, onToggleSelection, onViewDetails }
                 <div>
                     <span className="block text-slate-400">Precio</span>
                     <span className="font-medium text-slate-700">
-                        {formatCurrency(row.price)}
+                        ${typeof row.price === 'number' ? row.price.toLocaleString('es-ES') : row.price}
                     </span>
                 </div>
                 <div>
@@ -172,35 +170,35 @@ const ProductsTableGrid = ({
         };
 
         const dataColumns = [
-            { 
-                field: "sku", 
-                headerName: "SKU", 
+            {
+                field: "sku",
+                headerName: "SKU",
                 width: 140,
-                renderCell: (params) => <span className="font-medium text-slate-700">{params.value}</span> 
+                renderCell: (params) => <span className="font-medium text-slate-700">{params.value}</span>
             },
-            { 
-                field: "name", 
-                headerName: "Nombre", 
+            {
+                field: "name",
+                headerName: "Nombre",
                 width: 200,
-                renderCell: (params) => <span className="text-slate-800 font-medium">{params.value}</span> 
+                renderCell: (params) => <span className="text-slate-800 font-medium">{params.value}</span>
             },
-            { 
-                field: "tenantName", 
-                headerName: "Tenant", 
+            {
+                field: "tenantName",
+                headerName: "Tenant",
                 width: 120,
             },
-            { 
-                field: "warehouse", 
-                headerName: "Bodega", 
+            {
+                field: "warehouse",
+                headerName: "Bodega",
                 width: 120,
             },
-            { 
-                field: "quantity", 
-                headerName: "Cant.", 
+            {
+                field: "quantity",
+                headerName: "Cant.",
                 width: 90,
-                type: "number", 
-                align: "center", 
-                headerAlign: "center" 
+                type: "number",
+                align: "center",
+                headerAlign: "center"
             },
             {
                 field: "price",
@@ -209,7 +207,7 @@ const ProductsTableGrid = ({
                 type: "number",
                 renderCell: (params) => (
                     <span className="font-mono text-slate-600">
-                        {formatCurrency(params.value)}
+                        ${typeof params.value === 'number' ? params.value.toLocaleString('es-ES') : params.value}
                     </span>
                 )
             },
@@ -358,11 +356,7 @@ const ProductsTableGrid = ({
                 <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem]">
                     <Paper
                         elevation={0}
-                        className="w-full bg-white"
-                        sx={{
-                            width: "100%",
-                            overflow: "hidden",
-                        }}
+                        className="w-full bg-white overflow-hidden"
                     >
                         <div style={{ height: containerHeight, width: '100%', maxHeight: 'calc(100vh - 240px)' }}>
                             <DataGrid

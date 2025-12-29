@@ -282,7 +282,7 @@ const OrdersTable = ({
         <Alert
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          className="w-full"
         >
           {snackbar.message}
         </Alert>

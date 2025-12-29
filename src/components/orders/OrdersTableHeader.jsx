@@ -100,7 +100,7 @@ const OrdersTableHeader = ({
               <label className="relative block w-full">
                 <span className="sr-only">Buscar</span>
                 <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <SearchIcon sx={{ fontSize: 18 }} />
+                  <SearchIcon className="text-[18px]" />
                 </span>
                 <input
                   type="search"
@@ -128,7 +128,7 @@ const OrdersTableHeader = ({
                 {isExportingData ? (
                   <CircularProgress size={14} />
                 ) : (
-                  <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                  <FileDownloadOutlinedIcon className="text-[16px]" />
                 )}
                 <span>Exportar</span>
               </button>
@@ -144,7 +144,7 @@ const OrdersTableHeader = ({
                   {isExportingSelectedData ? (
                     <CircularProgress size={14} />
                   ) : (
-                    <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                    <FileDownloadOutlinedIcon className="text-[16px]" />
                   )}
                   <span>Sel.</span>
                 </button>

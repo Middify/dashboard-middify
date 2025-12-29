@@ -37,7 +37,7 @@ const RecycleBinHeader = ({
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-red-100 p-2">
-                        <DeleteOutlineIcon className="text-red-600" sx={{ fontSize: 28 }} />
+                        <DeleteOutlineIcon className="text-red-600 text-[28px]" />
                     </div>
                     <div>
                         <h1 className="text-lg font-semibold text-slate-800">
@@ -50,25 +50,12 @@ const RecycleBinHeader = ({
                 </div>
             </div>
 
-            <Box sx={{ borderBottom: 1, borderColor: "divider", mt: 3 }}>
+            <Box className="border-b border-slate-200 mt-3">
                 <Tabs
                     value={activeTab}
                     onChange={(_, newValue) => onTabChange(newValue)}
                     aria-label="Papelera de reciclaje tabs"
-                    sx={{
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: 600,
-                            fontSize: "0.875rem",
-                            minHeight: "40px",
-                        },
-                        "& .Mui-selected": {
-                            color: "#dc2626",
-                        },
-                        "& .MuiTabs-indicator": {
-                            backgroundColor: "#dc2626",
-                        },
-                    }}
+                    className="[&_.MuiTab-root]:normal-case [&_.MuiTab-root]:font-semibold [&_.MuiTab-root]:text-sm [&_.MuiTab-root]:min-h-[40px] [&_.Mui-selected]:text-red-600 [&_.MuiTabs-indicator]:bg-red-600"
                 >
                     <Tab
                         label={
@@ -182,7 +169,7 @@ const RecycleBinHeader = ({
                                                 </>
                                             ) : (
                                                 <>
-                                                    <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                                                    <FileDownloadOutlinedIcon className="text-[16px]" />
                                                     Exportar Selección
                                                 </>
                                             )}
@@ -204,7 +191,7 @@ const RecycleBinHeader = ({
                                         </>
                                     ) : (
                                         <>
-                                            <FileDownloadOutlinedIcon sx={{ fontSize: 16 }} />
+                                            <FileDownloadOutlinedIcon className="text-[16px]" />
                                             Exportar Todo
                                         </>
                                     )}

@@ -225,12 +225,7 @@ const RecycleBinProductsTab = ({
                         <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem]">
                             <Paper
                                 elevation={0}
-                                sx={{
-                                    width: "100%",
-                                    borderRadius: "16px",
-                                    boxShadow: "none",
-                                    overflow: "hidden",
-                                }}
+                                className="w-full rounded-2xl shadow-none overflow-hidden"
                             >
                                 <DataGrid
                                     rows={rows}

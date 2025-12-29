@@ -87,13 +87,10 @@ const Products = () => {
         if (!token) return;
         setIsExporting(true);
         try {
-            const exportBody = {
+            const response = await postExportProducts(token, {
                 tenantId: selectedTenantId,
                 tenantName: selectedTenantName,
-                state: resolvedProductState === "descartada" ? "discard" : resolvedProductState
-            };
-
-            const response = await postExportProducts(token, exportBody);
+            });
             if (response?.message) {
                 alertsProducts.exportSuccess(response.message);
             }
@@ -109,7 +106,7 @@ const Products = () => {
     }
 
     return (
-        <div className="space-y-4 md:space-y-4">
+        <div className="space-y-4">
             <ProductsTableHeader
                 title="Productos"
                 subtitle={selectedTenantName ? `Productos de ${selectedTenantName}` : "Gestión de productos"}
@@ -126,17 +123,15 @@ const Products = () => {
                 onDeleteSuccess={refreshData}
             />
 
-            <div className="md:mt-0">
-                <ProductsTableGrid
-                    rows={rows}
-                    loading={loading}
-                    error={error}
-                    selectedRowIds={selectedRowIds}
-                    onToggleRowSelection={handleToggleRowSelection}
-                    onToggleAllRows={handleToggleAllRows}
-                    onViewDetails={handleViewDetails}
-                />
-            </div>
+            <ProductsTableGrid
+                rows={rows}
+                loading={loading}
+                error={error}
+                selectedRowIds={selectedRowIds}
+                onToggleRowSelection={handleToggleRowSelection}
+                onToggleAllRows={handleToggleAllRows}
+                onViewDetails={handleViewDetails}
+            />
         </div>
     );
 };

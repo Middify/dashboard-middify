@@ -110,7 +110,7 @@ const AlertMessage = ({ type, icon: Icon, title, message, children }) => {
     return (
         <div className={`rounded-lg border p-3 ${styles[type]}`}>
             <div className="flex items-start gap-2">
-                {Icon && <Icon sx={{ fontSize: 20 }} className={styles[type].split(" ")[2]} />}
+                {Icon && <Icon className={`text-[20px] ${styles[type].split(" ")[2]}`} />}
                 <div className="flex-1">
                     {title && <p className="text-xs font-semibold">{title}</p>}
                     {message && <p className="text-xs">{message}</p>}
@@ -287,7 +287,7 @@ const ImportProductsModal = ({
             onClose={handleClose}
             maxWidth="sm"
             fullWidth
-            PaperProps={{ sx: { borderRadius: "12px" } }}
+            PaperProps={{ className: "rounded-xl" }}
         >
             <DialogTitle className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <span className="text-lg font-semibold text-slate-800">Importar Productos</span>
@@ -331,8 +331,7 @@ const ImportProductsModal = ({
                         {!selectedFile ? (
                             <>
                                 <CloudUploadIcon
-                                    sx={{ fontSize: 48 }}
-                                    className="mx-auto mb-3 text-slate-400"
+                                    className="mx-auto mb-3 text-slate-400 text-[48px]"
                                 />
                                 <p className="mb-2 text-sm font-medium text-slate-700">
                                     Arrastra y suelta tu archivo aquí
@@ -342,7 +341,7 @@ const ImportProductsModal = ({
                                     htmlFor="file-upload"
                                     className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
-                                    <CloudUploadIcon sx={{ fontSize: 18 }} />
+                                    <CloudUploadIcon className="text-[18px]" />
                                     Seleccionar archivo
                                 </label>
                                 <input
@@ -408,15 +407,15 @@ const ImportProductsModal = ({
                         >
                             <div className="space-y-1 text-xs">
                                 <p className="flex items-center gap-2">
-                                    <CheckCircleIcon sx={{ fontSize: 16, color: "green" }} />
+                                    <CheckCircleIcon className="text-[16px] text-green-600" />
                                     Exitosos: <strong>{importResult.succeeded}</strong>
                                 </p>
                                 <p className="flex items-center gap-2">
-                                    <CancelIcon sx={{ fontSize: 16, color: "red" }} />
+                                    <CancelIcon className="text-[16px] text-red-600" />
                                     Fallidos: <strong>{importResult.failed}</strong>
                                 </p>
                                 <p className="flex items-center gap-2">
-                                    <InventoryIcon sx={{ fontSize: 16, color: "rgb(99, 102, 241)" }} />
+                                    <InventoryIcon className="text-[16px] text-indigo-600" />
                                     Total procesados: {importResult.processed}
                                 </p>
                             </div>
@@ -455,7 +454,7 @@ const ImportProductsModal = ({
                 <Button
                     onClick={handleClose}
                     color="inherit"
-                    sx={{ textTransform: "none", fontWeight: 600 }}
+                    className="normal-case font-semibold"
                     disabled={isImporting}
                 >
                     {importResult ? "Cerrar" : "Cancelar"}
@@ -466,11 +465,11 @@ const ImportProductsModal = ({
                         variant="contained"
                         color="primary"
                         disabled={!parsedData || parsedData.length === 0 || isImporting}
-                        sx={{ textTransform: "none", fontWeight: 600, borderRadius: "8px" }}
+                        className="normal-case font-semibold rounded-lg"
                     >
                         {isImporting ? (
                             <>
-                                <CircularProgress size={16} sx={{ mr: 1 }} />
+                                <CircularProgress size={16} className="mr-1" />
                                 Importando...
                             </>
                         ) : (
