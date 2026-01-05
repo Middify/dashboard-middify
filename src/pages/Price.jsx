@@ -5,7 +5,7 @@ import PriceTableHeader from "../components/price/PriceTableHeader";
 import PriceTableGrid from "../components/price/PriceTableGrid";
 
 const Price = () => {
-    const { token, user, resolvedPriceState, selectedTenantName } = useOutletContext() || {};
+    const { token, user, resolvedPriceState, selectedTenantId, selectedTenantName } = useOutletContext() || {};
     const navigate = useNavigate();
     
     const [searchTerm, setSearchTerm] = useState("");
@@ -15,6 +15,8 @@ const Price = () => {
     
     const { products, total, loading, error } = usePrice({
         token,
+        tenantId: selectedTenantId,
+        tenantName: selectedTenantName,
         state: resolvedPriceState,
         page: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
@@ -24,7 +26,7 @@ const Price = () => {
     useEffect(() => {
         setPaginationModel(prev => ({ ...prev, page: 0 }));
         setSelectedRowIds(new Set());
-    }, [resolvedPriceState, searchTerm]);
+    }, [selectedTenantId, resolvedPriceState, searchTerm]);
 
     const filteredRows = useMemo(() => {
         const list = products || [];

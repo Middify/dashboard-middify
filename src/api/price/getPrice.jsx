@@ -4,12 +4,16 @@ const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getP
 
 export const getPrice = async ({ 
     token, 
+    tenantId,
+    tenantName,
     state, 
     page = 1, 
     pageSize = 100, 
     signal 
 } = {}) => {
     const params = new URLSearchParams();
+    if (tenantId) params.append("tenantId", tenantId);
+    if (tenantName) params.append("tenantName", tenantName);
     if (state) params.append("state", state);
     params.append("page", String(page));
     params.append("pageSize", String(pageSize));
@@ -32,6 +36,8 @@ export const getPrice = async ({
 
 export const usePrice = ({
     token,
+    tenantId,
+    tenantName,
     state,
     page = 1,
     pageSize = 100,
@@ -55,6 +61,8 @@ export const usePrice = ({
             try {
                 const result = await getPrice({ 
                     token,
+                    tenantId,
+                    tenantName,
                     state,
                     page,
                     pageSize,
@@ -81,7 +89,7 @@ export const usePrice = ({
             mounted = false;
             controller.abort();
         };
-    }, [token, refreshTrigger, state, page, pageSize]);
+    }, [token, tenantId, tenantName, refreshTrigger, state, page, pageSize]);
 
     return data;
 };
