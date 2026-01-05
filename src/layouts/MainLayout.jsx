@@ -28,24 +28,12 @@ const ensureOrderState = (value) =>
     value && ORDER_STATE_IDS.has(value) ? value : null;
 
 const deriveView = (pathname, hasDetail) => {
-    if (hasDetail) {
-        return "detailsOrders";
-    }
-    if (pathname.startsWith("/recycle")) {
-        return "recycle";
-    }
-    if (pathname.startsWith("/stores")) {
-        return "stores";
-    }
-    if (pathname.startsWith("/orders")) {
-        return "orders";
-    }
-    if (pathname.startsWith("/products")) {
-        return "products";
-    }
-    if (pathname.startsWith("/price")) {
-        return "price";
-    }
+    if (hasDetail) return "detailsOrders";
+    if (pathname.startsWith("/recycle")) return "recycle";
+    if (pathname.startsWith("/stores")) return "stores";
+    if (pathname.startsWith("/orders")) return "orders";
+    if (pathname.startsWith("/products")) return "products";
+    if (pathname.startsWith("/price")) return "price";
     return "dashboard";
 };
 
@@ -58,7 +46,7 @@ const MainLayout = () => {
     const [searchParams] = useSearchParams();
     const detailMatch = useMatch("/orders/:orderId");
     const detailOrderId = detailMatch?.params?.orderId ?? null;
-    const resolvedOrderState = ensureOrderState(searchParams.get("state"));
+    const resolvedOrderState = useMemo(() => ensureOrderState(searchParams.get("state")), [searchParams]);
     const resolvedProductState = searchParams.get("productState");
     const resolvedPriceState = searchParams.get("priceState");
 
@@ -67,19 +55,23 @@ const MainLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [lastOrderState, setLastOrderState] = useState(null);
 
-    const currentView = deriveView(location.pathname, Boolean(detailOrderId));
-    const autoRefresh = currentView === "dashboard" ? 1000 : null;
+    const currentView = useMemo(() => deriveView(location.pathname, Boolean(detailOrderId)), [location.pathname, detailOrderId]);
+    
+    // Polling solo si estamos en el dashboard, y aumentado a 30s para ahorrar memoria/CPU
+    const autoRefresh = currentView === "dashboard" ? 30000 : null;
 
     const {
         tenants,
         loading: tenantsLoading,
         error: tenantsError,
     } = useProductStates(token, autoRefresh);
+    
     const {
         tenants: marketplaceTenants,
         loading: marketplaceLoading,
         error: marketplaceError,
     } = useMarketplaceSummary(token, autoRefresh);
+    
     const {
         user,
         loading: userLoading,
@@ -98,134 +90,97 @@ const MainLayout = () => {
         }
     }, [currentView, resolvedOrderState]);
 
-    const lastKnownOrderState =
-        location.state?.fromOrderState ?? lastOrderState ?? null;
-
+    const lastKnownOrderState = location.state?.fromOrderState ?? lastOrderState ?? null;
     const isLoading = tenantsLoading || marketplaceLoading || userLoading;
     const error = tenantsError || marketplaceError || userError;
 
-    const handleChangeView = useCallback(
-        (nextView) => {
-            switch (nextView) {
-                case "stores":
-                    navigate("/stores");
-                    break;
-                case "orders": {
-                    const targetState = resolvedOrderState ?? lastOrderState ?? null;
-                    navigate(
-                        targetState
-                            ? `/orders?state=${encodeURIComponent(targetState)}`
-                            : "/orders"
-                    );
-                    break;
-                }
-                case "dashboard":
-                    navigate("/");
-                    break;
-                case "recycle":
-                    navigate("/recycle");
-                    break;
-                case "products":
-                    navigate("/products");
-                    break;
-                case "price":
-                    navigate("/price");
-                    break;
-                default:
-                    navigate("/");
-                    break;
+    const handleChangeView = useCallback((nextView) => {
+        switch (nextView) {
+            case "stores": navigate("/stores"); break;
+            case "orders": {
+                const targetState = resolvedOrderState ?? lastOrderState ?? null;
+                navigate(targetState ? `/orders?state=${encodeURIComponent(targetState)}` : "/orders");
+                break;
             }
-        },
-        [navigate, resolvedOrderState, lastOrderState]
-    );
+            case "dashboard": navigate("/"); break;
+            case "recycle": navigate("/recycle"); break;
+            case "products": navigate("/products"); break;
+            case "price": navigate("/price"); break;
+            default: navigate("/"); break;
+        }
+    }, [navigate, resolvedOrderState, lastOrderState]);
 
-    const handleSelectOrderState = useCallback(
-        (stateId) => {
-            if (stateId && ORDER_STATE_IDS.has(stateId)) {
-                navigate(`/orders?state=${encodeURIComponent(stateId)}`);
-            } else {
-                navigate("/orders");
-            }
-        },
-        [navigate]
-    );
+    const handleSelectOrderState = useCallback((stateId) => {
+        if (stateId && ORDER_STATE_IDS.has(stateId)) {
+            navigate(`/orders?state=${encodeURIComponent(stateId)}`);
+        } else {
+            navigate("/orders");
+        }
+    }, [navigate]);
 
-    const handleSelectProductState = useCallback(
-        (stateId) => {
-            if (stateId) {
-                navigate(`/products?productState=${encodeURIComponent(stateId)}`);
-            } else {
-                navigate("/products");
-            }
-        },
-        [navigate]
-    );
+    const handleSelectProductState = useCallback((stateId) => {
+        navigate(stateId ? `/products?productState=${encodeURIComponent(stateId)}` : "/products");
+    }, [navigate]);
 
-    const handleSelectPriceState = useCallback(
-        (stateId) => {
-            if (stateId) {
-                navigate(`/price?priceState=${encodeURIComponent(stateId)}`);
-            } else {
-                navigate("/price");
-            }
-        },
-        [navigate]
-    );
+    const handleSelectPriceState = useCallback((stateId) => {
+        navigate(stateId ? `/price?priceState=${encodeURIComponent(stateId)}` : "/price");
+    }, [navigate]);
 
-    const handleToggleSidebarCollapse = useCallback(() => {
-        setIsSidebarCollapsed((prev) => !prev);
-    }, []);
-
-    const handleOpenSidebar = useCallback(() => {
-        setIsSidebarOpen(true);
-    }, []);
-
-    const handleCloseSidebar = useCallback(() => {
-        setIsSidebarOpen(false);
-    }, []);
+    const handleToggleSidebarCollapse = useCallback(() => setIsSidebarCollapsed(p => !p), []);
+    const handleOpenSidebar = useCallback(() => setIsSidebarOpen(true), []);
+    const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
 
     useEffect(() => {
         const updateSidebarState = () => {
-            if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-                setIsSidebarOpen(false);
-            }
+            if (typeof window !== "undefined" && window.innerWidth >= 1024) setIsSidebarOpen(false);
         };
-
-        updateSidebarState();
         window.addEventListener("resize", updateSidebarState);
         return () => window.removeEventListener("resize", updateSidebarState);
     }, []);
 
     const filteredTenants = useMemo(() => {
-        if (!selectedTenantId) {
-            return tenants || [];
-        }
-        return (tenants || []).filter(
-            (tenant) => tenant.tenantId === selectedTenantId
-        );
+        if (!selectedTenantId) return tenants || [];
+        return (tenants || []).filter(t => t.tenantId === selectedTenantId);
     }, [selectedTenantId, tenants]);
 
     const selectedTenantName = useMemo(() => {
-        if (!selectedTenantId) {
-            return null;
-        }
-        const match = (tenants || []).find(
-            (tenant) => tenant.tenantId === selectedTenantId
-        );
-        return match?.tenantName ?? null;
+        if (!selectedTenantId) return null;
+        return (tenants || []).find(t => t.tenantId === selectedTenantId)?.tenantName ?? null;
     }, [selectedTenantId, tenants]);
 
     const filteredMarketplaceTenants = useMemo(() => {
-        if (!selectedTenantId) {
-            return marketplaceTenants || [];
-        }
-        return (marketplaceTenants || []).filter(
-            (tenant) => tenant.tenantId === selectedTenantId
-        );
+        if (!selectedTenantId) return marketplaceTenants || [];
+        return (marketplaceTenants || []).filter(t => t.tenantId === selectedTenantId);
     }, [selectedTenantId, marketplaceTenants]);
 
-    const sidebarOrderState =
-        currentView === "detailsOrders" ? lastKnownOrderState : resolvedOrderState;
+    const sidebarOrderState = currentView === "detailsOrders" ? lastKnownOrderState : resolvedOrderState;
+
+    // MEMOIZACIÓN CRÍTICA DEL CONTEXTO: Evita que todo el árbol de React se re-renderice innecesariamente
+    const contextValue = useMemo(() => ({
+        token,
+        user,
+        isLoading,
+        error,
+        tenants: filteredTenants,
+        marketplaceTenants: filteredMarketplaceTenants,
+        selectedTenantId,
+        selectedTenantName,
+        resolvedOrderState,
+        resolvedProductState,
+        resolvedPriceState,
+        lastOrderState,
+        handleSelectOrderState,
+        handleSelectProductState,
+        handleSelectPriceState,
+        isAggregated: selectedTenantId === null,
+        allTenants: tenants,
+        allMarketplaceTenants: marketplaceTenants,
+    }), [
+        token, user, isLoading, error, filteredTenants, filteredMarketplaceTenants,
+        selectedTenantId, selectedTenantName, resolvedOrderState, resolvedProductState,
+        resolvedPriceState, lastOrderState, handleSelectOrderState, handleSelectProductState,
+        handleSelectPriceState, tenants, marketplaceTenants
+    ]);
 
     return (
         <div className="min-h-screen bg-slate-50 lg:flex">
@@ -248,7 +203,7 @@ const MainLayout = () => {
                 onCloseMobile={handleCloseSidebar}
                 userRole={user?.role ?? null}
             />
-            <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col overflow-hidden">
                 <Navbar
                     user={user}
                     isSidebarCollapsed={isSidebarCollapsed}
@@ -257,44 +212,13 @@ const MainLayout = () => {
                     activeView={sidebarActiveView}
                     activeOrderState={resolvedOrderState}
                 />
-                <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-8">
-                    <main className="w-full">
-                        <Outlet
-                            context={{
-                                token,
-                                user,
-                                isLoading,
-                                error,
-                                tenants: filteredTenants,
-                                marketplaceTenants: filteredMarketplaceTenants,
-                                selectedTenantId,
-                                selectedTenantName,
-                                resolvedOrderState,
-                                resolvedProductState,
-                                resolvedPriceState,
-                                lastOrderState,
-                                handleSelectOrderState,
-                                handleSelectProductState,
-                                handleSelectPriceState,
-                                isAggregated: selectedTenantId === null,
-                                allTenants: tenants,
-                                allMarketplaceTenants: marketplaceTenants,
-                            }}
-                        />
+                <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-8 overflow-y-auto">
+                    <main className="w-full mx-auto max-w-7xl">
+                        <Outlet context={contextValue} />
                     </main>
                 </div>
             </div>
-            <ToastContainer
-                position="bottom-right"
-                autoClose={2000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
+            <ToastContainer position="bottom-right" autoClose={2000} />
         </div>
     );
 };

@@ -1,5 +1,4 @@
-import { useCallback, useState } from "react";
-import { useAuth } from "react-oidc-context";
+import { useCallback, useState, lazy, Suspense } from "react";
 import {
   Routes,
   Route,
@@ -10,15 +9,26 @@ import {
   useOutletContext,
 } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
-import Dashboard from "./Dashboard";
-import Stores from "./Stores";
-import Products from "./Products";
-import StoreDetail from "../components/stores/StoreDetail";
-import OrdersTable from "./OrdersTable";
-import DetailsOrders from "./DetailsOrders";
-import ProductDetails from "../components/products/ProductDetails";
-import RecycleBin from "./RecycleBin";
-import Price from "./Price";
+
+// Carga perezosa de componentes de página para reducir el bundle inicial y la memoria
+const Dashboard = lazy(() => import("./Dashboard"));
+const Stores = lazy(() => import("./Stores"));
+const Products = lazy(() => import("./Products"));
+const OrdersTable = lazy(() => import("./OrdersTable"));
+const Price = lazy(() => import("./Price"));
+const RecycleBin = lazy(() => import("./RecycleBin"));
+const DetailsOrders = lazy(() => import("./DetailsOrders"));
+
+// Componentes secundarios también lazy
+const StoreDetail = lazy(() => import("../components/stores/StoreDetail"));
+const ProductDetails = lazy(() => import("../components/products/ProductDetails"));
+
+// Loading simplificado para evitar CLS
+const PageLoader = () => (
+  <div className="flex h-[60vh] items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+  </div>
+);
 
 const DashboardWrapper = () => {
   const {
@@ -70,7 +80,6 @@ const OrdersTableWrapper = () => {
   } = useOutletContext();
 
   const navigate = useNavigate();
-  const location = useLocation();
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const handleSelectOrder = useCallback(
@@ -183,21 +192,23 @@ const ProductDetailsRoute = () => {
 
 const Index = () => {
   return (
-    <Routes>
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<DashboardWrapper />} />
-        <Route path="/stores" element={<StoresWrapper />} />
-        <Route path="/stores/:storeId" element={<StoreDetailWrapper />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products/:productId" element={<ProductDetailsRoute />} />
-        <Route path="/orders" element={<OrdersTableWrapper />} />
-        <Route path="/price" element={<Price />} />
-        <Route path="/recycle" element={<RecycleBinWrapper />} />
-        <Route path="/orders/detalle" element={<Navigate to="/orders" replace />} />
-        <Route path="/orders/:orderId" element={<DetailsRoute />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<DashboardWrapper />} />
+          <Route path="/stores" element={<StoresWrapper />} />
+          <Route path="/stores/:storeId" element={<StoreDetailWrapper />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:productId" element={<ProductDetailsRoute />} />
+          <Route path="/orders" element={<OrdersTableWrapper />} />
+          <Route path="/price" element={<Price />} />
+          <Route path="/recycle" element={<RecycleBinWrapper />} />
+          <Route path="/orders/detalle" element={<Navigate to="/orders" replace />} />
+          <Route path="/orders/:orderId" element={<DetailsRoute />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 };
 

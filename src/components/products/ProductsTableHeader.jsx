@@ -21,10 +21,13 @@ import {
     InputLabel,
 } from "@mui/material";
 import { patchExportProducts } from "../../api/products/patchStateProduct";
-import ImportProductsModal from "./ImportProductsModal";
-import SyncSkuModal from "./SyncSkuModal";
 import { alertsProducts } from "../../utils/alertsProducts";
 import SearchBar from "../common/SearchBar";
+import { lazy, Suspense } from "react";
+
+// Carga perezosa de modales para optimizar el bundle inicial
+const ImportProductsModal = lazy(() => import("./ImportProductsModal"));
+const SyncSkuModal = lazy(() => import("./SyncSkuModal"));
 
 const PRODUCT_STATES = [
     { value: "created", label: "Creada" },
@@ -470,23 +473,29 @@ const ProductsTableHeader = ({
                 </DialogActions>
             </Dialog>
 
-            <ImportProductsModal
-                open={showImportModal}
-                onClose={() => setShowImportModal(false)}
-                token={token}
-                tenantId={tenantId}
-                tenantName={tenantName}
-                onImportSuccess={handleModalSuccess}
-            />
+            <Suspense fallback={null}>
+                {showImportModal && (
+                    <ImportProductsModal
+                        open={showImportModal}
+                        onClose={() => setShowImportModal(false)}
+                        token={token}
+                        tenantId={tenantId}
+                        tenantName={tenantName}
+                        onImportSuccess={handleModalSuccess}
+                    />
+                )}
 
-            <SyncSkuModal
-                open={showSyncModal}
-                onClose={() => setShowSyncModal(false)}
-                token={token}
-                tenantId={tenantId}
-                tenantName={tenantName}
-                onSyncSuccess={handleModalSuccess}
-            />
+                {showSyncModal && (
+                    <SyncSkuModal
+                        open={showSyncModal}
+                        onClose={() => setShowSyncModal(false)}
+                        token={token}
+                        tenantId={tenantId}
+                        tenantName={tenantName}
+                        onSyncSuccess={handleModalSuccess}
+                    />
+                )}
+            </Suspense>
         </div>
     );
 };

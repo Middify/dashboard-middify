@@ -8,9 +8,9 @@ import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 
 const numberFormatter = new Intl.NumberFormat("es-CL");
 
-// Estados principales permitidos (normalizados)
 const normalizeStateName = (value = "") =>
   value.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 const ALLOWED_STATE_SET = new Set([
   "ingresada",
   "en proceso",
@@ -21,7 +21,6 @@ const ALLOWED_STATE_SET = new Set([
 ]);
 
 const sumAllowedStatesCount = (marketplace) => {
-  // Si viene desglosado por estados, sumar solo los 6 principales
   const states = Array.isArray(marketplace?.states) ? marketplace.states : null;
   if (states && states.length > 0) {
     return states.reduce((acc, st) => {
@@ -32,24 +31,20 @@ const sumAllowedStatesCount = (marketplace) => {
       return acc;
     }, 0);
   }
-  // Si no hay desglose, usar count como fallback
   return Number(marketplace?.count) || 0;
 };
 
 const aggregateTenants = (tenants) => {
   const map = new Map();
-
   tenants.forEach((tenant) => {
     (Array.isArray(tenant?.marketplaces) ? tenant.marketplaces : []).forEach(
       (marketplace) => {
         const name = marketplace?.name ?? "Sin nombre";
         const countValue = sumAllowedStatesCount(marketplace);
-
         map.set(name, (map.get(name) || 0) + countValue);
       }
     );
   });
-
   return Array.from(map.entries()).map(([name, count]) => ({
     id: name,
     name,
@@ -60,18 +55,27 @@ const aggregateTenants = (tenants) => {
 const normalizeTenantMarketplaces = (tenant, index) =>
   (Array.isArray(tenant?.marketplaces) ? tenant.marketplaces : []).map(
     (marketplace, marketplaceIndex) => ({
-      id:
-        marketplace?.name ??
-        `tenant-${tenant?.tenantId ?? index}-marketplace-${marketplaceIndex}`,
+      id: marketplace?.name ?? `tenant-${tenant?.tenantId ?? index}-marketplace-${marketplaceIndex}`,
       name: marketplace?.name ?? "Sin nombre",
       count: sumAllowedStatesCount(marketplace),
     })
   );
 
 const CardMarketplace = ({ tenants, isAggregated }) => {
-  if (!Array.isArray(tenants) || tenants.length === 0) {
-    return null;
-  }
+  const cardData = useMemo(() => {
+    if (!Array.isArray(tenants) || tenants.length === 0) return null;
+    return isAggregated
+      ? {
+        id: "marketplace-all",
+        title: "Todas las tiendas",
+        marketplaces: aggregateTenants(tenants),
+      }
+      : {
+        id: `marketplace-${tenants[0].tenantId ?? "tenant"}`,
+        title: tenants[0]?.tenantName ?? "Sin nombre",
+        marketplaces: normalizeTenantMarketplaces(tenants[0], 0),
+      };
+  }, [tenants, isAggregated]);
 
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState(5);
@@ -89,50 +93,30 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
     window.addEventListener("resize", computeRows);
     return () => window.removeEventListener("resize", computeRows);
   }, []);
-  const cardData = isAggregated
-    ? {
-      id: "marketplace-all",
-      title: "Todas las tiendas",
-      marketplaces: aggregateTenants(tenants),
-    }
-    : {
-      id: `marketplace-${tenants[0].tenantId ?? "tenant"}`,
-      title: tenants[0]?.tenantName ?? "Sin nombre",
-      marketplaces: normalizeTenantMarketplaces(tenants[0], 0),
-    };
 
   const PAGE_SIZE = COLS * rows;
-  const totalItems = cardData.marketplaces.length;
+  const totalItems = cardData?.marketplaces.length || 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-
-  // Asegurar que la página siempre esté en rango
   const currentPage = Math.min(page, totalPages);
 
-  const [viewMode, setViewMode] = useState("list"); // list | pie
+  const [viewMode, setViewMode] = useState("list");
 
-  // Orden determinístico: primero por cantidad desc, luego por nombre asc
   const sortedMarketplaces = useMemo(() => {
-    const list = Array.isArray(cardData.marketplaces)
-      ? cardData.marketplaces.slice()
-      : [];
+    if (!cardData?.marketplaces) return [];
+    const list = [...cardData.marketplaces];
     list.sort((a, b) => {
       const countDiff = (b.count || 0) - (a.count || 0);
       if (countDiff !== 0) return countDiff;
-      const aName = (a.name || "").toString().toLowerCase();
-      const bName = (b.name || "").toString().toLowerCase();
-      return aName.localeCompare(bName);
+      return (a.name || "").toString().toLowerCase().localeCompare((b.name || "").toString().toLowerCase());
     });
     return list;
-  }, [cardData.marketplaces]);
+  }, [cardData?.marketplaces]);
 
   const paginatedMarketplaces = useMemo(() => {
-    if (totalItems <= PAGE_SIZE) {
-      return sortedMarketplaces;
-    }
+    if (totalItems <= PAGE_SIZE) return sortedMarketplaces;
     const start = (currentPage - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    return sortedMarketplaces.slice(start, end);
-  }, [sortedMarketplaces, totalItems, currentPage]);
+    return sortedMarketplaces.slice(start, start + PAGE_SIZE);
+  }, [sortedMarketplaces, totalItems, currentPage, PAGE_SIZE]);
 
   const [isFading, setIsFading] = useState(false);
   const goPrev = () => {
@@ -150,20 +134,21 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
     }, 120);
   };
 
+  if (!cardData) return null;
+
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm max-w-[50vw] flex flex-col">
-      <header className="mb-4 flex items-center justify-between">
+    <section className="min-h-[400px] rounded-lg border border-slate-200 bg-white p-6 shadow-sm max-w-[100%] flex flex-col">
+      <header className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold text-slate-900">
           Marketplace por tienda
         </h2>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center">
             <Tooltip title="Vista lista">
               <IconButton
                 size="small"
                 color={viewMode === "list" ? "primary" : "default"}
                 onClick={() => setViewMode("list")}
-                aria-label="Ver como lista"
               >
                 <ViewListIcon fontSize="small" />
               </IconButton>
@@ -173,7 +158,6 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                 size="small"
                 color={viewMode === "pie" ? "primary" : "default"}
                 onClick={() => setViewMode("pie")}
-                aria-label="Ver como gráfico de torta"
               >
                 <DonutLargeIcon fontSize="small" />
               </IconButton>
@@ -218,12 +202,7 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
             <MarketplacePie items={sortedMarketplaces} />
           ) : (
             <ul
-              className="
-              grid grid-cols-1 gap-4
-              sm:grid-cols-2
-              md:grid-cols-3
-              transition-opacity duration-200 ease-out
-            "
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-200 ease-out"
               style={{ opacity: isFading ? 0 : 1 }}
             >
               {paginatedMarketplaces.map((marketplace) => (
@@ -233,13 +212,13 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-200 transition-transform duration-200 ease-out group-hover:scale-105">
-                      <MarketplaceLogo name={marketplace.name} className="h-6 w-6 transition-transform duration-200 ease-out group-hover:scale-110" />
+                      <MarketplaceLogo name={marketplace.name} className="h-6 w-6" />
                     </div>
                     <span className="truncate" title={marketplace.name}>
                       {marketplace.name}
                     </span>
                   </div>
-                  <span className="rounded-full bg-catalina-blue-50 px-2.5 py-1 text-[12px] font-medium text-catalina-blue-700 ring-1 ring-catalina-blue-100 transition-colors duration-200 ease-out group-hover:bg-catalina-blue-100 group-hover:text-catalina-blue-800">
+                  <span className="rounded-full bg-catalina-blue-50 px-2.5 py-1 text-[12px] font-medium text-catalina-blue-700 ring-1 ring-catalina-blue-100 transition-colors duration-200 group-hover:bg-catalina-blue-100 group-hover:text-catalina-blue-800">
                     {numberFormatter.format(marketplace.count || 0)}
                   </span>
                 </li>
@@ -253,4 +232,3 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
 };
 
 export default CardMarketplace;
-

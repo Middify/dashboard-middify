@@ -1,6 +1,5 @@
 import PropTypes from "prop-types";
 import { useState, useCallback } from "react";
-import * as XLSX from "xlsx";
 import {
     Dialog,
     DialogTitle,
@@ -79,6 +78,8 @@ const parseJsonFile = async (file) => {
 };
 
 const parseExcelFile = async (file) => {
+    // Carga dinámica de XLSX para optimizar memoria
+    const XLSX = await import("xlsx");
     const data = await file.arrayBuffer();
     const workbook = XLSX.read(data, { type: "array" });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];

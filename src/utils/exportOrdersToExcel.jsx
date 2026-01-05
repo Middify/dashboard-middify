@@ -1,5 +1,3 @@
-import * as XLSX from "xlsx";
-
 const normalizeFileName = (fileName) => {
   const safeName =
     typeof fileName === "string" && fileName.trim().length > 0
@@ -33,7 +31,10 @@ const normalizeCellValue = (value) => {
   return String(value);
 };
 
-export const exportOrdersToExcel = ({
+/**
+ * Exporta datos a Excel de forma optimizada cargando la librería dinámicamente.
+ */
+export const exportOrdersToExcel = async ({
   rows = [],
   columns = [],
   fileName = "ordenes.xlsx",
@@ -50,6 +51,9 @@ export const exportOrdersToExcel = ({
   if (!Array.isArray(rows) || rows.length === 0) {
     throw new Error("No hay filas disponibles para exportar.");
   }
+
+  // Carga dinámica de la librería pesada XLSX solo cuando se necesita
+  const XLSX = await import("xlsx");
 
   const headerRow = exportableColumns.map((column) => {
     if (typeof column.headerName === "string" && column.headerName.trim().length > 0) {
@@ -71,4 +75,3 @@ export const exportOrdersToExcel = ({
 };
 
 export default exportOrdersToExcel;
-

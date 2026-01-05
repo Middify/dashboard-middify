@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
@@ -156,16 +157,19 @@ const getStateStyles = (stateName = "") => {
 };
 
 const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
-  if (!Array.isArray(tenants) || tenants.length === 0) {
-    return null;
-  }
+  const cards = useMemo(() => {
+    if (!Array.isArray(tenants) || tenants.length === 0) {
+      return [];
+    }
+    return isAggregated
+      ? [aggregateTenants(tenants)]
+      : aggregateTenantsById(tenants);
+  }, [tenants, isAggregated]);
 
-  const cards = isAggregated
-    ? [aggregateTenants(tenants)]
-    : aggregateTenantsById(tenants);
+  if (cards.length === 0) return null;
 
   return (
-    <section className="">
+    <section className="min-h-[400px]">
       {cards.map((card) => {
         const rawStates = Array.isArray(card.states) ? card.states : [];
         const normalizedStates = new Map();
@@ -198,8 +202,6 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
           };
         });
 
-        // Total de órdenes: únicamente suma de los 6 estados principales,
-        // evitando contar estados adicionales no contemplados.
         const totalOrders = states.reduce(
           (acc, state) => acc + (Number(state?.count) || 0),
           0
@@ -215,7 +217,6 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
 
         return (
           <div key={card.id} className="space-y-6">
-            {/* Header del artículo */}
             <article className="rounded-3xl bg-white p-6 shadow-md ring-1 ring-slate-200 sm:p-8">
               <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -246,14 +247,12 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
               </header>
             </article>
 
-            {/* Cards de estado fuera del article - 2 columnas en móvil, 6 en desktop */}
             {states.length > 0 && (
               <ul className="grid grid-cols-2 gap-4 text-sm md:grid-cols-6">
                 {states.map((state) => {
                   const stateCount = Number(state?.count) || 0;
                   const percentage =
                     totalOrders > 0 ? (stateCount / totalOrders) * 100 : 0;
-                  const formattedPercentage = `${percentage.toFixed(1)}% del total`;
                   const variantKey =
                     state?.variant ?? normalizeStateName(state?.name);
                   const theme = getStateStyles(variantKey);
@@ -268,9 +267,7 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                   const isClickable = typeof onSelectState === "function";
 
                   const handleClick = () => {
-                    if (!isClickable) {
-                      return;
-                    }
+                    if (!isClickable) return;
                     onSelectState(orderStateId || null, {
                       stateId: state.id,
                       stateName: stateLabel,
@@ -280,23 +277,13 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                     });
                   };
 
-                  const handleKeyDown = (event) => {
-                    if (!isClickable) {
-                      return;
-                    }
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleClick();
-                    }
-                  };
-
                   return (
                     <li key={state.id}>
                       <div
                         role={isClickable ? "button" : undefined}
                         tabIndex={isClickable ? 0 : undefined}
                         onClick={handleClick}
-                        onKeyDown={handleKeyDown}
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleClick()}
                         data-order-state={orderStateId}
                         className={`group relative overflow-hidden rounded-2xl border ${cardBorder} bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${isClickable
                             ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-catalina-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
@@ -315,12 +302,12 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                                 {stateLabel}
                               </span>
                             </div>
-                            {IconComponent ? (
+                            {IconComponent && (
                               <IconComponent
                                 aria-hidden
                                 className="h-6 w-6 text-slate-300 transition-colors duration-200 group-hover:text-slate-400"
                               />
-                            ) : null}
+                            )}
                           </div>
                           <div className="space-y-1">
                             <div className="flex items-baseline gap-2">
