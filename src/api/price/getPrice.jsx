@@ -2,8 +2,19 @@ import { useEffect, useState } from "react";
 
 const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getPrice";
 
-export const getPrice = async ({ token, signal } = {}) => {
-    const response = await fetch(API_URL, {
+export const getPrice = async ({ 
+    token, 
+    state, 
+    page = 1, 
+    pageSize = 100, 
+    signal 
+} = {}) => {
+    const params = new URLSearchParams();
+    if (state) params.append("state", state);
+    params.append("page", String(page));
+    params.append("pageSize", String(pageSize));
+
+    const response = await fetch(`${API_URL}?${params}`, {
         headers: {
             "Content-Type": "application/json",
             ...(token && { Authorization: `Bearer ${token}` }),
@@ -19,28 +30,48 @@ export const getPrice = async ({ token, signal } = {}) => {
     return response.json();
 };
 
-export const usePrice = (token, refreshTrigger, state) => {
-    const [data, setData] = useState({ products: null, total: 0, loading: true, error: null });
+export const usePrice = ({
+    token,
+    state,
+    page = 1,
+    pageSize = 100,
+    refreshTrigger = 0,
+} = {}) => {
+    const [data, setData] = useState({
+        products: null,
+        total: 0,
+        loading: true,
+        error: null,
+    });
 
     useEffect(() => {
+        if (!token) return;
+
         const controller = new AbortController();
         let mounted = true;
 
         const fetchData = async () => {
             setData(prev => ({ ...prev, loading: true, error: null }));
             try {
-                const result = await getPrice({ token, signal: controller.signal });
+                const result = await getPrice({ 
+                    token,
+                    state,
+                    page,
+                    pageSize,
+                    signal: controller.signal,
+                });
                 if (mounted) {
+                    const products = Array.isArray(result) ? result : (result.products || []);
                     setData({ 
-                        products: result.products, 
-                        total: result.total, 
+                        products, 
+                        total: typeof result.total === 'number' ? result.total : products.length,
                         loading: false, 
                         error: null 
                     });
                 }
             } catch (err) {
                 if (err.name !== "AbortError" && mounted) {
-                    setData({ products: null, total: 0, loading: false, error: err });
+                    setData(prev => ({ ...prev, products: null, total: 0, loading: false, error: err }));
                 }
             }
         };
@@ -50,8 +81,7 @@ export const usePrice = (token, refreshTrigger, state) => {
             mounted = false;
             controller.abort();
         };
-    }, [token, refreshTrigger]);
+    }, [token, refreshTrigger, state, page, pageSize]);
 
     return data;
 };
-

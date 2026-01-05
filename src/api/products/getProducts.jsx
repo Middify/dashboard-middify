@@ -2,11 +2,21 @@ import { useEffect, useState } from "react";
 
 const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/products";
 
-export const getProducts = async ({ token, tenantId, tenantName, state, signal } = {}) => {
+export const getProducts = async ({ 
+    token, 
+    tenantId, 
+    tenantName, 
+    state, 
+    page = 1, 
+    pageSize = 100, 
+    signal 
+} = {}) => {
     const params = new URLSearchParams();
     if (tenantId) params.append("tenantId", tenantId);
     if (tenantName) params.append("tenantName", tenantName);
     if (state) params.append("state", state);
+    params.append("page", String(page));
+    params.append("pageSize", String(pageSize));
 
     const response = await fetch(`${API_URL}?${params}`, {
         headers: {
@@ -24,23 +34,52 @@ export const getProducts = async ({ token, tenantId, tenantName, state, signal }
     return response.json();
 };
 
-export const useProducts = (token, tenantId, tenantName, refreshTrigger, state) => {
-    const [data, setData] = useState({ products: null, loading: true, error: null });
+export const useProducts = ({
+    token,
+    tenantId,
+    tenantName,
+    state,
+    page = 1,
+    pageSize = 100,
+    refreshTrigger = 0,
+} = {}) => {
+    const [data, setData] = useState({
+        products: null,
+        total: 0,
+        loading: true,
+        error: null,
+    });
 
     useEffect(() => {
+        if (!token) return;
+
         const controller = new AbortController();
         let mounted = true;
 
         const fetchData = async () => {
             setData(prev => ({ ...prev, loading: true, error: null }));
             try {
-                const result = await getProducts({ token, tenantId, tenantName, state, signal: controller.signal });
+                const result = await getProducts({ 
+                    token,
+                    tenantId,
+                    tenantName,
+                    state,
+                    page,
+                    pageSize,
+                    signal: controller.signal,
+                });
                 if (mounted) {
-                    setData({ products: result, loading: false, error: null });
+                    const products = Array.isArray(result) ? result : (result.products || []);
+                    setData({ 
+                        products, 
+                        total: typeof result.total === 'number' ? result.total : products.length,
+                        loading: false, 
+                        error: null 
+                    });
                 }
             } catch (err) {
                 if (err.name !== "AbortError" && mounted) {
-                    setData({ products: null, loading: false, error: err });
+                    setData(prev => ({ ...prev, products: null, total: 0, loading: false, error: err }));
                 }
             }
         };
@@ -50,7 +89,7 @@ export const useProducts = (token, tenantId, tenantName, refreshTrigger, state) 
             mounted = false;
             controller.abort();
         };
-    }, [token, tenantId, tenantName, refreshTrigger, state]);
+    }, [token, tenantId, tenantName, refreshTrigger, state, page, pageSize]);
 
     return data;
 };

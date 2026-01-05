@@ -14,58 +14,34 @@ const Products = () => {
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
+    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
 
     const handleViewDetails = (id) => {
         navigate(`/products/${id}`);
     };
 
-    const { products, loading, error } = useProducts(
+    // Paginación en servidor
+    const { products, loading, error, total } = useProducts({
         token,
-        selectedTenantId,
-        selectedTenantName,
+        tenantId: selectedTenantId,
+        tenantName: selectedTenantName,
+        state: resolvedProductState,
+        page: paginationModel.page + 1, // API es 1-based
+        pageSize: paginationModel.pageSize,
         refreshTrigger,
-        resolvedProductState
-    );
+    });
 
-    // Filtrado directo sin normalización extra
-    const filteredProducts = useMemo(() => {
-        const productList = products?.products || [];
-        if (!productList.length) return [];
+    // Al cambiar filtros importantes, resetear a página 1
+    useEffect(() => {
+        setPaginationModel(prev => ({ ...prev, page: 0 }));
+        setSelectedRowIds(new Set());
+    }, [selectedTenantId, resolvedProductState, searchTerm]);
 
-        let result = productList;
+    const filteredRows = useMemo(() => {
+        const list = products || [];
+        return list.map((p, i) => ({ id: p._id || i, ...p }));
+    }, [products]);
 
-        if (resolvedProductState) {
-            const targetState = resolvedProductState === "descartada" ? "discard" : resolvedProductState;
-            result = result.filter(p => p.state === targetState);
-        } else {
-            result = result.filter(p => p.state !== "discard");
-        }
-
-        if (searchTerm) {
-            const low = searchTerm.toLowerCase();
-            result = result.filter(p => {
-                const name = String(p.name || "").toLowerCase();
-                const sku = String(p.sku || "").toLowerCase();
-                const tenant = String(p.tenantName || "").toLowerCase();
-                const warehouse = String(p.warehouse || "").toLowerCase();
-                
-                return name.includes(low) || 
-                       sku.includes(low) ||
-                       tenant.includes(low) ||
-                       warehouse.includes(low);
-            });
-        }
-
-        return result;
-    }, [products?.products, resolvedProductState, searchTerm]);
-
-    // Mapeo mínimo solo para agregar id (necesario para el DataGrid)
-    const rows = useMemo(() => 
-        filteredProducts.map((p, i) => ({ id: p._id || i, ...p })), 
-        [filteredProducts]
-    );
-
-    // Selección simplificada
     const handleToggleRowSelection = useCallback((rowId) => {
         setSelectedRowIds(prev => {
             const next = new Set(prev);
@@ -74,35 +50,29 @@ const Products = () => {
         });
     }, []);
 
-    // Sincronizar selección cuando cambian las filas
-    useEffect(() => {
-        setSelectedRowIds(prev => {
-            const valid = new Set();
-            rows.forEach(row => {
-                if (prev.has(row.id)) valid.add(row.id);
-            });
-            return valid;
-        });
-    }, [rows]);
-
     const handleToggleAllRows = useCallback(() => {
         setSelectedRowIds(prev => {
-            const allIds = new Set(rows.map(r => r.id));
+            const allIds = new Set(filteredRows.map(r => r.id));
             return allIds.size > 0 && [...allIds].every(id => prev.has(id)) 
                 ? new Set() 
                 : allIds;
         });
-    }, [rows]);
+    }, [filteredRows]);
 
     const getSelectedProductIds = useCallback(() => 
-        rows.filter(r => selectedRowIds.has(r.id)).map(r => r._id || r.id),
-        [rows, selectedRowIds]
+        filteredRows.filter(r => selectedRowIds.has(r.id)).map(r => r._id || r.id),
+        [filteredRows, selectedRowIds]
     );
 
     const refreshData = useCallback(() => {
         setRefreshTrigger(prev => prev + 1);
         setSelectedRowIds(new Set());
     }, []);
+
+    const handlePaginationChange = (model) => {
+        setPaginationModel(model);
+        setSelectedRowIds(new Set());
+    };
 
     const handleExportProducts = async () => {
         if (!token) return;
@@ -122,19 +92,17 @@ const Products = () => {
         }
     };
 
-    if (error && !loading) {
-        return <div className="px-6 py-12 text-center text-sm text-red-500">Error: {error.message}</div>;
-    }
+    if (error && !loading) return <div className="py-12 text-center text-red-500">Error: {error.message}</div>;
 
     return (
         <div className="space-y-4">
             <ProductsTableHeader
                 title="Productos"
                 subtitle={selectedTenantName ? `Productos de ${selectedTenantName}` : "Gestión de productos"}
-                infoChips={filteredProducts.length > 0 ? [{ id: "total", label: "Total", value: filteredProducts.length }] : []}
+                infoChips={total > 0 ? [{ id: "total", label: "Encontrados", value: total.toLocaleString('es-ES') }] : []}
                 onExportData={handleExportProducts}
                 isExportingData={isExporting}
-                exportDisabled={loading || !filteredProducts.length}
+                exportDisabled={loading || !total}
                 selectedCount={selectedRowIds.size}
                 getSelectedProductIds={getSelectedProductIds}
                 token={token}
@@ -147,9 +115,12 @@ const Products = () => {
             />
 
             <ProductsTableGrid
-                rows={rows}
+                rows={filteredRows}
                 loading={loading}
-                error={error}
+                rowCount={total || 0}
+                page={paginationModel.page}
+                pageSize={paginationModel.pageSize}
+                onPaginationModelChange={handlePaginationChange}
                 selectedRowIds={selectedRowIds}
                 onToggleRowSelection={handleToggleRowSelection}
                 onToggleAllRows={handleToggleAllRows}
