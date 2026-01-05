@@ -18,6 +18,7 @@ import OrdersTable from "./OrdersTable";
 import DetailsOrders from "./DetailsOrders";
 import ProductDetails from "../components/products/ProductDetails";
 import RecycleBin from "./RecycleBin";
+import Price from "./Price";
 
 const DashboardWrapper = () => {
   const {
@@ -161,10 +162,15 @@ const ProductDetailsRoute = () => {
   const { token } = useOutletContext();
   const { productId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleCloseProductDetails = useCallback(() => {
-      navigate("/products", { replace: true });
-  }, [navigate]);
+      if (location.state?.from === 'price') {
+          navigate("/price", { replace: true });
+      } else {
+          navigate("/products", { replace: true });
+      }
+  }, [navigate, location.state]);
 
   return (
     <ProductDetails
@@ -185,6 +191,7 @@ const Index = () => {
         <Route path="/products" element={<Products />} />
         <Route path="/products/:productId" element={<ProductDetailsRoute />} />
         <Route path="/orders" element={<OrdersTableWrapper />} />
+        <Route path="/price" element={<Price />} />
         <Route path="/recycle" element={<RecycleBinWrapper />} />
         <Route path="/orders/detalle" element={<Navigate to="/orders" replace />} />
         <Route path="/orders/:orderId" element={<DetailsRoute />} />

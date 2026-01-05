@@ -43,6 +43,9 @@ const deriveView = (pathname, hasDetail) => {
     if (pathname.startsWith("/products")) {
         return "products";
     }
+    if (pathname.startsWith("/price")) {
+        return "price";
+    }
     return "dashboard";
 };
 
@@ -57,6 +60,7 @@ const MainLayout = () => {
     const detailOrderId = detailMatch?.params?.orderId ?? null;
     const resolvedOrderState = ensureOrderState(searchParams.get("state"));
     const resolvedProductState = searchParams.get("productState");
+    const resolvedPriceState = searchParams.get("priceState");
 
     const [selectedTenantId, setSelectedTenantId] = useState(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -82,8 +86,11 @@ const MainLayout = () => {
         error: userError,
     } = useUsers(token);
 
-    const sidebarActiveView =
-        currentView === "detailsOrders" ? "orders" : currentView;
+    const sidebarActiveView = useMemo(() => {
+        if (currentView === "detailsOrders") return "orders";
+        if (currentView === "products" && location.state?.from === "price") return "price";
+        return currentView;
+    }, [currentView, location.state]);
 
     useEffect(() => {
         if (currentView === "orders") {
@@ -121,6 +128,9 @@ const MainLayout = () => {
                 case "products":
                     navigate("/products");
                     break;
+                case "price":
+                    navigate("/price");
+                    break;
                 default:
                     navigate("/");
                     break;
@@ -146,6 +156,17 @@ const MainLayout = () => {
                 navigate(`/products?productState=${encodeURIComponent(stateId)}`);
             } else {
                 navigate("/products");
+            }
+        },
+        [navigate]
+    );
+
+    const handleSelectPriceState = useCallback(
+        (stateId) => {
+            if (stateId) {
+                navigate(`/price?priceState=${encodeURIComponent(stateId)}`);
+            } else {
+                navigate("/price");
             }
         },
         [navigate]
@@ -219,6 +240,8 @@ const MainLayout = () => {
                 onChangeOrderState={handleSelectOrderState}
                 activeProductState={resolvedProductState}
                 onChangeProductState={handleSelectProductState}
+                activePriceState={resolvedPriceState}
+                onChangePriceState={handleSelectPriceState}
                 isCollapsed={isSidebarCollapsed}
                 onToggleCollapse={setIsSidebarCollapsed}
                 isMobileOpen={isSidebarOpen}
@@ -231,7 +254,7 @@ const MainLayout = () => {
                     isSidebarCollapsed={isSidebarCollapsed}
                     onToggleSidebarCollapse={handleToggleSidebarCollapse}
                     onToggleMobileSidebar={handleOpenSidebar}
-                    activeView={currentView}
+                    activeView={sidebarActiveView}
                     activeOrderState={resolvedOrderState}
                 />
                 <div className="flex-1 px-4 pb-10 sm:px-6 lg:px-8">
@@ -248,9 +271,11 @@ const MainLayout = () => {
                                 selectedTenantName,
                                 resolvedOrderState,
                                 resolvedProductState,
+                                resolvedPriceState,
                                 lastOrderState,
                                 handleSelectOrderState,
                                 handleSelectProductState,
+                                handleSelectPriceState,
                                 isAggregated: selectedTenantId === null,
                                 allTenants: tenants,
                                 allMarketplaceTenants: marketplaceTenants,

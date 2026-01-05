@@ -10,6 +10,7 @@ const RecycleBinHeader = ({
     onTabChange,
     ordersCount,
     productsCount,
+    priceCount,
 
     ordersSelectedCount = 0,
     ordersTotalCount = 0,
@@ -26,11 +27,23 @@ const RecycleBinHeader = ({
 
     productsSelectedCount = 0,
     productsTotalCount = 0,
-    productsOnRestore,
-    productsIsRestoring = false,
+    productsOnChangeState,
+    productsIsProcessing = false,
+
+    priceSelectedCount = 0,
+    priceTotalCount = 0,
+    priceOnChangeState,
+    priceIsProcessing = false,
 }) => {
     const hasOrdersSelection = ordersSelectedCount > 0;
     const hasProductsSelection = productsSelectedCount > 0;
+    const hasPriceSelection = priceSelectedCount > 0;
+
+    const PRODUCT_STATE_OPTIONS = [
+        { value: "created", label: "Creada" },
+        { value: "failed", label: "Error" },
+        { value: "success", label: "Procesada" },
+    ];
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -83,6 +96,19 @@ const RecycleBinHeader = ({
                         }
                         value="products"
                     />
+                    <Tab
+                        label={
+                            <span className="flex items-center gap-2">
+                                Precio
+                                {priceCount > 0 && (
+                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                                        {priceCount}
+                                    </span>
+                                )}
+                            </span>
+                        }
+                        value="price"
+                    />
                 </Tabs>
             </Box>
 
@@ -112,6 +138,20 @@ const RecycleBinHeader = ({
                                     </span>
                                     <span className="text-xs font-semibold text-indigo-700">
                                         {productsSelectedCount}
+                                    </span>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {activeTab === "price" && (
+                        <>
+                            {hasPriceSelection && (
+                                <div className="flex items-center gap-1.5 rounded-lg bg-indigo-100 px-2.5 py-1">
+                                    <span className="text-[10px] uppercase tracking-wider text-indigo-400">
+                                        Seleccionados
+                                    </span>
+                                    <span className="text-xs font-semibold text-indigo-700">
+                                        {priceSelectedCount}
                                     </span>
                                 </div>
                             )}
@@ -202,24 +242,72 @@ const RecycleBinHeader = ({
 
                     {activeTab === "products" && (
                         <>
-                            {hasProductsSelection && productsOnRestore && (
-                                <button
-                                    type="button"
-                                    onClick={productsOnRestore}
-                                    disabled={productsIsRestoring}
-                                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-1.5 text-xs font-semibold text-green-600 shadow-sm transition hover:border-green-500 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                                >
-                                    {productsIsRestoring ? (
-                                        <>
-                                            <CircularProgress size={14} />
-                                            Restaurando...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Restaurar ({productsSelectedCount})
-                                        </>
-                                    )}
-                                </button>
+                            {hasProductsSelection && (
+                                <>
+                                    <label className="block text-sm font-medium text-slate-700 sm:hidden">
+                                        Cambiar estado
+                                    </label>
+                                    <div className="relative w-full sm:w-auto sm:min-w-[200px]">
+                                        <select
+                                            className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-10 text-xs text-slate-700 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                            onChange={(event) => {
+                                                if (productsOnChangeState) {
+                                                    productsOnChangeState(event.target.value);
+                                                }
+                                            }}
+                                            value=""
+                                            disabled={productsIsProcessing}
+                                        >
+                                            <option value="">Cambiar estado a…</option>
+                                            {PRODUCT_STATE_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {productsIsProcessing && (
+                                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-indigo-500">
+                                                <CircularProgress size={14} />
+                                            </span>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === "price" && (
+                        <>
+                            {hasPriceSelection && (
+                                <>
+                                    <label className="block text-sm font-medium text-slate-700 sm:hidden">
+                                        Cambiar estado
+                                    </label>
+                                    <div className="relative w-full sm:w-auto sm:min-w-[200px]">
+                                        <select
+                                            className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-10 text-xs text-slate-700 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                            onChange={(event) => {
+                                                if (priceOnChangeState) {
+                                                    priceOnChangeState(event.target.value);
+                                                }
+                                            }}
+                                            value=""
+                                            disabled={priceIsProcessing}
+                                        >
+                                            <option value="">Cambiar estado a…</option>
+                                            {PRODUCT_STATE_OPTIONS.map((option) => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {priceIsProcessing && (
+                                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-indigo-500">
+                                                <CircularProgress size={14} />
+                                            </span>
+                                        )}
+                                    </div>
+                                </>
                             )}
                         </>
                     )}
@@ -230,10 +318,11 @@ const RecycleBinHeader = ({
 };
 
 RecycleBinHeader.propTypes = {
-    activeTab: PropTypes.oneOf(["orders", "products"]).isRequired,
+    activeTab: PropTypes.oneOf(["orders", "products", "price"]).isRequired,
     onTabChange: PropTypes.func.isRequired,
     ordersCount: PropTypes.number,
     productsCount: PropTypes.number,
+    priceCount: PropTypes.number,
     // Props para órdenes
     ordersSelectedCount: PropTypes.number,
     ordersTotalCount: PropTypes.number,
@@ -250,13 +339,19 @@ RecycleBinHeader.propTypes = {
     // Props para productos
     productsSelectedCount: PropTypes.number,
     productsTotalCount: PropTypes.number,
-    productsOnRestore: PropTypes.func,
-    productsIsRestoring: PropTypes.bool,
+    productsOnChangeState: PropTypes.func,
+    productsIsProcessing: PropTypes.bool,
+    // Props para precio
+    priceSelectedCount: PropTypes.number,
+    priceTotalCount: PropTypes.number,
+    priceOnChangeState: PropTypes.func,
+    priceIsProcessing: PropTypes.bool,
 };
 
 RecycleBinHeader.defaultProps = {
     ordersCount: 0,
     productsCount: 0,
+    priceCount: 0,
     ordersSelectedCount: 0,
     ordersTotalCount: 0,
     ordersOnChangeState: null,
@@ -271,8 +366,12 @@ RecycleBinHeader.defaultProps = {
     ordersExportSelectedDisabled: false,
     productsSelectedCount: 0,
     productsTotalCount: 0,
-    productsOnRestore: null,
-    productsIsRestoring: false,
+    productsOnChangeState: null,
+    productsIsProcessing: false,
+    priceSelectedCount: 0,
+    priceTotalCount: 0,
+    priceOnChangeState: null,
+    priceIsProcessing: false,
 };
 
 export default RecycleBinHeader;

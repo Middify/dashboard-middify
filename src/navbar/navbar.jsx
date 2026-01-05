@@ -110,6 +110,12 @@ const Navbar = ({
           : "Órdenes";
       case "detailsOrders":
         return "Órdenes · Detalle";
+      case "products":
+        return "Productos";
+      case "price":
+        return "Precios";
+      case "recycle":
+        return "Papelera de Reciclaje";
       case "dashboard":
       default:
         return "Dashboard";

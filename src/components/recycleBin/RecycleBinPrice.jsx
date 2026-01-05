@@ -2,23 +2,18 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
 import { DataGrid } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import { useProducts } from "../../api/products/getProducts";
+import { usePrice } from "../../api/price/getPrice";
 import { patchExportProducts } from "../../api/products/patchStateProduct";
-import ProductDetailsModal from "../products/ProductDetails";
 import { alertsProducts } from "../../utils/alertsProducts";
-
-const numberFormatter = new Intl.NumberFormat("es-CL");
 
 const NoRowsOverlay = () => (
     <div className="flex h-full items-center justify-center text-sm text-slate-500">
-        No hay productos eliminados.
+        No hay precios eliminados en la papelera.
     </div>
 );
 
-const RecycleBinProductsTab = ({
+const RecycleBinPrice = ({
     token,
-    selectedTenantId,
     user,
     onHeaderPropsChange,
 }) => {
@@ -26,39 +21,23 @@ const RecycleBinProductsTab = ({
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const { products, loading, error } = useProducts(
+    const { products, loading, error } = usePrice(
         token,
-        selectedTenantId,
-        null,
-        refreshTrigger,
-        "discard"
+        refreshTrigger
     );
 
-    // Estado local para el modal de detalles
-    const [detailsOpen, setDetailsOpen] = useState(false);
-    const [selectedProductId, setSelectedProductId] = useState(null);
-
-    const handleViewDetails = (id) => {
-        setSelectedProductId(id);
-        setDetailsOpen(true);
-    };
-
-    const handleCloseDetails = () => {
-        setDetailsOpen(false);
-        setSelectedProductId(null);
-    };
-
     const rows = useMemo(() => {
-        if (!Array.isArray(products?.products)) {
+        if (!Array.isArray(products)) {
             return [];
         }
-        return products.products
-            .filter((product) => product.state === "discard")
+        // Filtrar por estado 'discard' o 'discarded'
+        return products
+            .filter((product) => product.state === "discard" || product.state === "discarded")
             .map((product, index) => ({
                 id: product._id || index,
                 ...product,
             }));
-    }, [products?.products]);
+    }, [products]);
 
     const handleToggleRowSelection = useCallback((rowId) => {
         setSelectedRowIds((prevSelected) => {
@@ -113,7 +92,6 @@ const RecycleBinProductsTab = ({
             renderHeader: () => (
                 <input
                     type="checkbox"
-                    aria-label="Seleccionar todos los productos eliminados"
                     className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     checked={allSelected}
                     onClick={(event) => event.stopPropagation()}
@@ -130,7 +108,6 @@ const RecycleBinProductsTab = ({
                 return (
                     <input
                         type="checkbox"
-                        aria-label={`Seleccionar producto ${row._id ?? row.id}`}
                         className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                         checked={isChecked}
                         onClick={(event) => event.stopPropagation()}
@@ -146,10 +123,22 @@ const RecycleBinProductsTab = ({
         const dataColumns = [
             { field: "sku", headerName: "SKU", width: 150 },
             { field: "name", headerName: "Nombre", width: 250 },
-            { field: "tenantName", headerName: "Tenant", width: 150 },
-            { field: "warehouse", headerName: "Bodega", width: 150 },
-            { field: "quantity", headerName: "Cantidad", width: 100, type: "number" },
-            { field: "price", headerName: "Precio", width: 100, type: "number" },
+            { field: "tenantName", headerName: "Tienda", width: 150 },
+            { 
+                field: "price", 
+                headerName: "Precio", 
+                width: 200,
+                renderCell: ({ value }) => {
+                    if (!value) return '-';
+                    if (typeof value === 'object') {
+                        const vta = value.precioVta ? `$${parseFloat(value.precioVta).toLocaleString('es-ES')}` : '';
+                        const bol = value.PrecioBol ? `$${parseFloat(value.PrecioBol).toLocaleString('es-ES')}` : '';
+                        if (vta && bol) return `${vta} / ${bol}`;
+                        return vta || bol || '-';
+                    }
+                    return typeof value === 'number' ? `$${value.toLocaleString('es-ES')}` : String(value);
+                }
+            },
             {
                 field: "updatedDate",
                 headerName: "Fecha eliminación",
@@ -166,25 +155,7 @@ const RecycleBinProductsTab = ({
                         return <span className="text-sm text-slate-500">—</span>;
                     }
                 },
-            },
-            {
-                field: "details",
-                headerName: "Detalle",
-                width: 80,
-                sortable: false,
-                filterable: false,
-                renderCell: (params) => (
-                    <div className="flex h-full w-full items-center justify-center">
-                        <VisibilityIcon
-                            className="cursor-pointer text-slate-400 hover:text-indigo-600"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewDetails(params.row.id || params.row._id);
-                            }}
-                        />
-                    </div>
-                ),
-            },
+            }
         ];
 
         return [selectColumn, ...dataColumns];
@@ -213,7 +184,7 @@ const RecycleBinProductsTab = ({
             setSelectedRowIds(new Set());
             setRefreshTrigger(prev => prev + 1);
         } catch (err) {
-            console.error("Error al actualizar productos:", err);
+            console.error("Error al actualizar precios:", err);
             alertsProducts.updateError(err.message);
         } finally {
             setIsUpdating(false);
@@ -223,10 +194,10 @@ const RecycleBinProductsTab = ({
     useEffect(() => {
         if (typeof onHeaderPropsChange === "function") {
             onHeaderPropsChange({
-                productsSelectedCount: selectedCount,
-                productsTotalCount: rows.length,
-                productsOnChangeState: selectedCount > 0 ? handleUpdateState : null,
-                productsIsProcessing: isUpdating,
+                priceSelectedCount: selectedCount,
+                priceTotalCount: rows.length,
+                priceOnChangeState: selectedCount > 0 ? handleUpdateState : null,
+                priceIsProcessing: isUpdating,
             });
         }
     }, [selectedCount, rows.length, handleUpdateState, isUpdating, onHeaderPropsChange]);
@@ -234,7 +205,7 @@ const RecycleBinProductsTab = ({
     if (error && !loading) {
         return (
             <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-red-500">
-                Error al cargar los productos eliminados: {error.message}
+                Error al cargar precios eliminados: {error.message}
             </div>
         );
     }
@@ -244,87 +215,53 @@ const RecycleBinProductsTab = ({
             <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="p-4">
                     <div className="overflow-x-auto">
-                        <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem]">
-                            <Paper
-                                elevation={0}
-                                className="w-full rounded-2xl shadow-none overflow-hidden"
-                            >
-                                <DataGrid
-                                    rows={rows}
-                                    columns={columns}
-                                    loading={loading}
-                                    autoHeight
-                                    paginationMode="client"
-                                    initialState={{
-                                        pagination: {
-                                            paginationModel: { pageSize: 25, page: 0 },
-                                        },
-                                    }}
-                                    pageSizeOptions={[25, 50, 100]}
-                                    disableRowSelectionOnClick
-                                    disableColumnMenu
-                                    disableColumnSelector
-                                    disableDensitySelector
-                                    localeText={{
-                                        footerPaginationRowsPerPage: "Filas por página:",
-                                    }}
-                                    slots={{
-                                        noRowsOverlay: NoRowsOverlay,
-                                    }}
-                                    sx={{
-                                        border: 0,
-                                        "--DataGrid-containerBackground": "transparent",
-                                        "& .MuiDataGrid-columnHeaders": {
-                                            backgroundColor: "#f8fafc",
-                                        },
-                                        "& .MuiDataGrid-columnHeaderTitle": {
-                                            fontWeight: 600,
-                                            fontSize: "0.75rem",
-                                            letterSpacing: "0.08em",
-                                            textTransform: "uppercase",
-                                            color: "#475569",
-                                        },
-                                        "& .MuiDataGrid-row:hover": {
-                                            backgroundColor: "#fef2f2",
-                                        },
-                                        "& .MuiDataGrid-cell": {
-                                            borderBottomColor: "#e2e8f0",
-                                        },
-                                        "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within":
-                                            {
-                                                outline: "none",
-                                            },
-                                    }}
-                                />
-                            </Paper>
-                        </div>
+                        <Paper elevation={0} className="w-full rounded-2xl shadow-none overflow-hidden">
+                            <DataGrid
+                                rows={rows}
+                                columns={columns}
+                                loading={loading}
+                                autoHeight
+                                paginationMode="client"
+                                initialState={{
+                                    pagination: {
+                                        paginationModel: { pageSize: 10, page: 0 },
+                                    },
+                                }}
+                                pageSizeOptions={[10, 25, 50]}
+                                disableRowSelectionOnClick
+                                disableColumnMenu
+                                slots={{ noRowsOverlay: NoRowsOverlay }}
+                                sx={{
+                                    border: 0,
+                                    "& .MuiDataGrid-columnHeaders": { backgroundColor: "#f8fafc" },
+                                    "& .MuiDataGrid-columnHeaderTitle": {
+                                        fontWeight: 600,
+                                        fontSize: "0.75rem",
+                                        textTransform: "uppercase",
+                                        color: "#475569",
+                                    },
+                                    "& .MuiDataGrid-cell:focus": { outline: "none" },
+                                }}
+                            />
+                        </Paper>
                     </div>
                 </div>
             </section>
-
-            <ProductDetailsModal
-                open={detailsOpen}
-                onClose={handleCloseDetails}
-                productId={selectedProductId}
-                token={token}
-            />
         </div>
     );
 };
 
-RecycleBinProductsTab.propTypes = {
+RecycleBinPrice.propTypes = {
     token: PropTypes.string,
-    selectedTenantId: PropTypes.string,
     user: PropTypes.object,
     onHeaderPropsChange: PropTypes.func,
 };
 
-RecycleBinProductsTab.defaultProps = {
+RecycleBinPrice.defaultProps = {
     token: null,
-    selectedTenantId: null,
     user: null,
     onHeaderPropsChange: null,
 };
 
-export default RecycleBinProductsTab;
+export default RecycleBinPrice;
 

@@ -13,6 +13,7 @@ const Products = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const handleViewDetails = (id) => {
         navigate(`/products/${id}`);
@@ -31,12 +32,32 @@ const Products = () => {
         const productList = products?.products || [];
         if (!productList.length) return [];
 
+        let result = productList;
+
         if (resolvedProductState) {
             const targetState = resolvedProductState === "descartada" ? "discard" : resolvedProductState;
-            return productList.filter(p => p.state === targetState);
+            result = result.filter(p => p.state === targetState);
+        } else {
+            result = result.filter(p => p.state !== "discard");
         }
-        return productList.filter(p => p.state !== "discard");
-    }, [products?.products, resolvedProductState]);
+
+        if (searchTerm) {
+            const low = searchTerm.toLowerCase();
+            result = result.filter(p => {
+                const name = String(p.name || "").toLowerCase();
+                const sku = String(p.sku || "").toLowerCase();
+                const tenant = String(p.tenantName || "").toLowerCase();
+                const warehouse = String(p.warehouse || "").toLowerCase();
+                
+                return name.includes(low) || 
+                       sku.includes(low) ||
+                       tenant.includes(low) ||
+                       warehouse.includes(low);
+            });
+        }
+
+        return result;
+    }, [products?.products, resolvedProductState, searchTerm]);
 
     // Mapeo mínimo solo para agregar id (necesario para el DataGrid)
     const rows = useMemo(() => 
@@ -121,6 +142,8 @@ const Products = () => {
                 tenantId={selectedTenantId}
                 tenantName={selectedTenantName}
                 onDeleteSuccess={refreshData}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
             />
 
             <ProductsTableGrid

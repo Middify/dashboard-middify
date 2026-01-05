@@ -42,12 +42,6 @@ const MobileProductCard = ({ row, isSelected, onToggleSelection, onViewDetails }
 
             <div className="grid grid-cols-2 gap-y-2 gap-x-4 border-t border-slate-100 pt-3 text-xs">
                 <div>
-                    <span className="block text-slate-400">Precio</span>
-                    <span className="font-medium text-slate-700">
-                        ${typeof row.price === 'number' ? row.price.toLocaleString('es-ES') : row.price}
-                    </span>
-                </div>
-                <div>
                     <span className="block text-slate-400">Cantidad</span>
                     <span className="font-medium text-slate-700">{row.quantity}</span>
                 </div>
@@ -201,15 +195,24 @@ const ProductsTableGrid = ({
                 headerAlign: "center"
             },
             {
-                field: "price",
-                headerName: "Precio",
-                width: 100,
-                type: "number",
-                renderCell: (params) => (
-                    <span className="font-mono text-slate-600">
-                        ${typeof params.value === 'number' ? params.value.toLocaleString('es-ES') : params.value}
-                    </span>
-                )
+                field: "createdDate",
+                headerName: "Fecha Ingreso",
+                width: 160,
+                renderCell: (params) => {
+                    if (!params.value) return <span className="text-slate-400">-</span>;
+                    const dateStr = typeof params.value === 'object' ? params.value.$date : params.value;
+                    return <span className="text-xs text-slate-600 font-medium">{new Date(dateStr).toLocaleString('es-ES')}</span>;
+                }
+            },
+            {
+                field: "updatedDate",
+                headerName: "Fecha Actualizada",
+                width: 160,
+                renderCell: (params) => {
+                    if (!params.value) return <span className="text-slate-400">-</span>;
+                    const dateStr = typeof params.value === 'object' ? params.value.$date : params.value;
+                    return <span className="text-xs text-slate-600 font-medium">{new Date(dateStr).toLocaleString('es-ES')}</span>;
+                }
             },
             {
                 field: "state",

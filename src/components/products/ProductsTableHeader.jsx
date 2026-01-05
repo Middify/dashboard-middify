@@ -24,6 +24,7 @@ import { patchExportProducts } from "../../api/products/patchStateProduct";
 import ImportProductsModal from "./ImportProductsModal";
 import SyncSkuModal from "./SyncSkuModal";
 import { alertsProducts } from "../../utils/alertsProducts";
+import SearchBar from "../common/SearchBar";
 
 const PRODUCT_STATES = [
     { value: "created", label: "Creada" },
@@ -120,6 +121,8 @@ const ProductsTableHeader = ({
     onDeleteSuccess,
     tenantId,
     tenantName,
+    searchTerm,
+    onSearchChange,
 }) => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -205,27 +208,37 @@ const ProductsTableHeader = ({
     );
 
     return (
-        <>
+        <div className="flex flex-col gap-4">
             {/* Encabezado Móvil Sticky */}
             <div className="sticky top-20 mt-2 z-40 md:hidden">
                 <header className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] rounded-xl border-b border-slate-200 bg-white shadow-sm">
                     {/* Barra superior compacta */}
-                    <div className="flex items-center justify-between px-4 py-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <h1 className="text-sm font-semibold text-slate-800 truncate">{title}</h1>
-                            {selectedCount > 0 && (
-                                <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                                    {selectedCount}
-                                </span>
-                            )}
+                    <div className="flex flex-col gap-2 px-4 py-2">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <h1 className="text-sm font-semibold text-slate-800 truncate">{title}</h1>
+                                {selectedCount > 0 && (
+                                    <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                                        {selectedCount}
+                                    </span>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                                aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                            >
+                                {isMobileMenuOpen ? <CloseIcon fontSize="small" /> : <MenuIcon fontSize="small" />}
+                            </button>
                         </div>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                            aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
-                        >
-                            {isMobileMenuOpen ? <CloseIcon fontSize="small" /> : <MenuIcon fontSize="small" />}
-                        </button>
+                        
+                        {/* Buscador Móvil */}
+                        <SearchBar 
+                            value={searchTerm}
+                            onChange={onSearchChange}
+                            placeholder="Buscar SKU, nombre..."
+                            className="bg-slate-50 border-slate-100"
+                        />
                     </div>
 
                     {/* Menú desplegable de acciones */}
@@ -331,56 +344,65 @@ const ProductsTableHeader = ({
                             </div>
                         )}
                     </div>
-                </div>
 
-                <div className="mt-2 grid w-full grid-cols-2 gap-1.5 sm:flex sm:flex-row sm:items-center sm:justify-end">
-                    {hasSelection && (
-                        <>
-                            <ActionButton
-                                icon={EditIcon}
-                                label="Cambiar Estado"
-                                onClick={() => setShowUpdateModal(true)}
-                                disabled={isLoading}
-                                variant="default"
-                            />
-                            <ActionButton
-                                icon={DeleteOutlineIcon}
-                                label={`Eliminar (${selectedCount})`}
-                                onClick={handleDeleteClick}
-                                disabled={isLoading}
-                                variant="danger"
-                                loading={isDeleting}
-                                loadingLabel="Eliminando..."
-                                aria-label={`Eliminar ${selectedCount} producto(s) seleccionado(s)`}
-                            />
-                        </>
-                    )}
-                    <ActionButton
-                        icon={FileUploadOutlinedIcon}
-                        label="Importar"
-                        onClick={() => setShowImportModal(true)}
-                        variant="success"
-                        aria-label="Importar productos desde archivo"
-                    />
-                    <ActionButton
-                        icon={SyncIcon}
-                        label="Sincronizar SKU"
-                        onClick={() => setShowSyncModal(true)}
-                        variant="primary"
-                        aria-label="Sincronizar SKU"
-                    />
-                    <ActionButton
-                        icon={FileDownloadOutlinedIcon}
-                        label="Exportar"
-                        onClick={onExportData}
-                        disabled={!canTriggerExport || isExportingData}
-                        variant="default"
-                        loading={isExportingData}
-                        loadingLabel="Exportando..."
-                        aria-label="Exportar productos a Excel"
-                    />
+                    <div className="mt-2 grid w-full grid-cols-2 gap-1.5 sm:flex sm:flex-row sm:items-center sm:justify-end">
+                        {hasSelection && (
+                            <>
+                                <ActionButton
+                                    icon={EditIcon}
+                                    label="Cambiar Estado"
+                                    onClick={() => setShowUpdateModal(true)}
+                                    disabled={isLoading}
+                                    variant="default"
+                                />
+                                <ActionButton
+                                    icon={DeleteOutlineIcon}
+                                    label={`Eliminar (${selectedCount})`}
+                                    onClick={handleDeleteClick}
+                                    disabled={isLoading}
+                                    variant="danger"
+                                    loading={isDeleting}
+                                    loadingLabel="Eliminando..."
+                                    aria-label={`Eliminar ${selectedCount} producto(s) seleccionado(s)`}
+                                />
+                            </>
+                        )}
+                        <ActionButton
+                            icon={FileUploadOutlinedIcon}
+                            label="Importar"
+                            onClick={() => setShowImportModal(true)}
+                            variant="success"
+                            aria-label="Importar productos desde archivo"
+                        />
+                        <ActionButton
+                            icon={SyncIcon}
+                            label="Sincronizar SKU"
+                            onClick={() => setShowSyncModal(true)}
+                            variant="primary"
+                            aria-label="Sincronizar SKU"
+                        />
+                        <ActionButton
+                            icon={FileDownloadOutlinedIcon}
+                            label="Exportar"
+                            onClick={onExportData}
+                            disabled={!canTriggerExport || isExportingData}
+                            variant="default"
+                            loading={isExportingData}
+                            loadingLabel="Exportando..."
+                            aria-label="Exportar productos a Excel"
+                        />
+                    </div>
                 </div>
             </header>
+
+            {/* Buscador Global */}
+            <div className="hidden md:block mx-auto w-full max-w-full lg:max-w-[94rem]">
+                <SearchBar 
+                    value={searchTerm}
+                    onChange={onSearchChange}
+                    placeholder="Buscar por SKU, nombre, tienda o bodega..."
+                />
+            </div>
 
             <Dialog open={showUpdateModal} onClose={() => setShowUpdateModal(false)}>
                 <DialogTitle>Cambiar estado de productos</DialogTitle>
@@ -465,7 +487,7 @@ const ProductsTableHeader = ({
                 tenantName={tenantName}
                 onSyncSuccess={handleModalSuccess}
             />
-        </>
+        </div>
     );
 };
 
@@ -490,6 +512,8 @@ ProductsTableHeader.propTypes = {
     onDeleteSuccess: PropTypes.func,
     tenantId: PropTypes.string,
     tenantName: PropTypes.string,
+    searchTerm: PropTypes.string,
+    onSearchChange: PropTypes.func,
 };
 
 export default ProductsTableHeader;

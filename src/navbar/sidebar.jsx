@@ -5,6 +5,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import RestoreFromTrashOutlinedIcon from "@mui/icons-material/RestoreFromTrashOutlined";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import LogoFull from "../assets/logo/logo-removebg-preview.png";
 import LogoCompact from "../assets/logo/middify.png";
 import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
@@ -55,6 +56,8 @@ const Sidebar = ({
   onChangeOrderState,
   activeProductState = null,
   onChangeProductState,
+  activePriceState = null,
+  onChangePriceState,
   isCollapsed = false,
   onToggleCollapse = () => { },
   isMobileOpen = false,
@@ -69,7 +72,11 @@ const Sidebar = ({
     const options = tenants.filter(
       (tenant) => tenant?.tenantId && tenant?.tenantName
     );
-    return { hasValidTenants: options.length > 0, tenantOptions: options };
+    
+    // Eliminar duplicados por tenantId
+    const uniqueOptions = Array.from(new Map(options.map(t => [t.tenantId, t])).values());
+    
+    return { hasValidTenants: uniqueOptions.length > 0, tenantOptions: uniqueOptions };
   }, [tenants]);
 
   const handleViewChange = (view) => {
@@ -99,6 +106,7 @@ const Sidebar = ({
 
   const [ordersExpanded, setOrdersExpanded] = useState(activeView === "orders");
   const [productsExpanded, setProductsExpanded] = useState(activeView === "products");
+  const [priceExpanded, setPriceExpanded] = useState(activeView === "price");
   const effectiveCollapsed = isCollapsed && !isMobileOpen;
   const [tenantOpen, setTenantOpen] = useState(false);
 
@@ -106,6 +114,7 @@ const Sidebar = ({
     if (effectiveCollapsed) {
       setOrdersExpanded(false);
       setProductsExpanded(false);
+      setPriceExpanded(false);
       return;
     }
     if (activeView === "orders") {
@@ -113,6 +122,9 @@ const Sidebar = ({
     }
     if (activeView === "products") {
       setProductsExpanded(true);
+    }
+    if (activeView === "price") {
+      setPriceExpanded(true);
     }
   }, [activeView, effectiveCollapsed]);
 
@@ -130,6 +142,7 @@ const Sidebar = ({
 
   const isOrdersRootActive = activeView === "orders" && !activeOrderState;
   const isProductsRootActive = activeView === "products" && !activeProductState;
+  const isPriceRootActive = activeView === "price" && !activePriceState;
 
   const handleOrderRootClick = () => {
     handleViewChange("orders");
@@ -163,6 +176,22 @@ const Sidebar = ({
     closeMobileIfNeeded();
   };
 
+  const handlePriceRootClick = () => {
+    handleViewChange("price");
+    if (typeof onChangePriceState === "function") {
+      onChangePriceState(null);
+    }
+    closeMobileIfNeeded();
+  };
+
+  const handlePriceStateClick = (stateId) => {
+    handleViewChange("price");
+    if (typeof onChangePriceState === "function") {
+      onChangePriceState(stateId);
+    }
+    closeMobileIfNeeded();
+  };
+
   const handleOrdersToggle = () => {
     if (effectiveCollapsed) {
       onToggleCollapse(false);
@@ -179,6 +208,15 @@ const Sidebar = ({
       return;
     }
     setProductsExpanded((prev) => !prev);
+  };
+
+  const handlePriceToggle = () => {
+    if (effectiveCollapsed) {
+      onToggleCollapse(false);
+      handlePriceRootClick();
+      return;
+    }
+    setPriceExpanded((prev) => !prev);
   };
 
   const renderSidebarBody = (collapsed) => {
@@ -209,6 +247,14 @@ const Sidebar = ({
     const productsButtonClasses = [
       "relative flex w-full items-center rounded-2xl py-2.5 text-[13px] font-medium tracking-wide transition-colors duration-200",
       activeView === "products" && productsExpanded
+        ? "bg-white/10 text-white shadow-sm"
+        : "bg-transparent text-white/80 hover:bg-white/5 hover:text-white",
+      collapsed ? "justify-center px-0" : "justify-between px-3.5",
+    ].join(" ");
+
+    const priceButtonClasses = [
+      "relative flex w-full items-center rounded-2xl py-2.5 text-[13px] font-medium tracking-wide transition-colors duration-200",
+      activeView === "price" && priceExpanded
         ? "bg-white/10 text-white shadow-sm"
         : "bg-transparent text-white/80 hover:bg-white/5 hover:text-white",
       collapsed ? "justify-center px-0" : "justify-between px-3.5",
@@ -389,6 +435,69 @@ const Sidebar = ({
                             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isActive
                                 ? "bg-white/10 font-medium text-white"
                                 : "text-white/70 hover:bg-white/5 hover:text-white"
+                              }`}
+                          >
+                            <StatusDot active={isActive} />
+                            <span>{state.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handlePriceToggle}
+                  className={priceButtonClasses}
+                >
+                  <div
+                    className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                  >
+                    {renderIconWrapper(<AttachMoneyIcon fontSize="small" />, activeView === "price")}
+                    {!collapsed && (
+                      <span className={`transition-colors duration-200 ${activeView === "price" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
+                        }`}>
+                        Precio
+                      </span>
+                    )}
+                  </div>
+                  {!collapsed && (
+                    <ExpandMoreIcon
+                      className={`text-white/70 transition-all duration-300 ${priceExpanded ? "rotate-180" : ""
+                        }`}
+                      fontSize="small"
+                    />
+                  )}
+                </button>
+
+                {!collapsed && (
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${priceExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      }`}
+                  >
+                    <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
+                      <button
+                        type="button"
+                        onClick={handlePriceRootClick}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isPriceRootActive
+                          ? "bg-white/10 font-medium text-white"
+                          : "text-white/70 hover:bg-white/5 hover:text-white"
+                          }`}
+                      >
+                        <StatusDot active={isPriceRootActive} />
+                        <span>Todos</span>
+                      </button>
+                      {PRODUCT_STATE_ITEMS.map((state) => {
+                        const isActive = activePriceState === state.id;
+                        return (
+                          <button
+                            key={state.id}
+                            type="button"
+                            onClick={() => handlePriceStateClick(state.id)}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isActive
+                              ? "bg-white/10 font-medium text-white"
+                              : "text-white/70 hover:bg-white/5 hover:text-white"
                               }`}
                           >
                             <StatusDot active={isActive} />

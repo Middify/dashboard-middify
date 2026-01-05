@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
 import PropTypes from "prop-types";
 import { useProducts } from "../api/products/getProducts";
+import { usePrice } from "../api/price/getPrice";
 import RecycleBinHeader from "../components/recycleBin/RecycleBinHeader";
 import RecycleBinOrdersTab from "../components/recycleBin/RecycleBinOrdersTab";
 import RecycleBinProductsTab from "../components/recycleBin/RecycleBinProductsTab";
+import RecycleBinPrice from "../components/recycleBin/RecycleBinPrice";
 
 const RecycleBin = ({
     token = null,
@@ -14,11 +16,17 @@ const RecycleBin = ({
     const [activeTab, setActiveTab] = useState("orders");
     const [ordersHeaderProps, setOrdersHeaderProps] = useState({});
     const [productsHeaderProps, setProductsHeaderProps] = useState({});
+    const [priceHeaderProps, setPriceHeaderProps] = useState({});
 
     // Obtener conteo de productos eliminados
     const { products } = useProducts(token, selectedTenantId, null, 0, "discard");
     const productsCount =
         products?.products?.filter((p) => p.state === "discard")?.length || 0;
+
+    // Obtener conteo de precios eliminados
+    const { products: priceProducts } = usePrice(token, 0);
+    const priceCount =
+        priceProducts?.filter((p) => p.state === "discard" || p.state === "discarded")?.length || 0;
 
     // El conteo de órdenes lo obtiene el componente hijo
     const ordersCount = ordersHeaderProps.ordersTotalCount || 0;
@@ -35,6 +43,10 @@ const RecycleBin = ({
         setProductsHeaderProps(props);
     }, []);
 
+    const handlePriceHeaderPropsChange = useCallback((props) => {
+        setPriceHeaderProps(props);
+    }, []);
+
     return (
         <div className="flex flex-col gap-4 pt-4">
             <RecycleBinHeader
@@ -42,8 +54,10 @@ const RecycleBin = ({
                 onTabChange={handleTabChange}
                 ordersCount={ordersCount}
                 productsCount={productsCount}
+                priceCount={priceCount}
                 {...ordersHeaderProps}
                 {...productsHeaderProps}
+                {...priceHeaderProps}
             />
 
             {activeTab === "orders" && (
@@ -62,6 +76,14 @@ const RecycleBin = ({
                     selectedTenantId={selectedTenantId}
                     user={user}
                     onHeaderPropsChange={handleProductsHeaderPropsChange}
+                />
+            )}
+
+            {activeTab === "price" && (
+                <RecycleBinPrice
+                    token={token}
+                    user={user}
+                    onHeaderPropsChange={handlePriceHeaderPropsChange}
                 />
             )}
         </div>
