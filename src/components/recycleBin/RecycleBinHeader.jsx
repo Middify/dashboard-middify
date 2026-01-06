@@ -40,9 +40,9 @@ const RecycleBinHeader = ({
     const hasPriceSelection = priceSelectedCount > 0;
 
     const PRODUCT_STATE_OPTIONS = [
-        { value: "created", label: "Creada" },
-        { value: "failed", label: "Error" },
-        { value: "success", label: "Procesada" },
+        { value: "creada", label: "Creada" },
+        { value: "error", label: "Error" },
+        { value: "procesada", label: "Procesada" },
     ];
 
     return (

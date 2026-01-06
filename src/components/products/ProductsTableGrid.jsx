@@ -8,7 +8,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 const NoRowsOverlay = () => (
     <div className="flex h-full items-center justify-center text-sm text-slate-500">
-        No se encontraron productos disponibles.
+        No se encontraron resultados disponibles.
     </div>
 );
 
@@ -26,6 +26,8 @@ const getStateColor = (s) => {
     return states[s?.toLowerCase()] || "bg-slate-100 text-slate-600";
 };
 
+const formatPrice = (p) => p ? `$${Number(p).toLocaleString('es-ES')}` : '-';
+
 const formatDate = (date) => {
     if (!date) return '-';
     const rawDate = date?.$date || date;
@@ -34,12 +36,12 @@ const formatDate = (date) => {
     return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const MobileProductCard = ({ row, isSelected, onToggleSelection, onViewDetails }) => (
+const MobileCard = ({ row, isSelected, onToggleSelection, onViewDetails, showPrice, showStock }) => (
     <div 
         className={`mb-3 flex flex-col gap-3 rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
             isSelected ? "border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/10" : "border-slate-200 bg-white hover:border-slate-300 shadow-sm"
         }`}
-        onClick={() => onViewDetails(row.id || row._id)}
+        onClick={() => onViewDetails(row._id)}
     >
         <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1">
@@ -60,14 +62,26 @@ const MobileProductCard = ({ row, isSelected, onToggleSelection, onViewDetails }
         </div>
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-3 text-xs">
-            <div>
-                <p className="text-slate-400 mb-0.5">Cantidad</p>
-                <p className="font-bold text-slate-700">{row.quantity}</p>
-            </div>
-            <div>
-                <p className="text-slate-400 mb-0.5">Bodega</p>
-                <p className="font-medium text-slate-700 truncate">{row.warehouse}</p>
-            </div>
+            {showPrice && (
+                <>
+                    <div>
+                        <p className="text-slate-400 mb-0.5">Precio Ant.</p>
+                        <p className="font-mono text-slate-500">{formatPrice(row.oldPrice || row.precioAnterior)}</p>
+                    </div>
+                    <div>
+                        <p className="text-slate-400 mb-0.5">Precio Act.</p>
+                        <p className="font-bold text-indigo-600 font-mono">
+                            {formatPrice(typeof row.price === 'object' ? (row.price?.precioVta || row.price?.PrecioBol) : row.price)}
+                        </p>
+                    </div>
+                </>
+            )}
+            {showStock && (
+                <div>
+                    <p className="text-slate-400 mb-0.5">Stock</p>
+                    <p className="font-bold text-slate-700">{row.quantity || row.stockNuevo || 0}</p>
+                </div>
+            )}
             <div>
                 <p className="text-slate-400 mb-0.5">Tenant</p>
                 <p className="font-medium text-slate-700 truncate">{row.tenantName}</p>
@@ -84,7 +98,7 @@ const MobileProductCard = ({ row, isSelected, onToggleSelection, onViewDetails }
     </div>
 );
 
-const ProductsTableGrid = ({ 
+const TableGrid = ({ 
     rows,
     loading,
     rowCount,
@@ -95,50 +109,76 @@ const ProductsTableGrid = ({
     onToggleRowSelection,
     onToggleAllRows,
     onViewDetails,
+    showPrice = true,
+    showStock = false
 }) => {
     const allRowIds = useMemo(() => rows.map(r => r.id), [rows]);
     const allSelected = allRowIds.length > 0 && allRowIds.every(id => selectedRowIds.has(id));
     
     const totalPages = Math.max(1, Math.ceil((rowCount || 0) / pageSize));
 
-    const columns = useMemo(() => [
-        {
-            field: "select", headerName: "", width: 50, sortable: false,
-            renderHeader: () => (
-                <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-indigo-600"
-                    checked={allSelected} onChange={onToggleAllRows} />
-            ),
-            renderCell: ({ row }) => (
-                <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-indigo-600"
-                    checked={selectedRowIds.has(row.id)} onChange={() => onToggleRowSelection(row.id)} />
-            ),
-            align: "center", headerAlign: "center",
-        },
-        { field: "sku", headerName: "SKU", width: 140, renderCell: (p) => <span className="text-xs font-mono text-slate-600">{p.value}</span> },
-        { field: "name", headerName: "Nombre", flex: 1, renderCell: (p) => <span className="font-semibold text-slate-800">{p.value}</span> },
-        { field: "tenantName", headerName: "Tenant", width: 120 },
-        { field: "warehouse", headerName: "Bodega", width: 120 },
-        { field: "quantity", headerName: "Cant.", width: 80, align: "center", headerAlign: "center", renderCell: (p) => <span className="font-bold text-slate-700">{p.value}</span> },
-        { field: "createdDate", headerName: "Fecha Ingreso", width: 140, renderCell: (p) => (
-            <span className="text-xs text-slate-600 font-medium">{formatDate(p.value || p.row.ingresoMiddify)}</span>
-        )},
-        { field: "updatedDate", headerName: "Actualizado", width: 140, renderCell: (p) => (
-            <span className="text-xs text-slate-600 font-medium">{formatDate(p.value || p.row.actualizacion)}</span>
-        )},
-        { field: "state", headerName: "Estado", width: 110, align: "center", headerAlign: "center", renderCell: (p) => (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getStateColor(p.value)}`}>
-                {p.value}
-            </span>
-        )},
-        {
-            field: "actions", headerName: "", width: 50, sortable: false, align: "center",
-            renderCell: (p) => (
-                <button onClick={() => onViewDetails(p.row.id || p.row._id)} className="text-slate-400 hover:text-indigo-600 p-1 hover:bg-indigo-50 rounded-lg">
-                    <VisibilityIcon fontSize="small" />
-                </button>
-            )
+    const columns = useMemo(() => {
+        const cols = [
+            {
+                field: "select", headerName: "", width: 50, sortable: false,
+                renderHeader: () => (
+                    <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                        checked={allSelected} onChange={onToggleAllRows} />
+                ),
+                renderCell: ({ row }) => (
+                    <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                        checked={selectedRowIds.has(row.id)} onChange={() => onToggleRowSelection(row.id)} />
+                ),
+                align: "center", headerAlign: "center",
+            },
+            { field: "sku", headerName: "SKU", width: 140, renderCell: (p) => <span className="text-xs font-mono text-slate-600">{p.value}</span> },
+            { field: "name", headerName: "Producto", flex: 1, renderCell: (p) => <span className="font-semibold text-slate-800">{p.value}</span> },
+            { field: "tenantName", headerName: "Tenant", width: 120 },
+        ];
+
+        if (showPrice) {
+            cols.push(
+                { field: "oldPrice", headerName: "Precio Ant.", width: 120, renderCell: (p) => <span className="font-mono text-slate-400">{formatPrice(p.row.oldPrice || p.row.precioAnterior)}</span> },
+                { field: "price", headerName: "Precio Act.", width: 120, renderCell: (p) => (
+                    <span className="text-indigo-600 font-bold font-mono">
+                        {formatPrice(typeof p.value === 'object' ? (p.value?.precioVta || p.value?.PrecioBol) : p.value)}
+                    </span>
+                )}
+            );
         }
-    ], [allSelected, selectedRowIds, onViewDetails]);
+
+        if (showStock) {
+            cols.push(
+                { field: "quantity", headerName: "Stock", width: 100, align: "center", headerAlign: "center", renderCell: (p) => (
+                    <span className="font-bold text-slate-700">{p.value || p.row.stockNuevo || 0}</span>
+                )}
+            );
+        }
+
+        cols.push(
+            { field: "createdDate", headerName: "Fecha Ingreso", width: 140, renderCell: (p) => (
+                <span className="text-xs text-slate-600 font-medium">{formatDate(p.value || p.row.ingresoMiddify)}</span>
+            )},
+            { field: "updatedDate", headerName: "Actualizado", width: 140, renderCell: (p) => (
+                <span className="text-xs text-slate-600 font-medium">{formatDate(p.value || p.row.actualizacion)}</span>
+            )},
+            { field: "state", headerName: "Estado", width: 110, align: "center", headerAlign: "center", renderCell: (p) => (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getStateColor(p.value)}`}>
+                    {p.value}
+                </span>
+            )},
+            {
+                field: "actions", headerName: "", width: 50, sortable: false, align: "center",
+                renderCell: (p) => (
+                    <button onClick={() => onViewDetails(p.row._id)} className="text-slate-400 hover:text-indigo-600 p-1 hover:bg-indigo-50 rounded-lg">
+                        <VisibilityIcon fontSize="small" />
+                    </button>
+                )
+            }
+        );
+
+        return cols;
+    }, [allSelected, selectedRowIds, onViewDetails, showPrice, showStock]);
 
     return (
         <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] overflow-hidden">
@@ -150,8 +190,15 @@ const ProductsTableGrid = ({
                 </div>
                 <div className="flex flex-col gap-1 pb-32">
                     {rows.map(row => (
-                        <MobileProductCard key={row.id} row={row} isSelected={selectedRowIds.has(row.id)} 
-                            onToggleSelection={onToggleRowSelection} onViewDetails={onViewDetails} />
+                        <MobileCard 
+                            key={row.id} 
+                            row={row} 
+                            isSelected={selectedRowIds.has(row.id)} 
+                            onToggleSelection={onToggleRowSelection} 
+                            onViewDetails={onViewDetails}
+                            showPrice={showPrice}
+                            showStock={showStock}
+                        />
                     ))}
                 </div>
                 {/* Pagination Mobile */}
@@ -207,7 +254,7 @@ const ProductsTableGrid = ({
     );
 };
 
-ProductsTableGrid.propTypes = {
+TableGrid.propTypes = {
     rows: PropTypes.array.isRequired,
     loading: PropTypes.bool.isRequired,
     rowCount: PropTypes.number.isRequired,
@@ -218,6 +265,8 @@ ProductsTableGrid.propTypes = {
     onToggleRowSelection: PropTypes.func.isRequired,
     onToggleAllRows: PropTypes.func.isRequired,
     onViewDetails: PropTypes.func.isRequired,
+    showPrice: PropTypes.bool,
+    showStock: PropTypes.bool
 };
 
-export default ProductsTableGrid;
+export default TableGrid;

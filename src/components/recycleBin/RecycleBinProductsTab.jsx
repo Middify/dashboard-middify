@@ -26,13 +26,12 @@ const RecycleBinProductsTab = ({
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const { products, loading, error } = useProducts(
+    const { products, loading, error } = useProducts({
         token,
-        selectedTenantId,
-        null,
+        tenantId: selectedTenantId,
         refreshTrigger,
-        "discard"
-    );
+        state: "discarded"
+    });
 
     // Estado local para el modal de detalles
     const [detailsOpen, setDetailsOpen] = useState(false);
@@ -49,16 +48,19 @@ const RecycleBinProductsTab = ({
     };
 
     const rows = useMemo(() => {
-        if (!Array.isArray(products?.products)) {
+        if (!Array.isArray(products)) {
             return [];
         }
-        return products.products
-            .filter((product) => product.state === "discard")
+        return products
+            .filter((product) => {
+                const state = String(product.state || "").toLowerCase();
+                return state === "discard" || state === "discarded";
+            })
             .map((product, index) => ({
                 id: product._id || index,
                 ...product,
             }));
-    }, [products?.products]);
+    }, [products]);
 
     const handleToggleRowSelection = useCallback((rowId) => {
         setSelectedRowIds((prevSelected) => {

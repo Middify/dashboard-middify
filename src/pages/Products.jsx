@@ -125,6 +125,8 @@ const Products = () => {
                 onToggleRowSelection={handleToggleRowSelection}
                 onToggleAllRows={handleToggleAllRows}
                 onViewDetails={handleViewDetails}
+                showPrice={false}
+                showStock={true}
             />
         </div>
     );

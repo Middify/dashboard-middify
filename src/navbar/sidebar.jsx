@@ -30,9 +30,9 @@ const ORDER_STATE_ITEMS = STATE_DEFINITIONS.map(({ key, label }) => {
 });
 
 const PRODUCT_STATE_ITEMS = [
-  { id: "created", label: "Creada" },
-  { id: "failed", label: "Error" },
-  { id: "success", label: "Procesada" },
+  { id: "creada", label: "Creada" },
+  { id: "error", label: "Error" },
+  { id: "procesada", label: "Procesada" },
 ];
 
 export const SIDEBAR_WIDTH = 280;
@@ -145,49 +145,55 @@ const Sidebar = ({
   const isPriceRootActive = activeView === "price" && !activePriceState;
 
   const handleOrderRootClick = () => {
-    handleViewChange("orders");
     if (typeof onChangeOrderState === "function") {
       onChangeOrderState(null);
+    } else {
+      handleViewChange("orders");
     }
     closeMobileIfNeeded();
   };
 
   const handleProductRootClick = () => {
-    handleViewChange("products");
     if (typeof onChangeProductState === "function") {
       onChangeProductState(null);
+    } else {
+      handleViewChange("products");
     }
     closeMobileIfNeeded();
   };
 
   const handleOrderStateClick = (stateId) => {
-    handleViewChange("orders");
     if (typeof onChangeOrderState === "function") {
       onChangeOrderState(stateId);
+    } else {
+      handleViewChange("orders");
     }
     closeMobileIfNeeded();
   };
 
   const handleProductStateClick = (stateId) => {
-    handleViewChange("products");
     if (typeof onChangeProductState === "function") {
       onChangeProductState(stateId);
+    } else {
+      handleViewChange("products");
     }
     closeMobileIfNeeded();
   };
 
   const handlePriceRootClick = () => {
-    handleViewChange("price");
     if (typeof onChangePriceState === "function") {
       onChangePriceState(null);
+    } else {
+      handleViewChange("price");
     }
     closeMobileIfNeeded();
   };
 
   const handlePriceStateClick = (stateId) => {
-    handleViewChange("price");
     if (typeof onChangePriceState === "function") {
       onChangePriceState(stateId);
+    } else {
+      handleViewChange("price");
     }
     closeMobileIfNeeded();
   };

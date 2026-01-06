@@ -21,18 +21,22 @@ const RecycleBinPrice = ({
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const { products, loading, error } = usePrice(
+    const { products, loading, error } = usePrice({
         token,
-        refreshTrigger
-    );
+        refreshTrigger,
+        state: "discarded"
+    });
 
     const rows = useMemo(() => {
         if (!Array.isArray(products)) {
             return [];
         }
-        // Filtrar por estado 'discard' o 'discarded'
+        // Filtrar por estado 'discard' o 'discarded' (case-insensitive)
         return products
-            .filter((product) => product.state === "discard" || product.state === "discarded")
+            .filter((product) => {
+                const state = String(product.state || "").toLowerCase();
+                return state === "discard" || state === "discarded";
+            })
             .map((product, index) => ({
                 id: product._id || index,
                 ...product,

@@ -19,14 +19,29 @@ const RecycleBin = ({
     const [priceHeaderProps, setPriceHeaderProps] = useState({});
 
     // Obtener conteo de productos eliminados
-    const { products } = useProducts(token, selectedTenantId, null, 0, "discard");
+    const { products } = useProducts({
+        token,
+        tenantId: selectedTenantId,
+        refreshTrigger: 0,
+        state: "discarded"
+    });
     const productsCount =
-        products?.products?.filter((p) => p.state === "discard")?.length || 0;
+        products?.filter((p) => {
+            const state = String(p.state || "").toLowerCase();
+            return state === "discard" || state === "discarded";
+        })?.length || 0;
 
     // Obtener conteo de precios eliminados
-    const { products: priceProducts } = usePrice(token, 0);
+    const { products: priceProducts } = usePrice({
+        token,
+        refreshTrigger: 0,
+        state: "discarded"
+    });
     const priceCount =
-        priceProducts?.filter((p) => p.state === "discard" || p.state === "discarded")?.length || 0;
+        priceProducts?.filter((p) => {
+            const state = String(p.state || "").toLowerCase();
+            return state === "discard" || state === "discarded";
+        })?.length || 0;
 
     // El conteo de órdenes lo obtiene el componente hijo
     const ordersCount = ordersHeaderProps.ordersTotalCount || 0;

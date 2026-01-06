@@ -54,6 +54,14 @@ const RecycleBinOrdersTab = ({
             : [...baseOptions, { value: "deleted", label: "Eliminada" }];
     }, []);
 
+    const filteredRows = useMemo(() => {
+        if (!Array.isArray(grid.rows)) return [];
+        return grid.rows.filter(row => {
+            const status = String(row.rawOrder?.status || "").toLowerCase();
+            return status === "deleted" || status === "descartada" || status === "eliminada";
+        });
+    }, [grid.rows]);
+
     const columns = useMemo(
         () => grid.columns.filter((col) => col.field !== "total"),
         [grid.columns]
@@ -258,14 +266,14 @@ const RecycleBinOrdersTab = ({
         if (typeof onHeaderPropsChange === "function") {
             onHeaderPropsChange({
                 ordersSelectedCount: selectedRowIds.length,
-                ordersTotalCount: grid.rowCount || 0,
+                ordersTotalCount: filteredRows.length,
                 ordersOnChangeState: handleStateSelection,
                 ordersIsProcessing: isUpdatingStatus,
                 ordersStateOptions: stateOptions,
                 ordersSelectedState: selectedStatusValue,
                 ordersOnExportData: handleExportDeletedOrders,
                 ordersIsExportingData: isExporting,
-                ordersExportDisabled: !token || grid.rowCount === 0,
+                ordersExportDisabled: !token || filteredRows.length === 0,
                 ordersOnExportSelectedData: handleExportSelectedDeletedOrders,
                 ordersIsExportingSelectedData: isExportingSelection,
                 ordersExportSelectedDisabled: selectedRowIds.length === 0,
@@ -273,7 +281,7 @@ const RecycleBinOrdersTab = ({
         }
     }, [
         selectedRowIds.length,
-        grid.rowCount,
+        filteredRows.length,
         handleStateSelection,
         isUpdatingStatus,
         stateOptions,
@@ -290,7 +298,7 @@ const RecycleBinOrdersTab = ({
         <div className="space-y-4">
             <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <OrdersTableGrid
-                    rows={grid.rows}
+                    rows={filteredRows}
                     columns={columns}
                     loading={grid.loading}
                     error={error}

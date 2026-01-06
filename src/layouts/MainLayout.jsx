@@ -46,9 +46,10 @@ const MainLayout = () => {
     const [searchParams] = useSearchParams();
     const detailMatch = useMatch("/orders/:orderId");
     const detailOrderId = detailMatch?.params?.orderId ?? null;
+    
     const resolvedOrderState = useMemo(() => ensureOrderState(searchParams.get("state")), [searchParams]);
-    const resolvedProductState = searchParams.get("productState");
-    const resolvedPriceState = searchParams.get("priceState");
+    const resolvedProductState = useMemo(() => searchParams.get("productState"), [searchParams]);
+    const resolvedPriceState = useMemo(() => searchParams.get("priceState"), [searchParams]);
 
     const [selectedTenantId, setSelectedTenantId] = useState(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

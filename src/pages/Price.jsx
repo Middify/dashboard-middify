@@ -97,6 +97,8 @@ const Price = () => {
                 onToggleRowSelection={handleToggleRowSelection}
                 onToggleAllRows={handleToggleAllRows}
                 onViewDetails={handleViewDetails}
+                showPrice={true}
+                showStock={false}
             />
         </div>
     );
