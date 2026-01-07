@@ -1,5 +1,4 @@
 import PropTypes from "prop-types";
-import SearchIcon from "@mui/icons-material/Search";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
 
@@ -12,10 +11,6 @@ const OrdersTableHeader = ({
   isProcessing,
   stateOptions,
   selectedState,
-  searchValue,
-  onSearchChange,
-  searchPlaceholder,
-  searchDisabled,
   onExportData,
   isExportingData,
   exportDisabled,
@@ -24,10 +19,6 @@ const OrdersTableHeader = ({
   exportSelectedDisabled,
 }) => {
   const hasSelection = selectedCount > 0;
-  const shouldDisableSearch =
-    typeof onSearchChange !== "function"
-      ? true
-      : searchDisabled ?? false;
   const canTriggerExport = typeof onExportData === "function" && !exportDisabled;
   const canTriggerExportSelected =
     hasSelection &&
@@ -95,27 +86,6 @@ const OrdersTableHeader = ({
               )}
             </div>
 
-            {/* Buscador */}
-            <div className="w-full sm:max-w-xs">
-              <label className="relative block w-full">
-                <span className="sr-only">Buscar</span>
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <SearchIcon className="text-[18px]" />
-                </span>
-                <input
-                  type="search"
-                  placeholder={searchPlaceholder}
-                  value={searchValue}
-                  onChange={(event) => {
-                    if (shouldDisableSearch) return;
-                    onSearchChange(event);
-                  }}
-                  className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-xs text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-500"
-                  disabled={shouldDisableSearch}
-                />
-              </label>
-            </div>
-
             {/* Botones de Exportación */}
             <div className="flex flex-nowrap gap-2">
               <button
@@ -178,10 +148,6 @@ OrdersTableHeader.propTypes = {
     })
   ),
   selectedState: PropTypes.string,
-  searchValue: PropTypes.string,
-  onSearchChange: PropTypes.func,
-  searchPlaceholder: PropTypes.string,
-  searchDisabled: PropTypes.bool,
   onExportData: PropTypes.func,
   isExportingData: PropTypes.bool,
   exportDisabled: PropTypes.bool,
@@ -199,10 +165,6 @@ OrdersTableHeader.defaultProps = {
   isProcessing: false,
   stateOptions: [],
   selectedState: "",
-  searchValue: "",
-  onSearchChange: undefined,
-  searchPlaceholder: "Buscar...",
-  searchDisabled: true,
   onExportData: undefined,
   isExportingData: false,
   exportDisabled: false,

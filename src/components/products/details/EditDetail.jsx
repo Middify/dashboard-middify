@@ -33,10 +33,11 @@ const EditDetail = ({ product, token, onCancel, onSave }) => {
                 token,
                 sku: product.sku,
                 price: formData.price,
+                quantity: formData.quantity,
             });
             onSave();
         } catch (err) {
-            setError(err.message || 'Error al actualizar el precio');
+            setError(err.message || 'Error al actualizar los datos');
             setLoading(false);
         }
     };

@@ -8,7 +8,6 @@ const Price = () => {
     const { token, user, resolvedPriceState, selectedTenantId, selectedTenantName } = useOutletContext() || {};
     const navigate = useNavigate();
     
-    const [searchTerm, setSearchTerm] = useState("");
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
@@ -26,7 +25,7 @@ const Price = () => {
     useEffect(() => {
         setPaginationModel(prev => ({ ...prev, page: 0 }));
         setSelectedRowIds(new Set());
-    }, [selectedTenantId, resolvedPriceState, searchTerm]);
+    }, [selectedTenantId, resolvedPriceState]);
 
     const filteredRows = useMemo(() => {
         const list = products || [];
@@ -82,8 +81,6 @@ const Price = () => {
                 token={token}
                 user={user}
                 onSuccess={handleRefresh}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
             />
 
             <PriceTableGrid

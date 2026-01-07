@@ -1,15 +1,57 @@
 import PropTypes from "prop-types";
 import { useMemo } from "react";
-import { DataGrid } from "@mui/x-data-grid";
-import Paper from "@mui/material/Paper";
+import { DataGrid, GridOverlay } from "@mui/x-data-grid";
+import { Paper, Box, CircularProgress, Typography, Skeleton } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 
 const NoRowsOverlay = () => (
-    <div className="flex h-full items-center justify-center text-sm text-slate-500">
-        No se encontraron resultados disponibles.
-    </div>
+    <GridOverlay>
+        <Box className="flex flex-col items-center justify-center gap-3 p-8 text-slate-400">
+            <InboxOutlinedIcon sx={{ fontSize: 64, opacity: 0.2 }} />
+            <div className="text-center">
+                <Typography variant="h6" className="font-bold text-slate-500">
+                    Sin resultados
+                </Typography>
+                <Typography variant="body2">
+                    No encontramos productos con los filtros seleccionados.
+                </Typography>
+            </div>
+        </Box>
+    </GridOverlay>
+);
+
+const LoadingOverlay = () => (
+    <GridOverlay>
+        <Box className="w-full h-full flex flex-col items-center justify-center bg-white/50 backdrop-blur-[1px]">
+            <div className="relative flex items-center justify-center">
+                <CircularProgress 
+                    size={48} 
+                    thickness={4} 
+                    sx={{ color: '#4f46e5' }} 
+                />
+                <div className="absolute animate-ping h-8 w-8 rounded-full bg-indigo-100 opacity-75"></div>
+            </div>
+            <Typography variant="body2" className="mt-4 font-bold text-slate-600 animate-pulse uppercase tracking-widest">
+                Cargando datos...
+            </Typography>
+        </Box>
+    </GridOverlay>
+);
+
+const LoadingSkeleton = () => (
+    <Box sx={{ width: '100%', p: 2 }}>
+        {[...Array(10)].map((_, i) => (
+            <Skeleton 
+                key={i} 
+                variant="rectangular" 
+                height={52} 
+                sx={{ mb: 1, borderRadius: 2, opacity: 0.6 }} 
+            />
+        ))}
+    </Box>
 );
 
 const getStateColor = (s) => {
@@ -198,17 +240,26 @@ const TableGrid = ({
                     <button onClick={onToggleAllRows} className="text-indigo-600 font-semibold">{allSelected ? "Deseleccionar" : "Seleccionar todo"}</button>
                 </div>
                 <div className="flex flex-col gap-1 pb-32">
-                    {rows.map(row => (
-                        <MobileCard 
-                            key={row.id} 
-                            row={row} 
-                            isSelected={selectedRowIds.has(row.id)} 
-                            onToggleSelection={onToggleRowSelection} 
-                            onViewDetails={onViewDetails}
-                            showPrice={showPrice}
-                            showStock={showStock}
-                        />
-                    ))}
+                    {loading && rows.length === 0 ? (
+                        <LoadingSkeleton />
+                    ) : rows.length === 0 ? (
+                        <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+                            <InboxOutlinedIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
+                            <p className="text-sm font-medium">No se encontraron productos</p>
+                        </div>
+                    ) : (
+                        rows.map(row => (
+                            <MobileCard 
+                                key={row.id} 
+                                row={row} 
+                                isSelected={selectedRowIds.has(row.id)} 
+                                onToggleSelection={onToggleRowSelection} 
+                                onViewDetails={onViewDetails}
+                                showPrice={showPrice}
+                                showStock={showStock}
+                            />
+                        ))
+                    )}
                 </div>
                 {/* Pagination Mobile */}
                 <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-white/95 backdrop-blur px-4 py-3 flex justify-between items-center shadow-lg">
@@ -233,7 +284,7 @@ const TableGrid = ({
             {/* Desktop View */}
             <div className="hidden md:block">
                 <Paper elevation={0} className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                    <div style={{ height: Math.min(rows.length * 52 + 110, 800), width: '100%', maxHeight: 'calc(100vh - 240px)' }}>
+                    <div style={{ height: Math.min(Math.max(rows.length * 52 + 110, 400), 800), width: '100%', maxHeight: 'calc(100vh - 240px)' }}>
                         <DataGrid
                             rows={rows}
                             columns={columns}
@@ -246,7 +297,10 @@ const TableGrid = ({
                             disableRowSelectionOnClick
                             disableColumnMenu
                             rowHeight={52} columnHeaderHeight={48}
-                            slots={{ noRowsOverlay: NoRowsOverlay }}
+                            slots={{ 
+                                noRowsOverlay: NoRowsOverlay,
+                                loadingOverlay: LoadingOverlay
+                            }}
                             sx={{
                                 border: 0,
                                 "& .MuiDataGrid-columnHeaders": { backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" },

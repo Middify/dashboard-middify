@@ -2,7 +2,6 @@ import PropTypes from "prop-types";
 import { useState, useCallback } from "react";
 import { patchExportProducts } from "../../api/products/patchStateProduct";
 import { alertsProducts } from "../../utils/alertsProducts";
-import SearchBar from "../common/SearchBar";
 
 const PRODUCT_STATES = [
     { value: "creada", label: "Creada" },
@@ -19,8 +18,6 @@ const PriceTableHeader = ({
     token, 
     user, 
     onSuccess, 
-    searchTerm, 
-    onSearchChange 
 }) => {
     const [loading, setLoading] = useState(null);
     const [modal, setModal] = useState(null);
@@ -95,8 +92,6 @@ const PriceTableHeader = ({
                 )}
             </header>
 
-            <SearchBar value={searchTerm} onChange={onSearchChange} placeholder="Buscar por SKU, nombre o tienda..." />
-
             <Modal type="update" title="Cambiar Estado" confirmText="Actualizar" color="bg-indigo-600" onConfirm={() => handleAction(selectedState, 'update')}>
                 <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer">
                     <option value="">Seleccionar nuevo estado...</option>
@@ -120,8 +115,6 @@ PriceTableHeader.propTypes = {
     token: PropTypes.string,
     user: PropTypes.object,
     onSuccess: PropTypes.func,
-    searchTerm: PropTypes.string,
-    onSearchChange: PropTypes.func,
 };
 
 export default PriceTableHeader;

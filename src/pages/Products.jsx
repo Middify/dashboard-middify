@@ -13,7 +13,6 @@ const Products = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
     const [refreshTrigger, setRefreshTrigger] = useState(0);
-    const [searchTerm, setSearchTerm] = useState("");
     const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
 
     const handleViewDetails = (id) => {
@@ -35,7 +34,7 @@ const Products = () => {
     useEffect(() => {
         setPaginationModel(prev => ({ ...prev, page: 0 }));
         setSelectedRowIds(new Set());
-    }, [selectedTenantId, resolvedProductState, searchTerm]);
+    }, [selectedTenantId, resolvedProductState]);
 
     const filteredRows = useMemo(() => {
         const list = products || [];
@@ -110,8 +109,6 @@ const Products = () => {
                 tenantId={selectedTenantId}
                 tenantName={selectedTenantName}
                 onDeleteSuccess={refreshData}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
             />
 
             <ProductsTableGrid

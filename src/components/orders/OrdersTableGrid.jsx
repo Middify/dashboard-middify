@@ -1,12 +1,54 @@
 import PropTypes from "prop-types";
-import Paper from "@mui/material/Paper";
-import { DataGrid } from "@mui/x-data-grid";
+import { Paper, Box, CircularProgress, Typography, Skeleton } from "@mui/material";
+import { DataGrid, GridOverlay } from "@mui/x-data-grid";
 import { useMemo } from "react";
+import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 
 const NoRowsOverlay = () => (
-  <div className="flex h-full items-center justify-center text-sm text-slate-500">
-    No hay órdenes disponibles para los filtros seleccionados.
-  </div>
+  <GridOverlay>
+    <Box className="flex flex-col items-center justify-center gap-3 p-8 text-slate-400">
+      <InboxOutlinedIcon sx={{ fontSize: 64, opacity: 0.2 }} />
+      <div className="text-center">
+        <Typography variant="h6" className="font-bold text-slate-500">
+          Sin resultados
+        </Typography>
+        <Typography variant="body2">
+          No encontramos órdenes con los filtros seleccionados.
+        </Typography>
+      </div>
+    </Box>
+  </GridOverlay>
+);
+
+const LoadingOverlay = () => (
+  <GridOverlay>
+    <Box className="w-full h-full flex flex-col items-center justify-center bg-white/50 backdrop-blur-[1px]">
+      <div className="relative flex items-center justify-center">
+        <CircularProgress 
+          size={48} 
+          thickness={4} 
+          sx={{ color: '#4f46e5' }} 
+        />
+        <div className="absolute animate-ping h-8 w-8 rounded-full bg-indigo-100 opacity-75"></div>
+      </div>
+      <Typography variant="body2" className="mt-4 font-bold text-slate-600 animate-pulse uppercase tracking-widest">
+        Cargando datos...
+      </Typography>
+    </Box>
+  </GridOverlay>
+);
+
+const LoadingSkeleton = () => (
+  <Box sx={{ width: '100%', p: 2 }}>
+    {[...Array(10)].map((_, i) => (
+      <Skeleton 
+        key={i} 
+        variant="rectangular" 
+        height={52} 
+        sx={{ mb: 1, borderRadius: 2, opacity: 0.6 }} 
+      />
+    ))}
+  </Box>
 );
 
 const OrdersTableGrid = ({
@@ -23,7 +65,7 @@ const OrdersTableGrid = ({
 }) => {
   const containerHeight = useMemo(() => {
     const calculatedHeight = rows.length * 52 + 110;
-    return Math.min(Math.max(calculatedHeight, 300), 800);
+    return Math.min(Math.max(calculatedHeight, 400), 800);
   }, [rows.length]);
 
   if (error && !loading) {
@@ -63,6 +105,7 @@ const OrdersTableGrid = ({
               }}
               slots={{
                 noRowsOverlay: NoRowsOverlay,
+                loadingOverlay: LoadingOverlay,
               }}
               sx={{
                 border: 0,
@@ -102,10 +145,13 @@ const OrdersTableGrid = ({
       {/* Vista Móvil: Implementación simple para móviles si no existe una tarjeta específica */}
       <div className="block md:hidden">
         <div className="flex flex-col gap-3">
-          {loading ? (
-            <div className="h-32 w-full animate-pulse rounded-xl bg-slate-100" />
+          {loading && rows.length === 0 ? (
+            <LoadingSkeleton />
           ) : rows.length === 0 ? (
-            <NoRowsOverlay />
+            <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+              <InboxOutlinedIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
+              <p className="text-sm font-medium">No se encontraron órdenes</p>
+            </div>
           ) : (
             rows.map((row) => (
               <div

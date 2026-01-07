@@ -2,7 +2,6 @@ import PropTypes from "prop-types";
 import { useState, useCallback, lazy, Suspense } from "react";
 import { patchExportProducts } from "../../api/products/patchStateProduct";
 import { alertsProducts } from "../../utils/alertsProducts";
-import SearchBar from "../common/SearchBar";
 
 const ImportProductsModal = lazy(() => import("./ImportProductsModal"));
 const SyncSkuModal = lazy(() => import("./SyncSkuModal"));
@@ -27,8 +26,6 @@ const ProductsTableHeader = ({
     onDeleteSuccess,
     tenantId,
     tenantName,
-    searchTerm,
-    onSearchChange,
 }) => {
     const [loading, setLoading] = useState(null); // 'update' | 'delete' | null
     const [modal, setModal] = useState(null); // 'update' | 'delete' | 'import' | 'sync'
@@ -111,8 +108,6 @@ const ProductsTableHeader = ({
                 )}
             </header>
 
-            <SearchBar value={searchTerm} onChange={onSearchChange} placeholder="Buscar por SKU, nombre, tienda o bodega..." />
-
             <Modal type="update" title="Cambiar Estado" confirmText="Actualizar" color="bg-indigo-600" onConfirm={() => handleAction(selectedState, 'update')}>
                 <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer">
                     <option value="">Seleccionar nuevo estado...</option>
@@ -164,8 +159,6 @@ ProductsTableHeader.propTypes = {
     onDeleteSuccess: PropTypes.func,
     tenantId: PropTypes.string,
     tenantName: PropTypes.string,
-    searchTerm: PropTypes.string,
-    onSearchChange: PropTypes.func,
 };
 
 export default ProductsTableHeader;
