@@ -11,8 +11,8 @@ export const getPrice = async ({
     pageSize = 100, 
     signal 
 } = {}) => {
-    // Si hay estado, usamos el endpoint específico de estados (que funciona para ambos dominios)
-    const endpoint = state ? `${BASE_URL}/getProductsByState` : `${BASE_URL}/getPrice`;
+    // Usamos siempre el endpoint principal de precios por requerimiento
+    const endpoint = `${BASE_URL}/getPrice`;
 
     const params = new URLSearchParams();
     if (tenantId) params.append("tenantId", tenantId);
@@ -72,10 +72,24 @@ export const usePrice = ({
                     signal: controller.signal,
                 });
                 if (mounted) {
-                    const products = Array.isArray(result) ? result : (result.products || []);
+                    const allProducts = Array.isArray(result) ? result : (result.products || []);
+                    
+                    // Aplicamos el filtro de tópico y estado en el frontend
+                    // ya que la API principal puede no estar filtrando por 'state' todavía
+                    const products = allProducts.filter(p => {
+                        const matchesTopic = p.topic === "price-change";
+                        const matchesState = !state || p.state?.toLowerCase() === state.toLowerCase();
+                        return matchesTopic && matchesState;
+                    });
+                    
+                    // El total debe reflejar los productos filtrados encontrados en esta página
+                    // o el total que devuelva la API si ya viene filtrado.
+                    // Si aplicamos filtros en frontend, el total real es products.length
+                    const totalFound = state ? products.length : (typeof result.total === 'number' ? result.total : products.length);
+
                     setData({ 
                         products, 
-                        total: typeof result.total === 'number' ? result.total : products.length,
+                        total: totalFound,
                         loading: false, 
                         error: null 
                     });

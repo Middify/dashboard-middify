@@ -94,6 +94,12 @@ const MobileCard = ({ row, isSelected, onToggleSelection, onViewDetails, showPri
                 <p className="text-slate-400 mb-0.5">Actualizado</p>
                 <p className="text-slate-500 font-medium">{formatDate(row.updatedDate || row.actualizacion)}</p>
             </div>
+            {row.message && (
+                <div className="col-span-2 mt-1 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <p className="text-slate-400 mb-0.5 text-[10px] uppercase">Mensaje</p>
+                    <p className="text-slate-600 italic line-clamp-2 leading-relaxed">{row.message}</p>
+                </div>
+            )}
         </div>
     </div>
 );
@@ -161,6 +167,9 @@ const TableGrid = ({
             )},
             { field: "updatedDate", headerName: "Actualizado", width: 140, renderCell: (p) => (
                 <span className="text-xs text-slate-600 font-medium">{formatDate(p.value || p.row.actualizacion)}</span>
+            )},
+            { field: "message", headerName: "Mensaje", flex: 1.5, minWidth: 200, renderCell: (p) => (
+                <span className="text-xs text-slate-500 italic truncate" title={p.value}>{p.value || "—"}</span>
             )},
             { field: "state", headerName: "Estado", width: 110, align: "center", headerAlign: "center", renderCell: (p) => (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getStateColor(p.value)}`}>

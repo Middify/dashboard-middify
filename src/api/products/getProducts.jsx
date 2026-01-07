@@ -73,9 +73,11 @@ export const useProducts = ({
                 });
                 if (mounted) {
                     const products = Array.isArray(result) ? result : (result.products || []);
+                    const totalFound = typeof result.total === 'number' ? result.total : products.length;
+
                     setData({ 
                         products, 
-                        total: typeof result.total === 'number' ? result.total : products.length,
+                        total: totalFound,
                         loading: false, 
                         error: null 
                     });
