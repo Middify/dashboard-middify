@@ -79,6 +79,32 @@ const Sidebar = ({
     return { hasValidTenants: uniqueOptions.length > 0, tenantOptions: uniqueOptions };
   }, [tenants]);
 
+  // Cálculo de visibilidad por módulos
+  const visibility = useMemo(() => {
+    if (!tenants || tenants.length === 0) {
+      return { orders: false, stock: false, price: false };
+    }
+
+    // Si hay un tenant seleccionado, usamos su configuración específica
+    if (selectedTenantId) {
+      const selected = tenants.find(t => t.tenantId === selectedTenantId);
+      if (selected) {
+        return {
+          orders: selected.orders === "active",
+          stock: selected.stock === "active",
+          price: selected.price === "active"
+        };
+      }
+    }
+
+    // Si estamos en "Todas las tiendas", mostramos el módulo si al menos uno está activo
+    return {
+      orders: tenants.some(t => t.orders === "active"),
+      stock: tenants.some(t => t.stock === "active"),
+      price: tenants.some(t => t.price === "active")
+    };
+  }, [tenants, selectedTenantId]);
+
   const handleViewChange = (view) => {
     if (typeof onChangeView === "function") {
       onChangeView(view);
@@ -389,32 +415,35 @@ const Sidebar = ({
                     <div className="my-2 h-px bg-white/10" />
                   </>
                 )}
-                <button
-                  type="button"
-                  onClick={handleProductsToggle}
-                  className={productsButtonClasses}
-                >
-                  <div
-                    className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                
+                {visibility.stock && (
+                  <button
+                    type="button"
+                    onClick={handleProductsToggle}
+                    className={productsButtonClasses}
                   >
-                    {renderIconWrapper(<Inventory2Icon fontSize="small" />, activeView === "products")}
+                    <div
+                      className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                    >
+                      {renderIconWrapper(<Inventory2Icon fontSize="small" />, activeView === "products")}
+                      {!collapsed && (
+                        <span className={`transition-colors duration-200 ${activeView === "products" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
+                          }`}>
+                          Productos
+                        </span>
+                      )}
+                    </div>
                     {!collapsed && (
-                      <span className={`transition-colors duration-200 ${activeView === "products" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                        }`}>
-                        Productos
-                      </span>
+                      <ExpandMoreIcon
+                        className={`text-white/70 transition-all duration-300 ${productsExpanded ? "rotate-180" : ""
+                          }`}
+                        fontSize="small"
+                      />
                     )}
-                  </div>
-                  {!collapsed && (
-                    <ExpandMoreIcon
-                      className={`text-white/70 transition-all duration-300 ${productsExpanded ? "rotate-180" : ""
-                        }`}
-                      fontSize="small"
-                    />
-                  )}
-                </button>
+                  </button>
+                )}
 
-                {!collapsed && (
+                {visibility.stock && !collapsed && (
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${productsExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                       }`}
@@ -452,32 +481,34 @@ const Sidebar = ({
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={handlePriceToggle}
-                  className={priceButtonClasses}
-                >
-                  <div
-                    className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                {visibility.price && (
+                  <button
+                    type="button"
+                    onClick={handlePriceToggle}
+                    className={priceButtonClasses}
                   >
-                    {renderIconWrapper(<AttachMoneyIcon fontSize="small" />, activeView === "price")}
+                    <div
+                      className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                    >
+                      {renderIconWrapper(<AttachMoneyIcon fontSize="small" />, activeView === "price")}
+                      {!collapsed && (
+                        <span className={`transition-colors duration-200 ${activeView === "price" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
+                          }`}>
+                          Precio
+                        </span>
+                      )}
+                    </div>
                     {!collapsed && (
-                      <span className={`transition-colors duration-200 ${activeView === "price" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                        }`}>
-                        Precio
-                      </span>
+                      <ExpandMoreIcon
+                        className={`text-white/70 transition-all duration-300 ${priceExpanded ? "rotate-180" : ""
+                          }`}
+                        fontSize="small"
+                      />
                     )}
-                  </div>
-                  {!collapsed && (
-                    <ExpandMoreIcon
-                      className={`text-white/70 transition-all duration-300 ${priceExpanded ? "rotate-180" : ""
-                        }`}
-                      fontSize="small"
-                    />
-                  )}
-                </button>
+                  </button>
+                )}
 
-                {!collapsed && (
+                {visibility.price && !collapsed && (
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${priceExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                       }`}
@@ -517,38 +548,40 @@ const Sidebar = ({
               </div>
 
               <div className="space-y-2">
-                {!collapsed && (
+                {!collapsed && (visibility.orders) && (
                   <>
                     <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-white/45">Órdenes</p>
                     <div className="my-2 h-px bg-white/10" />
                   </>
                 )}
-                <button
-                  type="button"
-                  onClick={handleOrdersToggle}
-                  className={ordersButtonClasses}
-                >
-                  <div
-                    className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                {visibility.orders && (
+                  <button
+                    type="button"
+                    onClick={handleOrdersToggle}
+                    className={ordersButtonClasses}
                   >
-                    {renderIconWrapper(<ShoppingCartIcon fontSize="small" />, activeView === "orders")}
+                    <div
+                      className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                    >
+                      {renderIconWrapper(<ShoppingCartIcon fontSize="small" />, activeView === "orders")}
+                      {!collapsed && (
+                        <span className={`transition-colors duration-200 ${activeView === "orders" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
+                          }`}>
+                          Órdenes
+                        </span>
+                      )}
+                    </div>
                     {!collapsed && (
-                      <span className={`transition-colors duration-200 ${activeView === "orders" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                        }`}>
-                        Órdenes
-                      </span>
+                      <ExpandMoreIcon
+                        className={`text-white/70 transition-all duration-300 ${ordersExpanded ? "rotate-180" : ""
+                          }`}
+                        fontSize="small"
+                      />
                     )}
-                  </div>
-                  {!collapsed && (
-                    <ExpandMoreIcon
-                      className={`text-white/70 transition-all duration-300 ${ordersExpanded ? "rotate-180" : ""
-                        }`}
-                      fontSize="small"
-                    />
-                  )}
-                </button>
+                  </button>
+                )}
 
-                {!collapsed && (
+                {visibility.orders && !collapsed && (
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${ordersExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                       }`}

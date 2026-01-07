@@ -12,6 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useProductStates } from "../api/products/getProductStates";
 import { useMarketplaceSummary } from "../api/getMarketplaceSummary";
 import { useUsers } from "../api/users/getUsers";
+import { useUsersByTenant } from "../api/users/getUsersByTenant";
 import Navbar from "../navbar/navbar";
 import Sidebar from "../navbar/sidebar";
 
@@ -79,6 +80,12 @@ const MainLayout = () => {
         error: userError,
     } = useUsers(token);
 
+    const {
+        tenants: authorizedTenants,
+        loading: authTenantsLoading,
+        error: authTenantsError,
+    } = useUsersByTenant(token);
+
     const sidebarActiveView = useMemo(() => {
         if (currentView === "detailsOrders") return "orders";
         if (currentView === "products" && location.state?.from === "price") return "price";
@@ -92,8 +99,8 @@ const MainLayout = () => {
     }, [currentView, resolvedOrderState]);
 
     const lastKnownOrderState = location.state?.fromOrderState ?? lastOrderState ?? null;
-    const isLoading = tenantsLoading || marketplaceLoading || userLoading;
-    const error = tenantsError || marketplaceError || userError;
+    const isLoading = tenantsLoading || marketplaceLoading || userLoading || authTenantsLoading;
+    const error = tenantsError || marketplaceError || userError || authTenantsError;
 
     const handleChangeView = useCallback((nextView) => {
         switch (nextView) {
@@ -146,8 +153,8 @@ const MainLayout = () => {
 
     const selectedTenantName = useMemo(() => {
         if (!selectedTenantId) return null;
-        return (tenants || []).find(t => t.tenantId === selectedTenantId)?.tenantName ?? null;
-    }, [selectedTenantId, tenants]);
+        return (authorizedTenants || []).find(t => t.tenantId === selectedTenantId)?.tenantName ?? null;
+    }, [selectedTenantId, authorizedTenants]);
 
     const filteredMarketplaceTenants = useMemo(() => {
         if (!selectedTenantId) return marketplaceTenants || [];
@@ -176,17 +183,18 @@ const MainLayout = () => {
         isAggregated: selectedTenantId === null,
         allTenants: tenants,
         allMarketplaceTenants: marketplaceTenants,
+        authorizedTenants: authorizedTenants,
     }), [
         token, user, isLoading, error, filteredTenants, filteredMarketplaceTenants,
         selectedTenantId, selectedTenantName, resolvedOrderState, resolvedProductState,
         resolvedPriceState, lastOrderState, handleSelectOrderState, handleSelectProductState,
-        handleSelectPriceState, tenants, marketplaceTenants
+        handleSelectPriceState, tenants, marketplaceTenants, authorizedTenants
     ]);
 
     return (
         <div className="min-h-screen bg-slate-50 lg:flex">
             <Sidebar
-                tenants={tenants}
+                tenants={authorizedTenants}
                 selectedTenantId={selectedTenantId}
                 onChangeTenant={setSelectedTenantId}
                 activeView={sidebarActiveView}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/products";
+const BASE_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev";
 
 export const getProducts = async ({ 
     token, 
@@ -11,6 +11,9 @@ export const getProducts = async ({
     pageSize = 100, 
     signal 
 } = {}) => {
+    // Si hay estado, usamos el endpoint específico de estados
+    const endpoint = state ? `${BASE_URL}/getProductsByState` : `${BASE_URL}/products`;
+    
     const params = new URLSearchParams();
     if (tenantId) params.append("tenantId", tenantId);
     if (tenantName) params.append("tenantName", tenantName);
@@ -18,7 +21,7 @@ export const getProducts = async ({
     params.append("page", String(page));
     params.append("pageSize", String(pageSize));
 
-    const response = await fetch(`${API_URL}?${params}`, {
+    const response = await fetch(`${endpoint}?${params}`, {
         headers: {
             "Content-Type": "application/json",
             ...(token && { Authorization: `Bearer ${token}` }),

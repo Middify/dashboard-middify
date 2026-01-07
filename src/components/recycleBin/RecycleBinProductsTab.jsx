@@ -2,10 +2,8 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
 import { DataGrid } from "@mui/x-data-grid";
 import Paper from "@mui/material/Paper";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import { useProducts } from "../../api/products/getProducts";
 import { patchExportProducts } from "../../api/products/patchStateProduct";
-import ProductDetailsModal from "../products/ProductDetails";
 import { alertsProducts } from "../../utils/alertsProducts";
 
 const numberFormatter = new Intl.NumberFormat("es-CL");
@@ -32,20 +30,6 @@ const RecycleBinProductsTab = ({
         refreshTrigger,
         state: "discarded"
     });
-
-    // Estado local para el modal de detalles
-    const [detailsOpen, setDetailsOpen] = useState(false);
-    const [selectedProductId, setSelectedProductId] = useState(null);
-
-    const handleViewDetails = (id) => {
-        setSelectedProductId(id);
-        setDetailsOpen(true);
-    };
-
-    const handleCloseDetails = () => {
-        setDetailsOpen(false);
-        setSelectedProductId(null);
-    };
 
     const rows = useMemo(() => {
         if (!Array.isArray(products)) {
@@ -151,7 +135,6 @@ const RecycleBinProductsTab = ({
             { field: "tenantName", headerName: "Tenant", width: 150 },
             { field: "warehouse", headerName: "Bodega", width: 150 },
             { field: "quantity", headerName: "Cantidad", width: 100, type: "number" },
-            { field: "price", headerName: "Precio", width: 100, type: "number" },
             {
                 field: "updatedDate",
                 headerName: "Fecha eliminación",
@@ -168,24 +151,6 @@ const RecycleBinProductsTab = ({
                         return <span className="text-sm text-slate-500">—</span>;
                     }
                 },
-            },
-            {
-                field: "details",
-                headerName: "Detalle",
-                width: 80,
-                sortable: false,
-                filterable: false,
-                renderCell: (params) => (
-                    <div className="flex h-full w-full items-center justify-center">
-                        <VisibilityIcon
-                            className="cursor-pointer text-slate-400 hover:text-indigo-600"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewDetails(params.row.id || params.row._id);
-                            }}
-                        />
-                    </div>
-                ),
             },
         ];
 
@@ -303,13 +268,6 @@ const RecycleBinProductsTab = ({
                     </div>
                 </div>
             </section>
-
-            <ProductDetailsModal
-                open={detailsOpen}
-                onClose={handleCloseDetails}
-                productId={selectedProductId}
-                token={token}
-            />
         </div>
     );
 };

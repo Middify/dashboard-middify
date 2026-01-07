@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import PropTypes from "prop-types";
 import {
     CircularProgress,
@@ -31,24 +31,24 @@ const ProductDetails = ({ productId, token, onClose }) => {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState(TABS[0].id);
 
-    useEffect(() => {
-        const fetchProductDetails = async () => {
-            if (!productId || !token) return;
+    const fetchProductDetails = useCallback(async () => {
+        if (!productId || !token) return;
 
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await getProductDetails(token, productId);
-                setProduct(data);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProductDetails();
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await getProductDetails(token, productId);
+            setProduct(data);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     }, [productId, token]);
+
+    useEffect(() => {
+        fetchProductDetails();
+    }, [fetchProductDetails]);
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
@@ -149,7 +149,13 @@ const ProductDetails = ({ productId, token, onClose }) => {
             >
                 <Box className="overflow-y-auto flex-1 max-h-[calc(100vh-4rem-3.5rem-2.5rem)] md:max-h-[calc(100vh-8rem-4rem-3.5rem)] bg-slate-50 px-2 md:px-3 lg:px-4 py-2 md:py-3 lg:py-4">
                     <Box className="w-full mx-auto">
-                        {activeTab === "general" && <GeneralTab product={product} />}
+                        {activeTab === "general" && (
+                            <GeneralTab 
+                                product={product} 
+                                token={token} 
+                                onRefresh={fetchProductDetails} 
+                            />
+                        )}
                         {activeTab === "stock" && <StockTab history={product.historialStock} />}
                         {activeTab === "status" && <StatusTab history={product.historialEstados} />}
                     </Box>
