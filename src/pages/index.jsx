@@ -13,6 +13,7 @@ import MainLayout from "../layouts/MainLayout";
 // Carga perezosa de componentes de página para reducir el bundle inicial y la memoria
 const Dashboard = lazy(() => import("./Dashboard"));
 const Stores = lazy(() => import("./Stores"));
+const Users = lazy(() => import("./Users"));
 const Products = lazy(() => import("./Products"));
 const OrdersTable = lazy(() => import("./OrdersTable"));
 const Price = lazy(() => import("./Price"));
@@ -197,6 +198,7 @@ const Index = () => {
         <Route element={<MainLayout />}>
           <Route path="/" element={<DashboardWrapper />} />
           <Route path="/stores" element={<StoresWrapper />} />
+          <Route path="/users" element={<Users />} />
           <Route path="/stores/:storeId" element={<StoreDetailWrapper />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:productId" element={<ProductDetailsRoute />} />

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import AssessmentIcon from "@mui/icons-material/Assessment";
+import PeopleIcon from "@mui/icons-material/People";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
@@ -13,6 +14,7 @@ import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
 const PRIMARY_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", Icon: AssessmentIcon },
   { id: "stores", label: "Tiendas", Icon: ApartmentIcon },
+  { id: "users", label: "Usuarios", Icon: PeopleIcon },
 ];
 
 const normalizeStateId = (value = "") =>

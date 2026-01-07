@@ -32,6 +32,7 @@ const deriveView = (pathname, hasDetail) => {
     if (hasDetail) return "detailsOrders";
     if (pathname.startsWith("/recycle")) return "recycle";
     if (pathname.startsWith("/stores")) return "stores";
+    if (pathname.startsWith("/users")) return "users";
     if (pathname.startsWith("/orders")) return "orders";
     if (pathname.startsWith("/products")) return "products";
     if (pathname.startsWith("/price")) return "price";
@@ -105,6 +106,7 @@ const MainLayout = () => {
     const handleChangeView = useCallback((nextView) => {
         switch (nextView) {
             case "stores": navigate("/stores"); break;
+            case "users": navigate("/users"); break;
             case "orders": {
                 const targetState = resolvedOrderState ?? lastOrderState ?? null;
                 navigate(targetState ? `/orders?state=${encodeURIComponent(targetState)}` : "/orders");
