@@ -6,7 +6,7 @@ import { AuthProvider } from "react-oidc-context";
 import { BrowserRouter } from "react-router-dom";
 
 const COGNITO_DOMAIN = "https://us-east-2bws3t9vwm.auth.us-east-2.amazoncognito.com";
-const APP_URL = "http://localhost:5173";
+const APP_URL = window.location.origin;
 
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_BWs3t9VwM",
