@@ -127,8 +127,12 @@ const Sidebar = ({
 
   const primaryNavItems = useMemo(() => {
     if (normalizedRole === "user") {
-      return PRIMARY_NAV_ITEMS.filter((item) => item.id !== "stores");
+      return PRIMARY_NAV_ITEMS.filter((item) => item.id !== "stores" && item.id !== "users");
     }
+    if (normalizedRole !== "meddifyadmin") {
+         return PRIMARY_NAV_ITEMS.filter((item) => item.id !== "users");
+    }
+
     return PRIMARY_NAV_ITEMS;
   }, [normalizedRole]);
 
