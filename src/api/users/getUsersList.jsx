@@ -1,6 +1,6 @@
 const BASE_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev";
 
-export async function getUsersList({ token, page = 1, pageSize = 20 }) {
+export async function getUsersList({ token, page = 1, pageSize = 20, tenantId = null }) {
     if (!token) {
         throw new Error("Token is required");
     }
@@ -8,6 +8,9 @@ export async function getUsersList({ token, page = 1, pageSize = 20 }) {
     const url = new URL(`${BASE_URL}/users/list`);
     url.searchParams.append("page", page);
     url.searchParams.append("pageSize", pageSize);
+    if (tenantId) {
+        url.searchParams.append("tenant", tenantId);
+    }
 
     const response = await fetch(url.toString(), {
         method: "GET",

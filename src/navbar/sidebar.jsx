@@ -461,14 +461,16 @@ const Sidebar = ({
                         }`}
                     >
                       <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => handleViewChange("users-create")}
-                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 text-white/70 hover:bg-white/5 hover:text-white`}
-                        >
-                          <StatusDot active={false} />
-                          <span>Crear Usuario</span>
-                        </button>
+                        {normalizedRole === "middifyadmin" && (
+                          <button
+                            type="button"
+                            onClick={() => handleViewChange("users-create")}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 text-white/70 hover:bg-white/5 hover:text-white`}
+                          >
+                            <StatusDot active={false} />
+                            <span>Crear Usuario</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleViewChange("users-list")}

@@ -8,8 +8,11 @@ import GroupIcon from "@mui/icons-material/Group";
 import BusinessIcon from "@mui/icons-material/Business";
 import ShieldIcon from "@mui/icons-material/Shield";
 import EmailIcon from "@mui/icons-material/Email";
+import EditIcon from "@mui/icons-material/Edit";
+import IconButton from "@mui/material/IconButton";
+import EditUserModal from "./EditUserModal";
 
-const UsersTable = ({ token }) => {
+const UsersTable = ({ token, allTenants, selectedTenantId }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({
@@ -18,6 +21,8 @@ const UsersTable = ({ token }) => {
         totalPages: 1,
         count: 0
     });
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
 
     const fetchUsers = async () => {
         if (!token) return;
@@ -27,7 +32,8 @@ const UsersTable = ({ token }) => {
             const response = await getUsersList({ 
                 token, 
                 page: pagination.page, 
-                pageSize: pagination.pageSize 
+                pageSize: pagination.pageSize,
+                tenantId: selectedTenantId 
             });
             
             setUsers(response.users || []);
@@ -46,12 +52,21 @@ const UsersTable = ({ token }) => {
 
     useEffect(() => {
         fetchUsers();
-    }, [token, pagination.page, pagination.pageSize]);
+    }, [token, pagination.page, pagination.pageSize, selectedTenantId]);
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             setPagination(prev => ({ ...prev, page: newPage }));
         }
+    };
+
+    const handleEditClick = (user) => {
+        setEditingUser(user);
+        setIsEditModalOpen(true);
+    };
+
+    const handleEditSuccess = () => {
+        fetchUsers();
     };
 
     const getRoleBadgeColor = (role) => {
@@ -112,6 +127,9 @@ const UsersTable = ({ token }) => {
                                     Tenants Asignados
                                 </div>
                             </th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
+                                Acciones
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -151,6 +169,15 @@ const UsersTable = ({ token }) => {
                                         )}
                                     </div>
                                 </td>
+                                <td className="px-6 py-4 text-right">
+                                    <IconButton 
+                                        onClick={() => handleEditClick(user)}
+                                        className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                        size="small"
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -183,6 +210,15 @@ const UsersTable = ({ token }) => {
                     </button>
                 </div>
             )}
+
+            <EditUserModal
+                open={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                user={editingUser}
+                allTenants={allTenants || []}
+                token={token}
+                onSuccess={handleEditSuccess}
+            />
         </div>
     );
 };

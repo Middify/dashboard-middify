@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { getUsersList } from "../../api/users/getUsersList";
-import { updateUserTenants } from "../../api/users/updateUserTenants";
+import { updateUser } from "../../api/users/updateUser";
 import { useTableState } from "../../hooks/useTableState";
 import { alertsProducts } from "../../utils/alertsProducts";
 
@@ -83,7 +83,7 @@ export const useStoreUsersLogic = ({ token, storeName, storeId }) => {
         if (!userId || !tenantEntry) return { success: false, message: "Datos incompletos" };
         
         try {
-            await updateUserTenants({
+            await updateUser({
                 token,
                 userId,
                 tenantsToAssign: [tenantEntry],
@@ -100,7 +100,7 @@ export const useStoreUsersLogic = ({ token, storeName, storeId }) => {
         if (!userId || !tenantEntry) return { success: false };
 
         try {
-            await updateUserTenants({
+            await updateUser({
                 token,
                 userId,
                 tenantsToRemove: [tenantEntry],
