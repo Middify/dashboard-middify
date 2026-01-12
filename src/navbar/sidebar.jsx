@@ -14,7 +14,6 @@ import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
 const PRIMARY_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", Icon: AssessmentIcon },
   { id: "stores", label: "Tiendas", Icon: ApartmentIcon },
-  { id: "users", label: "Usuarios", Icon: PeopleIcon },
 ];
 
 const normalizeStateId = (value = "") =>
@@ -127,17 +126,14 @@ const Sidebar = ({
 
   const primaryNavItems = useMemo(() => {
     if (normalizedRole === "user") {
-      return PRIMARY_NAV_ITEMS.filter((item) => item.id !== "stores" && item.id !== "users");
+      return PRIMARY_NAV_ITEMS.filter((item) => item.id !== "stores");
     }
-    if (normalizedRole !== "meddifyadmin") {
-         return PRIMARY_NAV_ITEMS.filter((item) => item.id !== "users");
-    }
-
     return PRIMARY_NAV_ITEMS;
   }, [normalizedRole]);
 
   const [ordersExpanded, setOrdersExpanded] = useState(activeView === "orders");
   const [productsExpanded, setProductsExpanded] = useState(activeView === "products");
+  const [usersExpanded, setUsersExpanded] = useState(activeView === "users");
   const [priceExpanded, setPriceExpanded] = useState(activeView === "price");
   const effectiveCollapsed = isCollapsed && !isMobileOpen;
   const [tenantOpen, setTenantOpen] = useState(false);
@@ -146,6 +142,7 @@ const Sidebar = ({
     if (effectiveCollapsed) {
       setOrdersExpanded(false);
       setProductsExpanded(false);
+      setUsersExpanded(false);
       setPriceExpanded(false);
       return;
     }
@@ -154,6 +151,9 @@ const Sidebar = ({
     }
     if (activeView === "products") {
       setProductsExpanded(true);
+    }
+    if (activeView === "users") {
+      setUsersExpanded(true);
     }
     if (activeView === "price") {
       setPriceExpanded(true);
@@ -248,6 +248,15 @@ const Sidebar = ({
     setProductsExpanded((prev) => !prev);
   };
 
+  const handleUsersToggle = () => {
+    if (effectiveCollapsed) {
+      onToggleCollapse(false);
+      handleViewChange("users");
+      return;
+    }
+    setUsersExpanded((prev) => !prev);
+  };
+
   const handlePriceToggle = () => {
     if (effectiveCollapsed) {
       onToggleCollapse(false);
@@ -277,6 +286,14 @@ const Sidebar = ({
     const ordersButtonClasses = [
       "relative flex w-full items-center rounded-2xl py-2.5 text-[13px] font-medium tracking-wide transition-colors duration-200",
       activeView === "orders" && ordersExpanded
+        ? "bg-white/10 text-white shadow-sm"
+        : "bg-transparent text-white/80 hover:bg-white/5 hover:text-white",
+      collapsed ? "justify-center px-0" : "justify-between px-3.5",
+    ].join(" ");
+
+    const usersButtonClasses = [
+      "relative flex w-full items-center rounded-2xl py-2.5 text-[13px] font-medium tracking-wide transition-colors duration-200",
+      activeView === "users" && usersExpanded
         ? "bg-white/10 text-white shadow-sm"
         : "bg-transparent text-white/80 hover:bg-white/5 hover:text-white",
       collapsed ? "justify-center px-0" : "justify-between px-3.5",
@@ -412,6 +429,57 @@ const Sidebar = ({
                     </button>
                   );
                 })}
+
+                <button
+                    type="button"
+                    onClick={handleUsersToggle}
+                    className={usersButtonClasses}
+                  >
+                    <div
+                      className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
+                    >
+                      {renderIconWrapper(<PeopleIcon fontSize="small" />, activeView === "users")}
+                      {!collapsed && (
+                        <span className={`transition-colors duration-200 ${activeView === "users" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
+                          }`}>
+                          Usuarios
+                        </span>
+                      )}
+                    </div>
+                    {!collapsed && (
+                      <ExpandMoreIcon
+                        className={`text-white/70 transition-all duration-300 ${usersExpanded ? "rotate-180" : ""
+                          }`}
+                        fontSize="small"
+                      />
+                    )}
+                  </button>
+
+                  {!collapsed && (
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${usersExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                        }`}
+                    >
+                      <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleViewChange("users-create")}
+                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 text-white/70 hover:bg-white/5 hover:text-white`}
+                        >
+                          <StatusDot active={false} />
+                          <span>Crear Usuario</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleViewChange("users-list")}
+                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 text-white/70 hover:bg-white/5 hover:text-white`}
+                        >
+                          <StatusDot active={false} />
+                          <span>Listar Usuarios</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
 
               <div className="space-y-2">

@@ -107,6 +107,8 @@ const MainLayout = () => {
         switch (nextView) {
             case "stores": navigate("/stores"); break;
             case "users": navigate("/users"); break;
+            case "users-list": navigate("/users?view=list"); break;
+            case "users-create": navigate("/users?view=create"); break;
             case "orders": {
                 const targetState = resolvedOrderState ?? lastOrderState ?? null;
                 navigate(targetState ? `/orders?state=${encodeURIComponent(targetState)}` : "/orders");
