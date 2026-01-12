@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
 import { Snackbar, Alert } from "@mui/material";
 import OrdersTableHeader from "../components/orders/OrdersTableHeader";
-import OrdersTableGrid from "../components/orders/OrdersTableGrid";
+import TableGrid from "../components/common/TableGrid";
+import OrderMobileCard from "../components/orders/OrderMobileCard";
 import DeleteOrdersModal from "../components/orders/DeleteOrdersModal";
 import { useOrdersTableLogic } from "../components/orders/useOrdersTableLogic";
 import { patchStateOrder } from "../api/orders/patchStateOrder";
 import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
 import exportOrdersToExcel from "../utils/exportOrdersToExcel";
-import { fetchOrdersByStateAllPages } from "../api/orders/getOrdersByState";
 
 const OrdersTable = ({
   token = null,
@@ -20,14 +20,12 @@ const OrdersTable = ({
   const {
     error,
     grid,
-    selectedRowIds,
+    selectedRowIds, // This is now an array
     getSelectedOrderIds,
     getSelectedOrders,
     clearSelection,
     refreshData,
     selectedStateLabel,
-    onSearchIds,
-    onSearchLoading,
     formatOrdersForExport,
     exporting,
     onExport,
@@ -46,7 +44,6 @@ const OrdersTable = ({
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
   const [selectedStatusValue, setSelectedStatusValue] = useState("");
-  // const [isExporting, setIsExporting] = useState(false); // Now handled by hook
   const [isExportingSelection, setIsExportingSelection] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
@@ -112,19 +109,9 @@ const OrdersTable = ({
       return;
     }
 
-    if (!token) {
-      alert("Error: No hay token de autenticación disponible.");
+    if (!token || !user) {
+      alert("Error: Falta información de autenticación.");
       setShowStatusModal(false);
-      setPendingStatus(null);
-      setSelectedStatusValue("");
-      return;
-    }
-
-    if (!user) {
-      alert("Error: No hay información de usuario disponible.");
-      setShowStatusModal(false);
-      setPendingStatus(null);
-      setSelectedStatusValue("");
       return;
     }
 
@@ -148,86 +135,48 @@ const OrdersTable = ({
       setSelectedStatusValue("");
     } catch (err) {
       console.error("Error al actualizar órdenes:", err);
-      alert(
-        `Error al actualizar las órdenes: ${err.message || "Error desconocido"}`
-      );
+      alert(`Error al actualizar las órdenes: ${err.message || "Error desconocido"}`);
     } finally {
       setIsUpdatingStatus(false);
     }
-  }, [
-    token,
-    user,
-    getSelectedOrderIds,
-    pendingStatus,
-    refreshData,
-    clearSelection,
-  ]);
+  }, [token, user, getSelectedOrderIds, pendingStatus, refreshData, clearSelection]);
 
   const exportFileName = useMemo(() => {
     const parts = ["ordenes"];
     const sanitize = (value) =>
-      String(value)
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9-_]+/g, "_")
-        .replace(/_+/g, "_")
-        .replace(/^_|_$/g, "")
-        .toLowerCase();
+      String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-_]+/g, "_").toLowerCase();
 
-    if (selectedTenantName) {
-      parts.push(selectedTenantName);
-    }
-    if (selectedStateLabel) {
-      parts.push(selectedStateLabel);
-    }
+    if (selectedTenantName) parts.push(selectedTenantName);
+    if (selectedStateLabel) parts.push(selectedStateLabel);
 
-    const formatted = parts
-      .filter(Boolean)
-      .map((part) => sanitize(part))
-      .filter(Boolean)
-      .join("_");
-
-    return `${formatted || "ordenes"}.xlsx`;
+    return `${parts.map(sanitize).join("_")}.xlsx`;
   }, [selectedTenantName, selectedStateLabel]);
 
   const handleExportAllOrders = useCallback(async () => {
-    if (!token) {
-      alert("No hay token de autenticación para exportar.");
-      return;
-    }
+    if (!token) return alert("No hay token de autenticación para exportar.");
     onExport();
   }, [token, onExport]);
 
   const handleExportSelectedOrders = useCallback(async () => {
     const selectedOrders = getSelectedOrders();
-    if (!selectedOrders || selectedOrders.length === 0) {
-      alert("Selecciona al menos una orden para exportar.");
-      return;
-    }
+    if (!selectedOrders || selectedOrders.length === 0) return alert("Selecciona al menos una orden para exportar.");
 
     setIsExportingSelection(true);
     try {
       const formattedRows = formatOrdersForExport(selectedOrders);
-      if (!formattedRows || formattedRows.length === 0) {
-        alert("No se pudo preparar la exportación de las órdenes seleccionadas.");
-        return;
-      }
-      const baseName =
-        typeof exportFileName === "string" && exportFileName.trim().length > 0
-          ? exportFileName.trim()
-          : "ordenes.xlsx";
+      if (!formattedRows || formattedRows.length === 0) return alert("No se pudo preparar la exportación.");
+      
+      const baseName = exportFileName?.trim() || "ordenes.xlsx";
       const selectionFileName = baseName.replace(/\.xlsx$/i, "") + "_seleccion.xlsx";
+      
       exportOrdersToExcel({
         rows: formattedRows,
         columns: grid.columns,
         fileName: selectionFileName,
       });
     } catch (error) {
-      console.error("Error al exportar la selección de órdenes:", error);
-      alert(
-        `No se pudo exportar las órdenes seleccionadas: ${error.message ?? "Error desconocido"
-        }`
-      );
+      console.error("Error al exportar:", error);
+      alert("Error al exportar selección.");
     } finally {
       setIsExportingSelection(false);
     }
@@ -250,17 +199,10 @@ const OrdersTable = ({
           exportSelectedDisabled={selectedRowIds.length === 0}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <OrdersTableGrid
-            rows={grid.rows}
-            columns={grid.columns}
-            loading={grid.loading}
-            error={error}
-            paginationMode={grid.paginationMode}
-            paginationModel={grid.paginationModel}
-            onPaginationModelChange={grid.onPaginationModelChange}
-            pageSizeOptions={grid.pageSizeOptions}
-            rowCount={grid.rowCount}
-            onRowClick={grid.onRowClick}
+          <TableGrid
+            {...grid}
+            MobileComponent={OrderMobileCard}
+            mobileComponentProps={{}}
           />
         </section>
       </div>
@@ -292,5 +234,3 @@ const OrdersTable = ({
 };
 
 export default OrdersTable;
-
-

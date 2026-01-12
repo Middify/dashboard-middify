@@ -1,3 +1,14 @@
+const DATE_FORMATTER = new Intl.DateTimeFormat("es-CL", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+const CURRENCY_FORMATTER = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
 const ORDER_STATE_ITEMS = [
   { id: "ingresada", label: "Ingresada" },
   { id: "pendiente", label: "Pendiente" },
@@ -20,34 +31,22 @@ export const normalizeStatusKey = (status) => {
 };
 
 export const formatDateTime = (value) => {
-  if (!value) {
-    return "—";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
+  if (!value) return "—";
+  
+  const date = value instanceof Date ? value : new Date(value);
+  
+  if (isNaN(date.getTime())) return String(value);
 
-  return new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(date);
+  return DATE_FORMATTER.format(date);
 };
 
 export const formatCurrency = (value) => {
-  if (value === null || value === undefined || Number.isNaN(Number(value))) {
-    return "—";
-  }
+  if (value === null || value === undefined) return "—";
+  
+  const num = Number(value);
+  if (isNaN(num)) return "—";
 
-  try {
-    return new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-      maximumFractionDigits: 0,
-    }).format(Number(value));
-  } catch (_error) {
-    return value;
-  }
+  return CURRENCY_FORMATTER.format(num);
 };
 
 export const getSelectedStateLabel = (selectedOrderState) => {
@@ -57,5 +56,3 @@ export const getSelectedStateLabel = (selectedOrderState) => {
 
   return ORDER_STATE_LOOKUP[selectedOrderState] ?? selectedOrderState;
 };
-
-

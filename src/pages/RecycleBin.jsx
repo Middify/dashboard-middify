@@ -1,78 +1,59 @@
 import { useState, useCallback } from "react";
 import PropTypes from "prop-types";
-import { useProducts } from "../api/products/getProducts";
-import { usePrice } from "../api/price/getPrice";
 import RecycleBinHeader from "../components/recycleBin/RecycleBinHeader";
 import RecycleBinOrdersTab from "../components/recycleBin/RecycleBinOrdersTab";
-import RecycleBinProductsTab from "../components/recycleBin/RecycleBinProductsTab";
-import RecycleBinPrice from "../components/recycleBin/RecycleBinPrice";
+import GenericRecycleTab from "../components/recycleBin/RecycleBinGenericTab";
 
-const RecycleBin = ({
-    token = null,
-    selectedTenantId = null,
-    onSelectOrder = () => {},
-    user = null,
-}) => {
+const RecycleBin = ({ token, selectedTenantId, onSelectOrder, user }) => {
     const [activeTab, setActiveTab] = useState("orders");
-    const [ordersHeaderProps, setOrdersHeaderProps] = useState({});
-    const [productsHeaderProps, setProductsHeaderProps] = useState({});
-    const [priceHeaderProps, setPriceHeaderProps] = useState({});
-
-    // Obtener conteo de productos eliminados
-    const { products } = useProducts({
-        token,
-        tenantId: selectedTenantId,
-        refreshTrigger: 0,
-        state: "discarded"
+    const [stats, setStats] = useState({
+        orders: { count: 0, selected: 0, processing: false, actions: {} },
+        products: { count: 0, selected: 0, processing: false, actions: {} },
+        price: { count: 0, selected: 0, processing: false, actions: {} }
     });
-    const productsCount =
-        products?.filter((p) => {
-            const state = String(p.state || "").toLowerCase();
-            return state === "discard" || state === "discarded";
-        })?.length || 0;
 
-    // Obtener conteo de precios eliminados
-    const { products: priceProducts } = usePrice({
-        token,
-        refreshTrigger: 0,
-        state: "discarded"
-    });
-    const priceCount =
-        priceProducts?.filter((p) => {
-            const state = String(p.state || "").toLowerCase();
-            return state === "discard" || state === "discarded";
-        })?.length || 0;
+    const updateStats = useCallback((tab, newStats) => {
+        setStats(prev => {
+            const current = prev[tab];
+            if (
+                current.count === newStats.count &&
+                current.selected === newStats.selectedCount &&
+                current.processing === newStats.isProcessing
+            ) return prev;
 
-    // El conteo de órdenes lo obtiene el componente hijo
-    const ordersCount = ordersHeaderProps.ordersTotalCount || 0;
-
-    const handleTabChange = (newTab) => {
-        setActiveTab(newTab);
-    };
-
-    const handleOrdersHeaderPropsChange = useCallback((props) => {
-        setOrdersHeaderProps(props);
+            return {
+                ...prev,
+                [tab]: {
+                    count: newStats.count || 0,
+                    selected: newStats.selectedCount || 0,
+                    processing: newStats.isProcessing || false,
+                    actions: {
+                        onStateChange: newStats.onAction,
+                        onExportAll: newStats.onExport,
+                        onExportSelection: newStats.onExportSelection
+                    }
+                }
+            };
+        });
     }, []);
 
-    const handleProductsHeaderPropsChange = useCallback((props) => {
-        setProductsHeaderProps(props);
-    }, []);
+    const tabs = [
+        { id: "orders", label: "Órdenes", count: stats.orders.count },
+        { id: "products", label: "Productos", count: stats.products.count },
+        { id: "price", label: "Precio", count: stats.price.count }
+    ];
 
-    const handlePriceHeaderPropsChange = useCallback((props) => {
-        setPriceHeaderProps(props);
-    }, []);
+    const currentStats = stats[activeTab];
 
     return (
         <div className="flex flex-col gap-4 pt-4">
             <RecycleBinHeader
                 activeTab={activeTab}
-                onTabChange={handleTabChange}
-                ordersCount={ordersCount}
-                productsCount={productsCount}
-                priceCount={priceCount}
-                {...ordersHeaderProps}
-                {...productsHeaderProps}
-                {...priceHeaderProps}
+                onTabChange={setActiveTab}
+                tabs={tabs}
+                selectedCount={currentStats.selected}
+                isProcessing={currentStats.processing}
+                actions={currentStats.actions}
             />
 
             {activeTab === "orders" && (
@@ -81,24 +62,17 @@ const RecycleBin = ({
                     selectedTenantId={selectedTenantId}
                     onSelectOrder={onSelectOrder}
                     user={user}
-                    onHeaderPropsChange={handleOrdersHeaderPropsChange}
+                    onStatsChange={(s) => updateStats("orders", s)}
                 />
             )}
 
-            {activeTab === "products" && (
-                <RecycleBinProductsTab
+            {(activeTab === "products" || activeTab === "price") && (
+                <GenericRecycleTab
+                    type={activeTab}
                     token={token}
-                    selectedTenantId={selectedTenantId}
+                    tenantId={selectedTenantId}
                     user={user}
-                    onHeaderPropsChange={handleProductsHeaderPropsChange}
-                />
-            )}
-
-            {activeTab === "price" && (
-                <RecycleBinPrice
-                    token={token}
-                    user={user}
-                    onHeaderPropsChange={handlePriceHeaderPropsChange}
+                    onStatsChange={(s) => updateStats(activeTab, s)}
                 />
             )}
         </div>
@@ -112,13 +86,4 @@ RecycleBin.propTypes = {
     user: PropTypes.object,
 };
 
-RecycleBin.defaultProps = {
-    token: null,
-    selectedTenantId: null,
-    onSelectOrder: () => {},
-    user: null,
-};
-
 export default RecycleBin;
-
-

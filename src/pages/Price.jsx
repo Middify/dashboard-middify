@@ -1,72 +1,31 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { usePrice } from "../api/price/getPrice";
 import PriceTableHeader from "../components/price/PriceTableHeader";
-import PriceTableGrid from "../components/price/PriceTableGrid";
+import TableGrid from "../components/common/TableGrid";
+import ProductMobileCard from "../components/products/ProductMobileCard";
+import { usePriceTableLogic } from "../components/price/usePriceTableLogic";
 
 const Price = () => {
     const { token, user, resolvedPriceState, selectedTenantId, selectedTenantName } = useOutletContext() || {};
     const navigate = useNavigate();
     
-    const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
-    const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
-    
-    const { products, total, loading, error } = usePrice({
+    const {
+        loading,
+        error,
+        total,
+        selectedRowIds,
+        getSelectedIds,
+        refreshData,
+        grid
+    } = usePriceTableLogic({
         token,
-        tenantId: selectedTenantId,
-        tenantName: selectedTenantName,
-        state: resolvedPriceState,
-        page: paginationModel.page + 1,
-        pageSize: paginationModel.pageSize,
-        refreshTrigger,
+        selectedTenantId,
+        selectedTenantName,
+        resolvedPriceState,
+        user,
+        navigate,
+        showPrice: true,
+        showStock: false,
     });
-
-    useEffect(() => {
-        setPaginationModel(prev => ({ ...prev, page: 0 }));
-        setSelectedRowIds(new Set());
-    }, [selectedTenantId, resolvedPriceState]);
-
-    const filteredRows = useMemo(() => {
-        const list = products || [];
-        return list.map((p, i) => ({ id: p._id || i, ...p }));
-    }, [products]);
-
-    const handleToggleRowSelection = useCallback((rowId) => {
-        setSelectedRowIds(prev => {
-            const next = new Set(prev);
-            next.has(rowId) ? next.delete(rowId) : next.add(rowId);
-            return next;
-        });
-    }, []);
-
-    const handleToggleAllRows = useCallback(() => {
-        setSelectedRowIds(prev => {
-            const allIds = new Set(filteredRows.map(r => r.id));
-            return allIds.size > 0 && [...allIds].every(id => prev.has(id)) 
-                ? new Set() 
-                : allIds;
-        });
-    }, [filteredRows]);
-
-    const getSelectedIds = useCallback(() => 
-        filteredRows.filter(r => selectedRowIds.has(r.id)).map(r => r._id || r.id),
-        [filteredRows, selectedRowIds]
-    );
-
-    const handleViewDetails = (id) => {
-        navigate(`/products/${id}`, { state: { from: 'price' } });
-    };
-
-    const handleRefresh = useCallback(() => {
-        setRefreshTrigger(prev => prev + 1);
-        setSelectedRowIds(new Set());
-    }, []);
-
-    const handlePaginationChange = (model) => {
-        setPaginationModel(model);
-        setSelectedRowIds(new Set());
-    };
 
     if (error && !loading) return <div className="py-12 text-center text-red-500">Error: {error.message}</div>;
 
@@ -80,22 +39,13 @@ const Price = () => {
                 getSelectedIds={getSelectedIds}
                 token={token}
                 user={user}
-                onSuccess={handleRefresh}
+                onSuccess={refreshData}
             />
 
-            <PriceTableGrid
-                rows={filteredRows}
-                loading={loading}
-                rowCount={total || 0}
-                page={paginationModel.page}
-                pageSize={paginationModel.pageSize}
-                onPaginationModelChange={handlePaginationChange}
-                selectedRowIds={selectedRowIds}
-                onToggleRowSelection={handleToggleRowSelection}
-                onToggleAllRows={handleToggleAllRows}
-                onViewDetails={handleViewDetails}
-                showPrice={true}
-                showStock={false}
+            <TableGrid
+                {...grid}
+                MobileComponent={ProductMobileCard}
+                mobileComponentProps={{ showPrice: true, showStock: false }}
             />
         </div>
     );

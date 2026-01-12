@@ -1,21 +1,19 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
-import OrdersTableGrid from "../orders/OrdersTableGrid";
+import TableGrid from "../common/TableGrid";
+import OrderMobileCard from "../orders/OrderMobileCard";
 import DeleteOrdersModal from "../orders/DeleteOrdersModal";
 import { useOrdersTableLogic } from "../orders/useOrdersTableLogic";
 import { patchStateOrder } from "../../api/orders/patchStateOrder";
-import { STATE_DEFINITIONS } from "../dashboard/CardsStates";
 import exportOrdersToExcel from "../../utils/exportOrdersToExcel";
 import { fetchOrdersByStateAllPages } from "../../api/orders/getOrdersByState";
-
-const numberFormatter = new Intl.NumberFormat("es-CL");
 
 const RecycleBinOrdersTab = ({
     token,
     selectedTenantId,
     onSelectOrder,
     user,
-    onHeaderPropsChange,
+    onStatsChange,
 }) => {
     const {
         error,
@@ -33,26 +31,9 @@ const RecycleBinOrdersTab = ({
         onSelectOrder,
     });
 
-    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [showModal, setShowModal] = useState(false);
     const [pendingStatus, setPendingStatus] = useState(null);
-    const [selectedStatusValue, setSelectedStatusValue] = useState("");
-    const [isExporting, setIsExporting] = useState(false);
-    const [isExportingSelection, setIsExportingSelection] = useState(false);
-
-    const stateOptions = useMemo(() => {
-        const baseOptions =
-            STATE_DEFINITIONS?.map(({ key, label }) => ({
-                value: key,
-                label,
-            })) ?? [];
-
-        const hasDeleted = baseOptions.some((option) => option.value === "deleted");
-
-        return hasDeleted
-            ? baseOptions
-            : [...baseOptions, { value: "deleted", label: "Eliminada" }];
-    }, []);
 
     const filteredRows = useMemo(() => {
         if (!Array.isArray(grid.rows)) return [];
@@ -62,263 +43,98 @@ const RecycleBinOrdersTab = ({
         });
     }, [grid.rows]);
 
-    const columns = useMemo(
-        () => grid.columns.filter((col) => col.field !== "total"),
-        [grid.columns]
-    );
-
-    const exportFileName = useMemo(() => {
-        const base = selectedTenantId
-            ? `ordenes_papelera_${selectedTenantId}`
-            : "ordenes_papelera";
-        return base
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-zA-Z0-9-_]+/g, "_")
-            .replace(/_+/g, "_")
-            .replace(/^_|_$/g, "")
-            .concat(".xlsx");
-    }, [selectedTenantId]);
-
-    const handleExportDeletedOrders = useCallback(async () => {
-        if (!token) {
-            alert("No hay token de autenticación para exportar.");
-            return;
-        }
-
-        setIsExporting(true);
+    const handleExport = useCallback(async (selectedOnly = false) => {
+        setIsProcessing(true);
         try {
-            const preferredPageSize =
-                Array.isArray(grid?.pageSizeOptions) && grid.pageSizeOptions.length > 0
-                    ? Math.max(...grid.pageSizeOptions)
-                    : 500;
+            let ordersToExport = [];
+            let fileName = selectedTenantId ? `papelera_${selectedTenantId}` : "papelera";
 
-            const { orders: allOrders } = await fetchOrdersByStateAllPages({
-                token,
-                params: {
-                    tenantId: selectedTenantId ?? undefined,
-                    status: "deleted",
-                },
-                pageSize: preferredPageSize,
-            });
-
-            if (!Array.isArray(allOrders) || allOrders.length === 0) {
-                alert("No hay órdenes disponibles para exportar.");
-                return;
+            if (selectedOnly) {
+                ordersToExport = getSelectedOrders();
+                fileName += "_seleccion";
+            } else {
+                const { orders } = await fetchOrdersByStateAllPages({
+                    token,
+                    params: { tenantId: selectedTenantId, status: "deleted" },
+                    pageSize: 500,
+                });
+                ordersToExport = orders;
             }
 
-            const formattedRows = formatOrdersForExport(allOrders);
+            if (!ordersToExport?.length) return alert("No hay datos para exportar");
+
             exportOrdersToExcel({
-                rows: formattedRows,
-                columns,
-                fileName: exportFileName,
+                rows: formatOrdersForExport(ordersToExport),
+                columns: grid.columns.filter(c => c.field !== "total"),
+                fileName: `${fileName}.xlsx`,
             });
-        } catch (error) {
-            console.error("Error al exportar la papelera:", error);
-            alert(
-                `No se pudo exportar la papelera: ${error.message ?? "Error desconocido"}`
-            );
+        } catch (e) {
+            console.error(e);
+            alert("Error al exportar");
         } finally {
-            setIsExporting(false);
+            setIsProcessing(false);
         }
-    }, [
-        token,
-        grid?.pageSizeOptions,
-        selectedTenantId,
-        columns,
-        exportFileName,
-        formatOrdersForExport,
-    ]);
+    }, [token, selectedTenantId, getSelectedOrders, formatOrdersForExport, grid.columns]);
 
-    const handleExportSelectedDeletedOrders = useCallback(async () => {
-        const selectedOrders = getSelectedOrders();
-        if (!selectedOrders || selectedOrders.length === 0) {
-            alert("Selecciona al menos una orden para exportar.");
-            return;
-        }
+    const handleStateChange = useCallback((value) => {
+        if (!value || selectedRowIds.length === 0) return;
+        setPendingStatus(value);
+        setShowModal(true);
+    }, [selectedRowIds]);
 
-        setIsExportingSelection(true);
+    const confirmStateChange = useCallback(async () => {
+        if (!pendingStatus || !user) return;
+        setIsProcessing(true);
         try {
-            const formattedRows = formatOrdersForExport(selectedOrders);
-            if (!formattedRows || formattedRows.length === 0) {
-                alert("No se pudo preparar la exportación de las órdenes seleccionadas.");
-                return;
-            }
-            const baseName =
-                typeof exportFileName === "string" && exportFileName.trim().length > 0
-                    ? exportFileName.trim()
-                    : "ordenes_papelera.xlsx";
-            const selectionFileName =
-                baseName.replace(/\.xlsx$/i, "") + "_seleccion.xlsx";
-            exportOrdersToExcel({
-                rows: formattedRows,
-                columns,
-                fileName: selectionFileName,
-            });
-        } catch (error) {
-            console.error(
-                "Error al exportar las órdenes seleccionadas de la papelera:",
-                error
-            );
-            alert(
-                `No se pudo exportar las órdenes seleccionadas: ${
-                    error.message ?? "Error desconocido"
-                }`
-            );
-        } finally {
-            setIsExportingSelection(false);
-        }
-    }, [getSelectedOrders, formatOrdersForExport, exportFileName, columns]);
-
-    const handleStateSelection = useCallback(
-        (value) => {
-            setSelectedStatusValue(value);
-
-            if (!value) {
-                setPendingStatus(null);
-                return;
-            }
-
-            const selectedIds = getSelectedOrderIds();
-            if (selectedIds.length === 0) {
-                alert("Selecciona al menos una orden para actualizar su estado.");
-                setSelectedStatusValue("");
-                setPendingStatus(null);
-                return;
-            }
-
-            const option =
-                stateOptions.find((stateOption) => stateOption.value === value) ?? null;
-
-            setPendingStatus(
-                option ?? {
-                    value,
-                    label: value,
-                }
-            );
-            setShowStatusModal(true);
-        },
-        [getSelectedOrderIds, stateOptions]
-    );
-
-    const handleCloseModal = useCallback(() => {
-        if (!isUpdatingStatus) {
-            setShowStatusModal(false);
-            setPendingStatus(null);
-            setSelectedStatusValue("");
-        }
-    }, [isUpdatingStatus]);
-
-    const handleConfirmStatusChange = useCallback(async () => {
-        const selectedIds = getSelectedOrderIds();
-        if (selectedIds.length === 0 || !pendingStatus) {
-            setShowStatusModal(false);
-            setPendingStatus(null);
-            setSelectedStatusValue("");
-            return;
-        }
-
-        if (!token) {
-            alert("Error: No hay token de autenticación disponible.");
-            setShowStatusModal(false);
-            setPendingStatus(null);
-            setSelectedStatusValue("");
-            return;
-        }
-
-        if (!user) {
-            alert("Error: No hay información de usuario disponible.");
-            setShowStatusModal(false);
-            setPendingStatus(null);
-            setSelectedStatusValue("");
-            return;
-        }
-
-        setIsUpdatingStatus(true);
-        try {
-            const userEmail = user.email || user.mail || user.username || "usuario";
-            const userName = user.name || user.username || userEmail;
-
             await patchStateOrder({
                 token,
-                ids: selectedIds,
-                status: pendingStatus.value,
-                user: userName,
-                mailUser: userEmail,
+                ids: getSelectedOrderIds(),
+                status: pendingStatus,
+                user: user.name || "usuario",
+                mailUser: user.email || "usuario",
             });
-
             refreshData();
             clearSelection();
-            setShowStatusModal(false);
-            setPendingStatus(null);
-            setSelectedStatusValue("");
-        } catch (err) {
-            console.error("Error al actualizar órdenes:", err);
-            alert(
-                `Error al actualizar las órdenes: ${err.message || "Error desconocido"}`
-            );
+            setShowModal(false);
+        } catch (e) {
+            console.error(e);
+            alert("Error al actualizar");
         } finally {
-            setIsUpdatingStatus(false);
+            setIsProcessing(false);
         }
     }, [token, user, getSelectedOrderIds, pendingStatus, refreshData, clearSelection]);
 
     useEffect(() => {
-        if (typeof onHeaderPropsChange === "function") {
-            onHeaderPropsChange({
-                ordersSelectedCount: selectedRowIds.length,
-                ordersTotalCount: filteredRows.length,
-                ordersOnChangeState: handleStateSelection,
-                ordersIsProcessing: isUpdatingStatus,
-                ordersStateOptions: stateOptions,
-                ordersSelectedState: selectedStatusValue,
-                ordersOnExportData: handleExportDeletedOrders,
-                ordersIsExportingData: isExporting,
-                ordersExportDisabled: !token || filteredRows.length === 0,
-                ordersOnExportSelectedData: handleExportSelectedDeletedOrders,
-                ordersIsExportingSelectedData: isExportingSelection,
-                ordersExportSelectedDisabled: selectedRowIds.length === 0,
-            });
-        }
-    }, [
-        selectedRowIds.length,
-        filteredRows.length,
-        handleStateSelection,
-        isUpdatingStatus,
-        stateOptions,
-        selectedStatusValue,
-        handleExportDeletedOrders,
-        isExporting,
-        token,
-        handleExportSelectedDeletedOrders,
-        isExportingSelection,
-        onHeaderPropsChange,
-    ]);
+        onStatsChange?.({
+            count: filteredRows.length,
+            selectedCount: selectedRowIds.length,
+            isProcessing,
+            onAction: handleStateChange,
+            onExport: () => handleExport(false),
+            onExportSelection: () => handleExport(true)
+        });
+    }, [filteredRows.length, selectedRowIds.length, isProcessing, handleStateChange, handleExport, onStatsChange]);
+
+    if (error) return <div className="text-red-500 p-4">Error: {error.message}</div>;
 
     return (
         <div className="space-y-4">
             <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-                <OrdersTableGrid
+                <TableGrid
+                    {...grid}
                     rows={filteredRows}
-                    columns={columns}
-                    loading={grid.loading}
-                    error={error}
-                    paginationMode={grid.paginationMode}
-                    paginationModel={grid.paginationModel}
-                    onPaginationModelChange={grid.onPaginationModelChange}
-                    pageSizeOptions={grid.pageSizeOptions}
-                    rowCount={grid.rowCount}
-                    onRowClick={undefined}
+                    MobileComponent={OrderMobileCard}
                 />
             </section>
 
             <DeleteOrdersModal
-                isOpen={showStatusModal}
-                onClose={handleCloseModal}
-                onConfirm={handleConfirmStatusChange}
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onConfirm={confirmStateChange}
                 selectedCount={selectedRowIds.length}
-                isProcessing={isUpdatingStatus}
-                statusLabel={pendingStatus?.label}
-                statusValue={pendingStatus?.value}
+                isProcessing={isProcessing}
+                statusLabel="Restaurar"
+                statusValue={pendingStatus}
             />
         </div>
     );
@@ -329,18 +145,7 @@ RecycleBinOrdersTab.propTypes = {
     selectedTenantId: PropTypes.string,
     onSelectOrder: PropTypes.func,
     user: PropTypes.object,
-    onHeaderPropsChange: PropTypes.func,
-};
-
-RecycleBinOrdersTab.defaultProps = {
-    token: null,
-    selectedTenantId: null,
-    onSelectOrder: () => {},
-    user: null,
-    onHeaderPropsChange: null,
+    onStatsChange: PropTypes.func,
 };
 
 export default RecycleBinOrdersTab;
-
-
-

@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
-const API_URL =
-  "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getOrdersByState";
+const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getOrdersByState";
 
 export const DASHBOARD_COLUMNS_TEMPLATE = [
   { title: "_id", value: "_id", active: true },
@@ -27,13 +26,7 @@ export const DASHBOARD_COLUMNS_TEMPLATE = [
   { title: "Stages", value: "stages", active: true },
 ];
 
-export const buildUrlWithParams = ({
-  tenantId,
-  tenantName,
-  status,
-  page,
-  pageSize,
-} = {}) => {
+export const buildUrlWithParams = ({ tenantId, tenantName, status, page, pageSize } = {}) => {
   const url = new URL(API_URL);
   if (tenantId) url.searchParams.set("tenantId", tenantId);
   if (tenantName) url.searchParams.set("tenantName", tenantName);
@@ -43,82 +36,30 @@ export const buildUrlWithParams = ({
   return url;
 };
 
-export async function fetchTenantColumns({
-  token,
-  tenantName,
-  tenantId,
-  signal,
-}) {
-  if (!token) throw new Error("Falta token");
-  if (!tenantName && !tenantId) throw new Error("Falta referencia del tenant");
-
-  const url = buildUrlWithParams({
-    tenantId,
-    tenantName,
-    page: 1,
-    pageSize: 1,
-  });
-
-  const response = await fetch(url, {
+export const fetchOrdersByState = async ({ token, params = {}, signal }) => {
+  if (!token) throw new Error("Token missing");
+  
+  const response = await fetch(buildUrlWithParams(params), {
     headers: { Authorization: `Bearer ${token}` },
     signal,
   });
 
-  const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(
-      payload?.error || payload?.message || "Error al leer columnas"
-    );
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || "Failed to fetch orders");
   }
 
-  if (Array.isArray(payload?.columnsConfig)) {
-    const match = payload.columnsConfig.find(c =>
-      (tenantId && String(c.tenantId) === String(tenantId)) ||
-      (tenantName && c.tenantName?.toLowerCase() === tenantName.toLowerCase())
-    );
-    if (match?.columns) return match.columns;
-  }
-
-  return payload?.defaultColumns || payload?.columns || DASHBOARD_COLUMNS_TEMPLATE;
-}
-
-
-
-export const fetchOrdersByState = async ({
-  token,
-  params = {},
-  signal,
-} = {}) => {
-  if (!token) throw new Error("Falta token");
-  const url = buildUrlWithParams(params);
-
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-    signal,
-  });
-
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(
-      payload?.error || payload?.message || "Error al cargar órdenes"
-    );
-  }
-
+  const data = await response.json();
   return {
-    orders: Array.isArray(payload?.orders) ? payload.orders : [],
-    meta: payload?.meta || payload || {},
+    orders: Array.isArray(data.orders) ? data.orders : [],
+    meta: data.meta || data || {},
   };
 };
 
-export const fetchOrdersByStateAllPages = async ({
-  token,
-  params = {},
-  pageSize = 100,
-  signal,
-  onPage,
-  maxPages,
-} = {}) => {
-  if (!token) throw new Error("Falta token");
+export const fetchTenantColumns = async () => DASHBOARD_COLUMNS_TEMPLATE;
+
+export const fetchOrdersByStateAllPages = async ({ token, params = {}, pageSize = 100, signal, onPage, maxPages }) => {
+  if (!token) throw new Error("Token missing");
 
   const safePageSize = Number(pageSize) > 0 ? Number(pageSize) : 50;
   const baseParams = { ...params };
@@ -129,192 +70,47 @@ export const fetchOrdersByStateAllPages = async ({
   while (shouldContinue) {
     const { orders, meta } = await fetchOrdersByState({
       token,
-      params: {
-        ...baseParams,
-        page: currentPage,
-        pageSize: safePageSize,
-      },
+      params: { ...baseParams, page: currentPage, pageSize: safePageSize },
       signal,
     });
 
     accumulatedOrders.push(...orders);
 
-    if (typeof onPage === "function") {
-      onPage({
-        page: currentPage,
-        pageSize: safePageSize,
-        received: orders.length,
-        accumulated: accumulatedOrders.length,
-        meta,
-      });
-    }
+    if (onPage) onPage({ page: currentPage, received: orders.length, accumulated: accumulatedOrders.length, meta });
 
     const totalPages = Number(meta?.totalPages);
-    const hasMoreHint =
-      Boolean(meta?.hasMore) ||
-      Boolean(meta?.hasNext) ||
-      Boolean(meta?.hasNextPage) ||
-      Boolean(meta?.nextPage) ||
-      Boolean(meta?.nextToken) ||
-      Boolean(meta?.lastKey) ||
-      Boolean(meta?.lastEvaluatedKey) ||
-      Boolean(meta?.cursor);
-
     if (Number.isFinite(totalPages)) {
       shouldContinue = currentPage < totalPages;
-    } else if (orders.length === 0) {
-      shouldContinue = false;
-    } else if (hasMoreHint) {
-      shouldContinue = true;
     } else {
       shouldContinue = orders.length === safePageSize;
     }
 
-    currentPage += 1;
-    if (maxPages && currentPage > maxPages) {
-      shouldContinue = false;
-    }
+    currentPage++;
+    if (maxPages && currentPage > maxPages) shouldContinue = false;
   }
 
   return { orders: accumulatedOrders };
 };
 
-export const useOrdersByState = (token, params = {}, refreshTrigger = 0) => {
-  const [orders, setOrders] = useState([]);
-  const [meta, setMeta] = useState(null);
-  const [columns, setColumns] = useState(
-    DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column }))
-  );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export const useOrdersData = (token, params = {}, refreshTrigger = 0) => {
+  return useQuery({
+    queryKey: ["orders", token, params, refreshTrigger],
+    queryFn: ({ signal }) => fetchOrdersByState({ token, params, signal }),
+    enabled: !!token,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 120,
+    cacheTime: 1000 * 600,
+    refetchOnWindowFocus: false
+  });
+};
 
-  useEffect(() => {
-    if (!token) {
-      setOrders([]);
-      setMeta(null);
-      setColumns(DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column })));
-      setError(new Error("Falta token"));
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Determine if we need to do multi-fetching
-        const requestedPageSize = Number(params?.pageSize) || 20;
-        const requestedPage = Number(params?.page) || 1;
-        // AWS Infrastructure limit (Timeout/Payload size) requires small chunks
-        const API_LIMIT = 50;
-
-        let ordersResult;
-
-        if (requestedPageSize > API_LIMIT) {
-          // Calculate which API pages correspond to the requested "virtual" page
-          const startItemIndex = (requestedPage - 1) * requestedPageSize;
-          const endItemIndex = startItemIndex + requestedPageSize;
-
-          const startApiPage = Math.floor(startItemIndex / API_LIMIT) + 1;
-          const endApiPage = Math.ceil(endItemIndex / API_LIMIT);
-
-          const apiPagePromises = [];
-          for (let p = startApiPage; p <= endApiPage; p++) {
-            apiPagePromises.push(
-              fetchOrdersByState({
-                token,
-                params: {
-                  ...params,
-                  page: p,
-                  pageSize: API_LIMIT,
-                },
-                signal: controller.signal,
-              })
-            );
-          }
-
-          const results = await Promise.all(apiPagePromises);
-
-          // Combine orders
-          const allOrders = results.flatMap(r => r.orders);
-
-          // Slice to match the exact requested range
-          const fetchedStartIndex = (startApiPage - 1) * API_LIMIT;
-          const sliceStart = startItemIndex - fetchedStartIndex;
-          const sliceEnd = sliceStart + requestedPageSize;
-
-          const slicedOrders = allOrders.slice(sliceStart, sliceEnd);
-
-          // Construct a synthetic meta
-          const firstMeta = results[0]?.meta || {};
-          const total = firstMeta.total || firstMeta.totalOrders || 0;
-
-          ordersResult = {
-            orders: slicedOrders,
-            meta: {
-              ...firstMeta,
-              page: requestedPage,
-              pageSize: requestedPageSize,
-              totalPages: Math.ceil(total / requestedPageSize),
-            }
-          };
-
-        } else {
-          // Normal fetch
-          ordersResult = await fetchOrdersByState({
-            token,
-            params,
-            signal: controller.signal,
-          });
-        }
-
-        const [_, tenantColumns] = await Promise.all([
-          Promise.resolve(), // orders already fetched
-          params?.tenantName || params?.tenantId
-            ? fetchTenantColumns({
-              token,
-              tenantName: params?.tenantName,
-              tenantId: params?.tenantId,
-              signal: controller.signal,
-            }).catch(() => null)
-            : Promise.resolve(null),
-        ]);
-
-        setOrders(ordersResult.orders);
-        setMeta(ordersResult.meta);
-        if (tenantColumns && Array.isArray(tenantColumns)) {
-          setColumns(tenantColumns);
-        } else {
-          setColumns(
-            DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column }))
-          );
-        }
-      } catch (err) {
-        if (err.name === "AbortError") {
-          return;
-        }
-        setOrders([]);
-        setMeta(null);
-        setColumns(DASHBOARD_COLUMNS_TEMPLATE.map((column) => ({ ...column })));
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-    return () => controller.abort();
-  }, [
-    token,
-    params?.tenantId,
-    params?.tenantName,
-    params?.status,
-    params?.page,
-    params?.pageSize,
-    refreshTrigger,
-  ]);
-
-  return { orders, meta, columns, loading, error };
+export const useTenantColumns = (token, tenantId, tenantName) => {
+  return useQuery({
+    queryKey: ["columns", token, tenantId, tenantName],
+    queryFn: fetchTenantColumns,
+    enabled: true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    initialData: DASHBOARD_COLUMNS_TEMPLATE
+  });
 };

@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DASHBOARD_COLUMNS_TEMPLATE,
-  useOrdersByState,
+  useOrdersData,
+  useTenantColumns
 } from "../../api/orders/getOrdersByState";
+import { fetchOrdersByState } from "../../api/orders/getOrdersByState";
 import {
   formatCurrency,
   formatDateTime,
@@ -11,155 +14,47 @@ import {
   ORDER_STATE_LOOKUP,
 } from "./helpers";
 import { useExportOrders } from "./useExportOrders";
+import { useTableState } from "../../hooks/useTableState";
 
-const PAGE_SIZE_OPTIONS_BASE = [10, 20, 50, 100];
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const PREFETCH_STATES = ["deleted", "en proceso"];
 
 const getColumnRawValue = (order, key) => {
   if (!order) return null;
-  switch (key) {
-    case "_id":
-      return order._id ?? order.id ?? null;
-    case "tennantId":
-    case "tenantId":
-      return order.tennantId ?? order.tenantId ?? null;
-    case "tennantName":
-    case "tenantName":
-      return order.tennantName ?? order.tenantName ?? null;
-    default:
-      break;
-  }
+  if (key === "_id" || key === "id") return order._id ?? order.id;
+  if (key === "tennantId" || key === "tenantId") return order.tennantId ?? order.tenantId;
+  if (key === "tennantName" || key === "tenantName") return order.tennantName ?? order.tenantName;
+  return order[key] ?? order.marketPlace?.[key] ?? null;
+};
 
-  if (order[key] !== undefined) {
-    return order[key];
-  }
-
-  if (order.marketPlace && order.marketPlace[key] !== undefined) {
-    return order.marketPlace[key];
-  }
-
-  return null;
+const FORMATTERS = {
+  creation: formatDateTime,
+  lastUpdate: formatDateTime,
+  status: (value) => {
+    const statusKey = normalizeStatusKey(value);
+    return (statusKey && ORDER_STATE_LOOKUP[statusKey]) ?? String(value);
+  },
+  total: (value) => {
+    const amount = (typeof value === "object" && value !== null && "amount" in value) ? value.amount : value;
+    return formatCurrency(amount);
+  },
+  subTotal: (value) => {
+    const amount = (typeof value === "object" && value !== null && "amount" in value) ? value.amount : value;
+    return formatCurrency(amount);
+  },
+  marketPlace: (value) => typeof value === "object" ? (value.name || value.displayName || String(value)) : String(value),
+  omniChannel: (value) => typeof value === "object" ? (value.name || value.displayName || String(value)) : String(value),
+  errorDetail: (value) => typeof value === "object" ? (value.message || value.detail || "") : String(value),
 };
 
 const formatColumnValue = (key, order) => {
   const value = getColumnRawValue(order, key);
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
+  if (value === null || value === undefined || value === "") return "—";
 
-  switch (key) {
-    case "creation":
-    case "lastUpdate":
-      return formatDateTime(value);
-    case "status": {
-      const statusKey = normalizeStatusKey(value);
-      return (statusKey && ORDER_STATE_LOOKUP[statusKey]) ?? String(value);
-    }
-    case "total":
-    case "subTotal": {
-      const amount =
-        (typeof value === "object" && value !== null && "amount" in value
-          ? value.amount
-          : value);
-      return Number.isFinite(Number(amount))
-        ? formatCurrency(Number(amount))
-        : String(value);
-    }
-    case "attempts":
-    case "itemQuantity":
-      return Number.isFinite(Number(value)) ? Number(value).toString() : String(value);
-    case "discounts":
-    case "message": {
-      if (typeof value === "object") {
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return "[object]";
-        }
-      }
-      return String(value);
-    }
-    case "errorDetail": {
-      if (typeof value === "object" && value !== null) {
-        if (typeof value.message === "string" && value.message.trim().length > 0) {
-          return value.message;
-        }
-        if (
-          typeof value.detail === "string" &&
-          value.detail.trim().length > 0
-        ) {
-          return value.detail;
-        }
-        if (
-          typeof value.error === "string" &&
-          value.error.trim().length > 0
-        ) {
-          return value.error;
-        }
-      }
-      if (typeof value === "string" && value.trim().length > 0) {
-        return value;
-      }
-      return "";
-    }
-    case "marketPlace": {
-      if (typeof value === "object" && value !== null) {
-        if (typeof value.name === "string" && value.name.trim().length > 0) {
-          return value.name;
-        }
-        if (
-          typeof value.displayName === "string" &&
-          value.displayName.trim().length > 0
-        ) {
-          return value.displayName;
-        }
-      }
-      if (typeof value === "string" && value.trim().length > 0) {
-        return value;
-      }
-      try {
-        return JSON.stringify(value);
-      } catch {
-        return "[object]";
-      }
-    }
-    case "omniChannel": {
-      if (typeof value === "object" && value !== null) {
-        if (typeof value.name === "string" && value.name.trim().length > 0) {
-          return value.name;
-        }
-        if (
-          typeof value.displayName === "string" &&
-          value.displayName.trim().length > 0
-        ) {
-          return value.displayName;
-        }
-      }
-      if (typeof value === "string" && value.trim().length > 0) {
-        return value;
-      }
-      try {
-        return JSON.stringify(value);
-      } catch {
-        return "[object]";
-      }
-    }
-    case "taxes":
-    case "extras":
-    case "documents":
-    case "comments":
-    case "stages": {
-      if (typeof value === "object") {
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return "[object]";
-        }
-      }
-      return String(value);
-    }
-    default:
-      return String(value);
-  }
+  const formatter = FORMATTERS[key];
+  if (formatter) return formatter(value);
+
+  return typeof value === "object" ? "[Detalle]" : String(value);
 };
 
 const buildColumnDefinition = (column) => {
@@ -169,37 +64,23 @@ const buildColumnDefinition = (column) => {
     sortable: false,
     flex: 1,
     minWidth: 160,
-    renderCell: ({ row }) => (
-      <span className="text-sm text-slate-700">{row[column.value] ?? "—"}</span>
-    ),
+    renderCell: ({ row }) => <span className="text-sm text-slate-700">{row[column.value] ?? "—"}</span>,
   };
 
   if (column.value === "_id") {
     return {
       ...base,
       minWidth: 200,
-      renderCell: ({ row }) => (
-        <span className="font-mono text-sm text-slate-700">
-          {row[column.value] ?? "—"}
-        </span>
-      ),
+      renderCell: ({ row }) => <span className="font-mono text-sm text-slate-700">{row[column.value] ?? "—"}</span>,
     };
   }
 
   if (["total", "subTotal"].includes(column.value)) {
-    return {
-      ...base,
-      align: "right",
-      headerAlign: "right",
-      minWidth: 140,
-    };
+    return { ...base, align: "right", headerAlign: "right", minWidth: 140 };
   }
 
   if (["creation", "lastUpdate"].includes(column.value)) {
-    return {
-      ...base,
-      minWidth: 180,
-    };
+    return { ...base, minWidth: 180 };
   }
 
   return base;
@@ -213,97 +94,97 @@ export const useOrdersTableLogic = ({
   onSelectOrder = () => { },
   onExportSuccess = () => { },
 }) => {
-  const [pageSize, setPageSize] = useState(20);
-  const [page, setPage] = useState(1);
-  const [selectedRowIds, setSelectedRowIds] = useState(() => new Set());
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const {
+    paginationModel,
+    setPaginationModel,
+    rowSelectionModel,
+    refreshTrigger,
+    handleToggleRowSelection,
+    handleToggleAllRows,
+    handleSelectionModelChange,
+    triggerRefresh,
+    resetPagination,
+  } = useTableState({ initialPageSize: 100 });
 
-  const apiStatus = selectedOrderState
-    ? selectedOrderState.replace(/_/g, " ")
-    : null;
+  const apiStatus = selectedOrderState ? selectedOrderState.replace(/_/g, " ") : undefined;
+  const queryClient = useQueryClient();
 
-  const { orders, meta, columns: apiColumns, loading, error } = useOrdersByState(
+  const queryParams = useMemo(() => ({
+    tenantId: selectedTenantId || undefined,
+    tenantName: selectedTenantName || undefined,
+    status: apiStatus,
+    page: paginationModel.page + 1,
+    pageSize: paginationModel.pageSize,
+  }), [selectedTenantId, selectedTenantName, apiStatus, paginationModel.page, paginationModel.pageSize]);
+
+  const { data: ordersData, isLoading: loadingOrders, error } = useOrdersData(
     token,
-    {
-      tenantId: selectedTenantId ?? undefined,
-      tenantName: selectedTenantName ?? undefined,
-      status: apiStatus ?? undefined,
-      page,
-      pageSize,
-    },
+    queryParams,
     refreshTrigger
   );
 
+  useEffect(() => {
+    if (!token) return;
+    const currentPage = paginationModel.page + 1;
+    const targets = [
+      currentPage + 1,
+      currentPage - 1 > 0 ? currentPage - 1 : null,
+      currentPage === 1 ? 3 : null,
+    ].filter(Boolean);
+
+    targets.forEach((page) => {
+      const prefetchParams = { ...queryParams, page };
+      queryClient.prefetchQuery({
+        queryKey: ["orders", token, prefetchParams, refreshTrigger],
+        queryFn: ({ signal }) => fetchOrdersByState({ token, params: prefetchParams, signal }),
+        staleTime: 1000 * 120,
+        cacheTime: 1000 * 600,
+      });
+    });
+  }, [token, queryParams, refreshTrigger, paginationModel.page, queryClient]);
+
+  useEffect(() => {
+    if (!token) return;
+    const candidateStates = PREFETCH_STATES.filter((s) => s !== apiStatus);
+    candidateStates.forEach((state) => {
+      const params = {
+        ...queryParams,
+        status: state,
+        page: 1,
+        pageSize: paginationModel.pageSize,
+      };
+      queryClient.prefetchQuery({
+        queryKey: ["orders", token, params, refreshTrigger],
+        queryFn: ({ signal }) => fetchOrdersByState({ token, params, signal }),
+        staleTime: 1000 * 120,
+        cacheTime: 1000 * 600,
+      });
+    });
+  }, [token, queryParams, apiStatus, paginationModel.pageSize, refreshTrigger, queryClient]);
+
+  const { data: columnsData } = useTenantColumns(token, selectedTenantId, selectedTenantName);
   const { isExporting, startExport } = useExportOrders({ token, onSuccess: onExportSuccess });
 
-  const handleExportOrders = useCallback(() => {
-    const filters = {
-      status: apiStatus,
-      tenantId: selectedTenantId,
-      tenantName: selectedTenantName,
-    };
-    // Remove undefined and null keys
-    Object.keys(filters).forEach(
-      (key) => (filters[key] === undefined || filters[key] === null) && delete filters[key]
-    );
-
-    console.log('🔍 Export filters being sent:', filters);
-    console.log('📊 Selected tenant info:', { selectedTenantId, selectedTenantName, apiStatus });
-
-    startExport(filters);
-  }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);
-
   useEffect(() => {
-    setPage(1);
-  }, [selectedTenantId, selectedOrderState]);
-
-  const totalPagesFromMeta = meta?.totalPages ?? null;
-  const currentPage = meta?.page ?? page;
-  const displayOrders = Array.isArray(orders) ? orders : [];
+    resetPagination();
+  }, [selectedTenantId, selectedOrderState, resetPagination]);
 
   const activeColumns = useMemo(() => {
-    const base =
-      Array.isArray(apiColumns) && apiColumns.length > 0
-        ? apiColumns
-        : DASHBOARD_COLUMNS_TEMPLATE;
-
+    const base = Array.isArray(columnsData) && columnsData.length > 0 ? columnsData : DASHBOARD_COLUMNS_TEMPLATE;
     return base
-      .filter((column) => column?.active === true)
-      .map((column, index) => {
-        const computedOrder =
-          typeof column.sortOrder === "number"
-            ? column.sortOrder
-            : typeof column.originalIndex === "number"
-              ? column.originalIndex
-              : index;
-        return { ...column, _computedOrder: computedOrder };
-      })
-      .sort((a, b) => a._computedOrder - b._computedOrder)
-      .map(({ _computedOrder, ...column }) => column);
-  }, [apiColumns]);
+      .filter((c) => c?.active)
+      .sort((a, b) => (a.sortOrder ?? a.originalIndex ?? 0) - (b.sortOrder ?? b.originalIndex ?? 0));
+  }, [columnsData]);
 
-  useEffect(() => {
-    if (totalPagesFromMeta && page > totalPagesFromMeta) {
-      setPage(totalPagesFromMeta);
-    }
-  }, [page, totalPagesFromMeta]);
+  const orders = ordersData?.orders || [];
+  const meta = ordersData?.meta || {};
 
-  const pageSizeOptions = useMemo(() => {
-    if (PAGE_SIZE_OPTIONS_BASE.includes(pageSize)) {
-      return PAGE_SIZE_OPTIONS_BASE;
-    }
-    return [...PAGE_SIZE_OPTIONS_BASE, pageSize].sort((a, b) => a - b);
-  }, [pageSize]);
-
-  const mapOrdersToGridRows = (orders, activeColumns) => {
-    if (!Array.isArray(orders) || orders.length === 0) {
-      return [];
-    }
-
+  const rows = useMemo(() => {
     return orders.map((order, index) => {
       const orderId = order._id ?? order.id ?? `order-${index}`;
       const tenantId = order.tennantId ?? order.tenantId ?? "";
-      const uniqueId = `${orderId}-${tenantId || index}`;
+      // Ensure uniqueId is truly unique by appending index if tenantId is missing or to be safe
+      const uniqueId = order._id ? `${order._id}-${index}` : `${orderId}-${tenantId || "no-tenant"}-${index}`;
 
       const row = {
         id: uniqueId,
@@ -312,257 +193,76 @@ export const useOrdersTableLogic = ({
         rawOrder: order,
       };
 
-      activeColumns.forEach((column) => {
-        row[column.value] = formatColumnValue(column.value, order);
-      });
+      const len = activeColumns.length;
+      for (let i = 0; i < len; i++) {
+        const col = activeColumns[i];
+        row[col.value] = formatColumnValue(col.value, order);
+      }
 
       return row;
     });
-  };
-  const dataGridRows = useMemo(
-    () => mapOrdersToGridRows(displayOrders, activeColumns),
-    [activeColumns, displayOrders]
-  );
-
-  useEffect(() => {
-    setSelectedRowIds((prevSelected) => {
-      const nextSelected = new Set();
-      dataGridRows.forEach((row) => {
-        if (prevSelected.has(row.id)) {
-          nextSelected.add(row.id);
-        }
-      });
-      return nextSelected;
-    });
-  }, [dataGridRows]);
-
-  const handleToggleRowSelection = useCallback((rowId) => {
-    setSelectedRowIds((prevSelected) => {
-      const nextSelected = new Set(prevSelected);
-      if (nextSelected.has(rowId)) {
-        nextSelected.delete(rowId);
-      } else {
-        nextSelected.add(rowId);
-      }
-      return nextSelected;
-    });
-  }, []);
-
-  const allRowIds = useMemo(() => dataGridRows.map((row) => row.id), [dataGridRows]);
-
-  const allSelected = useMemo(() => {
-    if (allRowIds.length === 0) {
-      return false;
-    }
-    return allRowIds.every((id) => selectedRowIds.has(id));
-  }, [allRowIds, selectedRowIds]);
-
-  const handleToggleAllRows = useCallback(() => {
-    setSelectedRowIds((prevSelected) => {
-      if (allSelected) {
-        return new Set();
-      }
-      return new Set(allRowIds);
-    });
-  }, [allSelected, allRowIds]);
+  }, [orders, activeColumns]);
 
   const columns = useMemo(() => {
-    const selectColumn = {
-      field: "select",
-      headerName: "",
-      width: 52,
-      sortable: false,
-      filterable: false,
-      disableColumnMenu: true,
-      renderHeader: () => (
-        <input
-          type="checkbox"
-          aria-label="Seleccionar todas las órdenes visibles"
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-          checked={allSelected}
-          onClick={(event) => event.stopPropagation()}
-          onChange={(event) => {
-            event.stopPropagation();
-            handleToggleAllRows();
-          }}
-        />
-      ),
-      align: "center",
-      headerAlign: "center",
-      renderCell: ({ row }) => {
-        const isChecked = selectedRowIds.has(row.id);
-        return (
-          <input
-            type="checkbox"
-            aria-label={`Seleccionar orden ${row._id ?? row.id}`}
-            className="h-4 w-4 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-            checked={isChecked}
-            onClick={(event) => event.stopPropagation()}
-            onChange={(event) => {
-              event.stopPropagation();
-              handleToggleRowSelection(row.id);
-            }}
-          />
-        );
-      },
-    };
+    return activeColumns.map(buildColumnDefinition);
+  }, [activeColumns]);
 
-    const dynamicColumns = activeColumns.map(buildColumnDefinition);
-
-    return [selectColumn, ...dynamicColumns];
-  }, [
-    activeColumns,
-    allSelected,
-    handleToggleAllRows,
-    handleToggleRowSelection,
-    selectedRowIds,
-  ]);
-
-  const paginationModel = useMemo(() => {
-    return {
-      page: Math.max((currentPage ?? 1) - 1, 0),
-      pageSize,
-    };
-  }, [currentPage, pageSize]);
-
-  const handlePaginationModelChange = useCallback(
-    (model) => {
-      const nextPage = model.page + 1;
-      if (nextPage !== page) {
-        setPage(nextPage);
-      }
-      if (model.pageSize !== pageSize) {
-        setPageSize(model.pageSize);
-      }
-    },
-    [page, pageSize]
-  );
-
-  const dataGridRowCount = dataGridRows.length;
-
-  useEffect(() => {
-    if (!loading && page > 1 && dataGridRowCount === 0) {
-      setPage((prev) => Math.max(prev - 1, 1));
-    }
-  }, [loading, page, dataGridRowCount]);
 
   const rowCount = useMemo(() => {
-    const totalCandidates = [
-      meta?.total,
-      meta?.totalOrders,
-      meta?.totalItems,
-      meta?.count,
-      meta?.records,
-      meta?.recordsCount,
-      meta?.rows,
-    ];
+    if (meta?.totalPages && meta?.pageSize) return meta.totalPages * meta.pageSize;
+    if (meta?.total) return meta.total;
+    return orders.length;
+  }, [meta, orders.length]);
 
-    for (const candidate of totalCandidates) {
-      const parsed = Number(candidate);
-      if (Number.isFinite(parsed) && parsed >= dataGridRowCount) {
-        return parsed;
-      }
-    }
+  const getSelectedOrderIds = useCallback(() => 
+    rows.filter(r => rowSelectionModel.includes(r.id)).map(r => r.internalId),
+  [rows, rowSelectionModel]);
 
-    const totalPages = Number(meta?.totalPages ?? meta?.pages);
-    const metaPageSize = Number(
-      meta?.pageSize ?? meta?.limit ?? meta?.perPage ?? pageSize
-    );
-    if (Number.isFinite(totalPages) && Number.isFinite(metaPageSize)) {
-      return totalPages * metaPageSize;
-    }
+  const getSelectedOrders = useCallback(() => 
+    rows.filter(r => rowSelectionModel.includes(r.id)).map(r => r.rawOrder),
+  [rows, rowSelectionModel]);
 
-    const hasMoreHint =
-      Boolean(meta?.hasMore) ||
-      Boolean(meta?.hasNext) ||
-      Boolean(meta?.hasNextPage) ||
-      Boolean(meta?.nextPage) ||
-      Boolean(meta?.next) ||
-      Boolean(meta?.nextToken) ||
-      Boolean(meta?.lastKey) ||
-      Boolean(meta?.lastEvaluatedKey) ||
-      Boolean(meta?.cursor) ||
-      Boolean(meta?.pagination?.hasMore);
+  const formatOrdersForExportFunc = useCallback((list) => {
+      return list.map((order, i) => {
+        const row = { id: i };
+        activeColumns.forEach(c => row[c.value] = formatColumnValue(c.value, order));
+        return row;
+      });
+  }, [activeColumns]);
 
-    const completedRows = (page - 1) * pageSize + dataGridRowCount;
-
-    if (hasMoreHint || dataGridRowCount === pageSize) {
-      return completedRows + pageSize;
-    }
-
-    return completedRows;
-  }, [meta, dataGridRowCount, page, pageSize]);
-
-  const handleRowClick = useCallback(
-    (params) => {
-      if (params?.row?.rawOrder) {
-        onSelectOrder(params.row.rawOrder);
-      }
-    },
-    [onSelectOrder]
-  );
-
-  const clearSelection = useCallback(() => {
-    setSelectedRowIds(new Set());
-  }, []);
-
-  const getSelectedOrderIds = useCallback(() => {
-    const selectedIds = [];
-    dataGridRows.forEach((row) => {
-      if (selectedRowIds.has(row.id)) {
-        selectedIds.push(row.internalId);
-      }
-    });
-    return selectedIds;
-  }, [dataGridRows, selectedRowIds]);
-
-  const getSelectedOrders = useCallback(() => {
-    const selectedOrders = [];
-    dataGridRows.forEach((row) => {
-      if (selectedRowIds.has(row.id) && row.rawOrder) {
-        selectedOrders.push(row.rawOrder);
-      }
-    });
-    return selectedOrders;
-  }, [dataGridRows, selectedRowIds]);
-
-  const refreshData = useCallback(() => {
-    setRefreshTrigger((prev) => prev + 1);
-  }, []);
-
-  const formatOrdersForExport = useCallback(
-    (ordersList) => mapOrdersToGridRows(ordersList, activeColumns),
-    [activeColumns]
-  );
-
-  const isLargePageSize = pageSize > 100;
+  const handleExport = useCallback(() => {
+      const filters = { status: apiStatus, tenantId: selectedTenantId, tenantName: selectedTenantName };
+      Object.keys(filters).forEach(k => !filters[k] && delete filters[k]);
+      startExport(filters);
+  }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);
 
   return {
-    loading,
+    loading: loadingOrders,
     error,
     selectedStateLabel: getSelectedStateLabel(selectedOrderState),
-    selectedRowIds: Array.from(selectedRowIds),
+    selectedRowIds: rowSelectionModel, 
     getSelectedOrderIds,
     getSelectedOrders,
-    clearSelection,
-    refreshData,
-    formatOrdersForExport,
+    clearSelection: () => handleSelectionModelChange([]),
+    refreshData: triggerRefresh,
+    formatOrdersForExport: formatOrdersForExportFunc,
     exporting: isExporting,
-    onExport: handleExportOrders,
+    onExport: handleExport,
     grid: {
-      rows: dataGridRows,
+      rows,
       columns,
-      loading,
-      paginationModel: isLargePageSize
-        ? { page: 0, pageSize: 100 }
-        : paginationModel,
-      onPaginationModelChange: handlePaginationModelChange,
-      paginationMode: isLargePageSize ? "client" : "server",
-      pageSizeOptions,
-
-      rowCount: isLargePageSize ? undefined : rowCount,
-      onRowClick: handleRowClick,
+      loading: loadingOrders,
+      paginationModel,
+      onPaginationModelChange: setPaginationModel,
+      pageSizeOptions: PAGE_SIZE_OPTIONS,
+      rowCount: Number(rowCount) || 0,
+      onViewDetails: (row) => onSelectOrder(row),
+      
+      rowSelectionModel,
+      onRowSelectionModelChange: handleSelectionModelChange,
+      onToggleRowSelection: handleToggleRowSelection,
+      onToggleAllRows: (ids) => handleToggleAllRows(ids || rows.map(r => r.id)),
+      checkboxSelection: true,
     },
   };
 };
-

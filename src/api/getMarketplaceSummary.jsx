@@ -1,10 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 
 const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getMarketplaceSummary";
+const CACHE_TTL_MS = 1000 * 60 * 5;
+const cache = new Map(); // key: token, value: { data, ts }
 
 export const getMarketplaceSummary = async ({ token, signal } = {}) => {
   if (!token) {
     throw new Error("Token de autenticación no proporcionado.");
+  }
+
+  const cached = cache.get(token);
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return cached.data;
   }
 
   const response = await fetch(API_URL, {
@@ -18,7 +25,9 @@ export const getMarketplaceSummary = async ({ token, signal } = {}) => {
     throw new Error(`Error ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  cache.set(token, { data, ts: Date.now() });
+  return data;
 };
 
 export const useMarketplaceSummary = (token, autoRefreshInterval = null) => {
