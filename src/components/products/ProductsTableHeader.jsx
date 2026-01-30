@@ -7,9 +7,9 @@ const ImportProductsModal = lazy(() => import("./ImportProductsModal"));
 const SyncSkuModal = lazy(() => import("./SyncSkuModal"));
 
 const PRODUCT_STATES = [
-    { value: "creada", label: "Creada" },
+    { value: "created", label: "Creada" },
     { value: "error", label: "Error" },
-    { value: "procesada", label: "Procesada" },
+    { value: "success", label: "Procesada" },
 ];
 
 const ProductsTableHeader = ({

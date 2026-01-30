@@ -1,17 +1,15 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 
-// Configuración de la prueba de carga
 export const options = {
-  // Aumentamos la carga progresivamente para probar capacidad
   stages: [
-    { duration: '30s', target: 50 },  // Subir a 50 usuarios (carga moderada)
-    { duration: '1m', target: 50 },   // Mantener 50 usuarios
-    { duration: '10s', target: 0 },   
+    { duration: '30s', target: 200 },
+    { duration: '1m', target: 200 },
+    { duration: '10s', target: 0 },
   ],
   thresholds: {
-    http_req_failed: ['rate<0.01'],   // Error rate < 1%
-    http_req_duration: ['p(95)<2000'], // 95% de las peticiones deben ser < 2s
+    http_req_failed: ['rate<0.01'],
+    http_req_duration: ['p(95)<2500'],
   },
 };
 

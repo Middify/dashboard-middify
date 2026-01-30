@@ -1,87 +1,41 @@
-import { useEffect, useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getProductStates";
-const CACHE_TTL_MS = 1000 * 60 * 5;
-const cache = new Map(); 
 
-export const getProductStates = async ({ token, signal } = {}) => {
-  if (!token) {
-    throw new Error("Token de autenticación no proporcionado.");
-  }
+export const fetchProductStates = async ({ token, tenantId, signal }) => {
+  if (!token) throw new Error("Token missing");
+  if (!tenantId) throw new Error("tenantId es obligatorio");
 
-  const cached = cache.get(token);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-    return cached.data;
-  }
+  const url = new URL(API_URL);
+  url.searchParams.append("tenantId", tenantId);
 
-  const response = await fetch(API_URL, {
-    headers: {
-      Authorization: `Bearer ${token}`,
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: { 
+      Authorization: `Bearer ${token}`
     },
     signal,
   });
 
   if (!response.ok) {
-    throw new Error(`Error ${response.status}`);
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `Error ${response.status}`);
   }
 
   const data = await response.json();
-  cache.set(token, { data, ts: Date.now() });
-  return data;
+  return data.tenants || data || [];
 };
 
-export const useProductStates = (token, autoRefreshInterval = null) => {
-  const [tenants, setTenants] = useState([]);
-  const [loading, setLoading] = useState(Boolean(token));
-  const [error, setError] = useState(null);
-  const isInitialLoad = useRef(true);
-
-  useEffect(() => {
-    if (!token) {
-      setTenants([]);
-      setLoading(false);
-      isInitialLoad.current = true;
-      return;
-    }
-
-    const controller = new AbortController();
-    let isMounted = true;
-
-    const load = async () => {
-      if (isInitialLoad.current) setLoading(true);
-      setError(null);
-      try {
-        const data = await getProductStates({ token, signal: controller.signal });
-        if (isMounted) {
-          setTenants(data.tenants || data || []);
-          isInitialLoad.current = false;
-        }
-      } catch (err) {
-        if (err.name !== "AbortError" && isMounted) setError(err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    load();
-
-    // Auto-refresh si se especifica intervalo
-    let intervalId = null;
-    if (autoRefreshInterval && autoRefreshInterval > 0) {
-      intervalId = setInterval(load, autoRefreshInterval);
-    }
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [token, autoRefreshInterval]);
-
-  useEffect(() => {
-    isInitialLoad.current = true;
-  }, [token]);
-
-  return { tenants, loading, error };
+export const useProductStates = (token, tenantId, autoRefreshInterval = null) => {
+  return useQuery({
+    queryKey: ["productStates", token, tenantId],
+    queryFn: ({ signal }) => fetchProductStates({ token, tenantId, signal }),
+    enabled: !!token && !!tenantId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchInterval: autoRefreshInterval,
+    refetchOnWindowFocus: false,
+    retry: 2,
+  });
 };
 

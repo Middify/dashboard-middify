@@ -5,6 +5,7 @@ const Stores = ({
   error = null,
   productTenants = [],
   marketplaceTenants = [],
+  authorizedTenants = [],
 }) => {
   let content;
 
@@ -21,6 +22,7 @@ const Stores = ({
       <StoreCards
         productTenants={productTenants}
         marketplaceTenants={marketplaceTenants}
+        authorizedTenants={authorizedTenants}
       />
     );
   }

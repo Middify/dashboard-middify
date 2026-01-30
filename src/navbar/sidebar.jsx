@@ -65,6 +65,8 @@ const Sidebar = ({
   onCloseMobile = null,
   userRole = null,
 }) => {
+  const [tenantSearch, setTenantSearch] = useState("");
+
   const { hasValidTenants, tenantOptions } = useMemo(() => {
     if (!Array.isArray(tenants)) {
       return { hasValidTenants: false, tenantOptions: [] };
@@ -77,8 +79,13 @@ const Sidebar = ({
     // Eliminar duplicados por tenantId
     const uniqueOptions = Array.from(new Map(options.map(t => [t.tenantId, t])).values());
     
-    return { hasValidTenants: uniqueOptions.length > 0, tenantOptions: uniqueOptions };
-  }, [tenants]);
+    // Filtrar por búsqueda
+    const filteredOptions = uniqueOptions.filter(t => 
+      t.tenantName.toLowerCase().includes(tenantSearch.toLowerCase())
+    );
+    
+    return { hasValidTenants: filteredOptions.length > 0, tenantOptions: filteredOptions };
+  }, [tenants, tenantSearch]);
 
   // Cálculo de visibilidad por módulos
   const visibility = useMemo(() => {
@@ -322,7 +329,7 @@ const Sidebar = ({
     );
 
     const selectedTenantOption = (hasValidTenants && tenantOptions.find(t => t.tenantId === selectedTenantId)) || null;
-    const selectedTenantLabel = selectedTenantOption ? selectedTenantOption.tenantName : "Todas las tiendas";
+    const selectedTenantLabel = selectedTenantOption ? selectedTenantOption.tenantName : "Seleccionar tienda";
 
     return (
       <div className="flex h-full flex-col">
@@ -345,36 +352,33 @@ const Sidebar = ({
                     Tienda
                   </label>
                   <div className="relative mt-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setTenantOpen((v) => !v)}
-                      className={`w-full rounded-xl border ${tenantOpen ? "border-white/40 bg-white/15" : "border-white/25 bg-white/10"} px-3 py-2 pr-10 text-sm font-medium text-white outline-none transition-all duration-200 hover:border-white/40 hover:bg-white/12 focus:border-white/50 focus:bg-white/15`}
-                      aria-haspopup="listbox"
-                      aria-expanded={tenantOpen}
-                      title="Seleccionar tienda"
-                    >
-                      <span className="truncate">{selectedTenantLabel}</span>
-                      <ExpandMoreIcon className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/70 transition-transform duration-300 ${tenantOpen ? "rotate-180" : ""}`} />
-                    </button>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Buscar tienda..."
+                        value={tenantSearch}
+                        onChange={(e) => {
+                          setTenantSearch(e.target.value);
+                          setTenantOpen(true);
+                        }}
+                        onFocus={() => setTenantOpen(true)}
+                        className={`w-full rounded-xl border ${tenantOpen ? "border-white/40 bg-white/15" : "border-white/25 bg-white/10"} px-3 py-2 pr-10 text-sm font-medium text-white placeholder:text-white/40 outline-none transition-all duration-200 hover:border-white/40 hover:bg-white/12 focus:border-white/50 focus:bg-white/15`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setTenantOpen((v) => !v)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+                      >
+                        <ExpandMoreIcon className={`transition-transform duration-300 ${tenantOpen ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
+                    
                     <div
                       className={`absolute z-10 mt-2 w-full rounded-xl border border-white/15 bg-[#063279]/95 backdrop-blur-sm shadow-xl shadow-black/20 transition-all duration-300 ease-out ${tenantOpen ? "max-h-[60vh] opacity-100 translate-y-0" : "pointer-events-none max-h-0 opacity-0 -translate-y-1"} ${tenantOpen ? "overflow-auto" : "overflow-hidden"}`}
                       role="listbox"
                       tabIndex={-1}
                     >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (typeof onChangeTenant === "function") onChangeTenant(null);
-                          setTenantOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-3 px-3 py-2 text-sm text-left transition-colors duration-150 ${selectedTenantId == null ? "bg-white/10 text-white" : "text-white/90 hover:bg-white/10 hover:text-white"}`}
-                        role="option"
-                        aria-selected={selectedTenantId == null}
-                      >
-                        <StatusDot active={selectedTenantId == null} />
-                        <span>Todas las tiendas</span>
-                      </button>
-                      {hasValidTenants &&
+                      {hasValidTenants ? (
                         tenantOptions.map((tenant) => {
                           const isActive = selectedTenantId === tenant.tenantId;
                           return (
@@ -384,6 +388,7 @@ const Sidebar = ({
                               onClick={() => {
                                 if (typeof onChangeTenant === "function") onChangeTenant(tenant.tenantId);
                                 setTenantOpen(false);
+                                setTenantSearch(""); // Limpiar búsqueda al seleccionar
                               }}
                               className={`flex w-full items-center gap-3 px-3 py-2 text-sm text-left transition-colors duration-150 ${isActive ? "bg-white/10 text-white" : "text-white/90 hover:bg-white/10 hover:text-white"}`}
                               role="option"
@@ -393,7 +398,12 @@ const Sidebar = ({
                               <span className="truncate">{tenant.tenantName}</span>
                             </button>
                           );
-                        })}
+                        })
+                      ) : (
+                        <div className="px-4 py-3 text-xs text-white/40 text-center italic">
+                          No se encontraron tiendas
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import HighlightOffOutlinedIcon from "@mui/icons-material/HighlightOffOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 
 const numberFormatter = new Intl.NumberFormat("es-CL");
 
@@ -84,6 +85,14 @@ export const STATE_DEFINITIONS = [
   { key: "procesada", label: "Procesada" },
 ];
 
+// Mapeo de estados técnicos a los 6 estados oficiales
+const STATE_MAPPING = {
+  success: "procesada",
+  failed: "error",
+  discarded: "descartada",
+  // Puedes añadir más mapeos aquí si el backend envía otros nombres
+};
+
 const stateStyles = {
   ingresada: {
     badge: "bg-catalina-blue-50 text-catalina-blue-600 border border-catalina-blue-200",
@@ -109,13 +118,31 @@ const stateStyles = {
     gradient: "from-slate-50 via-transparent to-red-50",
     border: "border-red-100",
   },
+  failed: {
+    badge: "bg-red-50 text-red-600 border border-red-200",
+    accent: "text-red-600",
+    gradient: "from-slate-50 via-transparent to-red-50",
+    border: "border-red-100",
+  },
   descartada: {
     badge: "bg-slate-100 text-slate-700 border border-slate-200",
     accent: "text-slate-700",
     gradient: "from-slate-50 via-transparent to-slate-100",
     border: "border-slate-200",
   },
+  discarded: {
+    badge: "bg-slate-100 text-slate-700 border border-slate-200",
+    accent: "text-slate-700",
+    gradient: "from-slate-50 via-transparent to-slate-100",
+    border: "border-slate-200",
+  },
   procesada: {
+    badge: "bg-emerald-50 text-emerald-600 border border-emerald-200",
+    accent: "text-emerald-600",
+    gradient: "from-slate-50 via-transparent to-emerald-50",
+    border: "border-emerald-100",
+  },
+  success: {
     badge: "bg-emerald-50 text-emerald-600 border border-emerald-200",
     accent: "text-emerald-600",
     gradient: "from-slate-50 via-transparent to-emerald-50",
@@ -134,8 +161,11 @@ const stateIcons = {
   "en proceso": AccessTimeOutlinedIcon,
   pendiente: WarningAmberOutlinedIcon,
   error: ErrorOutlineIcon,
+  failed: ErrorOutlineIcon,
   descartada: HighlightOffOutlinedIcon,
+  discarded: HighlightOffOutlinedIcon,
   procesada: CheckCircleOutlineOutlinedIcon,
+  success: CheckCircleOutlineOutlinedIcon,
 };
 
 const normalizeStateName = (value = "") =>
@@ -175,10 +205,13 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
         const normalizedStates = new Map();
 
         rawStates.forEach((state) => {
-          const key = normalizeStateName(state?.name);
-          if (!key) {
+          const rawKey = normalizeStateName(state?.name);
+          if (!rawKey) {
             return;
           }
+
+          // Mapear el estado técnico al estado oficial, o usar el original si no hay mapeo
+          const key = STATE_MAPPING[rawKey] || rawKey;
 
           const currentValue = normalizedStates.get(key);
           const countValue = Number(state?.count) || 0;
@@ -194,10 +227,11 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
 
         const states = STATE_DEFINITIONS.map(({ key, label }) => {
           const existing = normalizedStates.get(key);
+          const count = existing?.count ?? 0;
           return {
             id: existing?.id ?? `${card.id}-${key}`,
             name: label,
-            count: existing?.count ?? 0,
+            count: count,
             variant: key,
           };
         });
@@ -207,48 +241,39 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
           0
         );
 
-        const summaryChips = [
-          {
-            id: "total",
-            label: "Órdenes totales",
-            value: numberFormatter.format(totalOrders || 0),
-          }
-        ];
-
         return (
-          <div key={card.id} className="space-y-6">
-            <article className="rounded-3xl bg-white p-6 shadow-md ring-1 ring-slate-200 sm:p-8">
-              <header className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div key={card.id} className="space-y-8">
+            <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-catalina-blue-600 text-white shadow-lg shadow-catalina-blue-200">
+                  <StorefrontOutlinedIcon fontSize="large" />
+                </div>
                 <div>
-                  <span className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">
-                    Panel de control
-                  </span>
-                  <h2 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-md bg-catalina-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-catalina-blue-700 ring-1 ring-inset ring-catalina-blue-700/10">
+                      Tienda Activa
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">
                     {card.name}
                   </h2>
                 </div>
-                <div className="flex flex-wrap gap-3 text-sm font-medium text-slate-600">
-                  {summaryChips.map((chip) => (
-                    <div
-                      key={chip.id}
-                      className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2"
-                    >
-                      <span className="text-[11px] uppercase tracking-[0.25em] text-slate-400">
-                        {chip.label}
-                      </span>
-                      <span
-                        className={`text-sm font-semibold text-slate-700 ${chip.accentClass ?? ""}`}
-                      >
-                        {chip.value}
-                      </span>
-                    </div>
-                  ))}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end rounded-2xl bg-white px-6 py-3 shadow-sm ring-1 ring-slate-200">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Volumen Total
+                  </span>
+                  <span className="text-2xl font-black text-catalina-blue-600">
+                    {numberFormatter.format(totalOrders || 0)}
+                  </span>
                 </div>
-              </header>
-            </article>
+              </div>
+            </header>
 
             {states.length > 0 && (
-              <ul className="grid grid-cols-2 gap-4 text-sm md:grid-cols-6">
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 {states.map((state) => {
                   const stateCount = Number(state?.count) || 0;
                   const percentage =
@@ -278,48 +303,58 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                   };
 
                   return (
-                    <li key={state.id}>
+                    <li key={state.id} className="h-full">
                       <div
                         role={isClickable ? "button" : undefined}
                         tabIndex={isClickable ? 0 : undefined}
                         onClick={handleClick}
                         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleClick()}
                         data-order-state={orderStateId}
-                        className={`group relative overflow-hidden rounded-2xl border ${cardBorder} bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${isClickable
-                            ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-catalina-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                        className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border-2 ${cardBorder} bg-white p-1 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${isClickable
+                            ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-catalina-blue-500 focus-visible:ring-offset-2"
                             : ""
                           }`}
                       >
                         <div
-                          className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 bg-gradient-to-br ${gradientClasses}`}
+                          className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10 bg-gradient-to-br ${gradientClasses}`}
                         />
-                        <div className="relative space-y-4 p-5">
-                          <div className="flex items-start justify-between">
+                        
+                        <div className="relative flex h-full flex-col justify-between p-5">
+                          <div className="flex items-center justify-between">
                             <div
-                              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold shadow-sm transition-colors ${badgeClasses}`}
+                              className={`flex h-10 w-10 items-center justify-center rounded-2xl shadow-inner transition-transform duration-300 group-hover:scale-110 ${badgeClasses}`}
                             >
-                              <span className="uppercase tracking-[0.25em] text-[11px]">
-                                {stateLabel}
-                              </span>
+                              {IconComponent && (
+                                <IconComponent
+                                  aria-hidden
+                                  className="h-5 w-5"
+                                />
+                              )}
                             </div>
-                            {IconComponent && (
-                              <IconComponent
-                                aria-hidden
-                                className="h-6 w-6 text-slate-300 transition-colors duration-200 group-hover:text-slate-400"
-                              />
-                            )}
+                            <div className="text-right">
+                              <p className={`text-[10px] font-black uppercase tracking-widest ${accentClasses}`}>
+                                {stateLabel}
+                              </p>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-3xl font-black leading-none text-slate-900">
+
+                          <div className="mt-6 space-y-2">
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-4xl font-black tracking-tighter text-slate-900">
                                 {numberFormatter.format(stateCount)}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-500">
-                              <span className={`font-medium ${accentClasses}`}>
-                                {percentage.toFixed(1)}%
+                            
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-1000 ease-out ${accentClasses.replace('text', 'bg')}`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <span className={`text-xs font-bold ${accentClasses}`}>
+                                {percentage.toFixed(0)}%
                               </span>
-                              <span className="text-slate-400">del total</span>
                             </div>
                           </div>
                         </div>

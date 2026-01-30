@@ -85,7 +85,7 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
     const computeRows = () => {
       const reserved = 220;
       const available = Math.max(300, window.innerHeight - reserved);
-      const itemHeight = 68;
+      const itemHeight = 84;
       const nextRows = Math.max(2, Math.min(5, Math.floor(available / itemHeight)));
       setRows(nextRows);
     };
@@ -136,97 +136,138 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
 
   if (!cardData) return null;
 
+  const totalOrders = sortedMarketplaces.reduce((acc, mp) => acc + (mp.count || 0), 0);
+
   return (
-    <section className="min-h-[400px] rounded-lg border border-slate-200 bg-white p-6 shadow-sm max-w-[100%] flex flex-col">
-      <header className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Marketplace por tienda
-        </h2>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center">
-            <Tooltip title="Vista lista">
-              <IconButton
-                size="small"
-                color={viewMode === "list" ? "primary" : "default"}
+    <section className="animate-in fade-in slide-in-from-bottom-6 duration-1000 flex flex-col overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
+      <header className="border-b border-slate-100 bg-slate-50/50 p-8 backdrop-blur-md">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+              <DonutLargeIcon className="text-catalina-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900">
+                Distribución de Marketplaces
+              </h2>
+              <p className="text-sm font-medium text-slate-500">
+                Canales de venta activos para <span className="font-bold text-catalina-blue-600">{cardData.title}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 rounded-2xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
+              <button
                 onClick={() => setViewMode("list")}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${viewMode === "list" ? "bg-catalina-blue-600 text-white shadow-md shadow-catalina-blue-200" : "text-slate-400 hover:bg-slate-50"}`}
               >
                 <ViewListIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Vista torta">
-              <IconButton
-                size="small"
-                color={viewMode === "pie" ? "primary" : "default"}
+              </button>
+              <button
                 onClick={() => setViewMode("pie")}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${viewMode === "pie" ? "bg-catalina-blue-600 text-white shadow-md shadow-catalina-blue-200" : "text-slate-400 hover:bg-slate-50"}`}
               >
                 <DonutLargeIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </div>
-          <span className="text-xs font-medium uppercase tracking-wide text-catalina-blue-600">
-            {cardData.title}
-          </span>
-          {totalItems > PAGE_SIZE && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={goPrev}
-                disabled={currentPage === 1}
-                className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <span className="text-[11px] text-slate-500">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={goNext}
-                disabled={currentPage === totalPages}
-                className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-              >
-                Siguiente
               </button>
             </div>
-          )}
+
+            {totalItems > PAGE_SIZE && (
+              <div className="flex items-center gap-2 rounded-2xl bg-white px-3 py-1.5 shadow-sm ring-1 ring-slate-200">
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  disabled={currentPage === 1}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-catalina-blue-600 disabled:opacity-20"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                  </svg>
+                </button>
+                <span className="text-[11px] font-black text-slate-400">
+                  {currentPage} <span className="mx-1">/</span> {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={currentPage === totalPages}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-catalina-blue-600 disabled:opacity-20"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
-      {cardData.marketplaces.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          No hay marketplaces registrados para esta tienda.
-        </p>
-      ) : (
-        <div className="flex-1">
-          {viewMode === "pie" ? (
-            <MarketplacePie items={sortedMarketplaces} />
-          ) : (
-            <ul
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-200 ease-out"
-              style={{ opacity: isFading ? 0 : 1 }}
-            >
-              {paginatedMarketplaces.map((marketplace) => (
-                <li
-                  key={marketplace.id}
-                  className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 ring-1 ring-slate-200 transition-transform duration-200 ease-out group-hover:scale-105">
-                      <MarketplaceLogo name={marketplace.name} className="h-6 w-6" />
-                    </div>
-                    <span className="truncate" title={marketplace.name}>
-                      {marketplace.name}
-                    </span>
-                  </div>
-                  <span className="rounded-full bg-catalina-blue-50 px-2.5 py-1 text-[12px] font-medium text-catalina-blue-700 ring-1 ring-catalina-blue-100 transition-colors duration-200 group-hover:bg-catalina-blue-100 group-hover:text-catalina-blue-800">
-                    {numberFormatter.format(marketplace.count || 0)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="p-8">
+        {cardData.marketplaces.length === 0 ? (
+          <div className="flex h-48 flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-100 text-slate-400">
+            <DonutLargeIcon fontSize="large" className="mb-2 opacity-20" />
+            <p className="text-sm font-medium">No hay marketplaces activos</p>
+          </div>
+        ) : (
+          <div className="min-h-[300px]">
+            {viewMode === "pie" ? (
+              <div className="flex items-center justify-center py-4">
+                <MarketplacePie items={sortedMarketplaces} />
+              </div>
+            ) : (
+              <ul
+                className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-300"
+                style={{ opacity: isFading ? 0 : 1 }}
+              >
+                {paginatedMarketplaces.map((marketplace) => {
+                  const mpPercentage = totalOrders > 0 ? (marketplace.count / totalOrders) * 100 : 0;
+                  return (
+                    <li
+                      key={marketplace.id}
+                      className="group relative flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-catalina-blue-100 hover:shadow-xl hover:shadow-catalina-blue-100/20"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100 transition-all duration-300 group-hover:scale-110 group-hover:bg-white group-hover:shadow-md group-hover:ring-catalina-blue-100">
+                          <MarketplaceLogo name={marketplace.name} className="h-8 w-8" />
+                        </div>
+                        <div className="text-right">
+                          <span className="text-2xl font-black text-slate-900">
+                            {numberFormatter.format(marketplace.count || 0)}
+                          </span>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Órdenes</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-black text-slate-700 truncate max-w-[70%]" title={marketplace.name}>
+                            {marketplace.name}
+                          </span>
+                          <span className="font-bold text-catalina-blue-600">{mpPercentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div 
+                            className="h-full rounded-full bg-gradient-to-r from-catalina-blue-500 to-catalina-blue-700 transition-all duration-1000 ease-out"
+                            style={{ width: `${mpPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      <footer className="bg-slate-50/50 px-8 py-4 border-t border-slate-100">
+        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-slate-400">
+          <span>Total Canales: {totalItems}</span>
+          <span>Actualizado en tiempo real</span>
         </div>
-      )}
+      </footer>
     </section>
   );
 };

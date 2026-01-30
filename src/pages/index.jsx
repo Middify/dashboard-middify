@@ -34,6 +34,7 @@ const PageLoader = () => (
 const DashboardWrapper = () => {
   const {
     isLoading,
+    isFetching,
     error,
     tenants,
     marketplaceTenants,
@@ -44,6 +45,7 @@ const DashboardWrapper = () => {
   return (
     <Dashboard
       isLoading={isLoading}
+      isFetching={isFetching}
       error={error}
       tenants={tenants}
       marketplaceTenants={marketplaceTenants}
@@ -54,7 +56,7 @@ const DashboardWrapper = () => {
 };
 
 const StoresWrapper = () => {
-  const { isLoading, error, allTenants, allMarketplaceTenants } = useOutletContext();
+  const { isLoading, error, allTenants, allMarketplaceTenants, authorizedTenants } = useOutletContext();
 
   return (
     <Stores
@@ -62,6 +64,7 @@ const StoresWrapper = () => {
       error={error}
       productTenants={allTenants || []}
       marketplaceTenants={allMarketplaceTenants || []}
+      authorizedTenants={authorizedTenants || []}
     />
   );
 };

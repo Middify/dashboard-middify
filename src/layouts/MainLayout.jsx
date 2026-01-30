@@ -64,16 +64,18 @@ const MainLayout = () => {
     const autoRefresh = currentView === "dashboard" ? 30000 : null;
 
     const {
-        tenants,
-        loading: tenantsLoading,
-        error: tenantsError,
-    } = useProductStates(token, autoRefresh);
+        data: tenants = [],
+        isLoading: productLoading,
+        isFetching: productFetching,
+        error: productError,
+    } = useProductStates(token, selectedTenantId, autoRefresh);
     
     const {
-        tenants: marketplaceTenants,
-        loading: marketplaceLoading,
+        data: marketplaceTenants = [],
+        isLoading: marketplaceLoading,
+        isFetching: marketplaceFetching,
         error: marketplaceError,
-    } = useMarketplaceSummary(token, autoRefresh);
+    } = useMarketplaceSummary(token, selectedTenantId, autoRefresh);
     
     const {
         user,
@@ -86,6 +88,23 @@ const MainLayout = () => {
         loading: authTenantsLoading,
         error: authTenantsError,
     } = useUsersByTenant(token);
+
+    // NUEVO: Hook para obtener todos los datos de todas las tiendas (para la pestaña de Tiendas)
+    // Esto evita que la pestaña de Tiendas dependa del filtro del sidebar
+    const {
+        data: allProductTenants = [],
+    } = useProductStates(token, authorizedTenants?.length > 0 ? authorizedTenants.map(t => t.tenantId).join(',') : null, null);
+
+    const {
+        data: allMarketplaceSummary = [],
+    } = useMarketplaceSummary(token, authorizedTenants?.length > 0 ? authorizedTenants.map(t => t.tenantId).join(',') : null, null);
+
+    // Seleccionar automáticamente el primer tenant si no hay uno seleccionado
+    useEffect(() => {
+        if (!selectedTenantId && authorizedTenants && authorizedTenants.length > 0) {
+            setSelectedTenantId(authorizedTenants[0].tenantId);
+        }
+    }, [selectedTenantId, authorizedTenants]);
 
     const sidebarActiveView = useMemo(() => {
         if (currentView === "detailsOrders") return "orders";
@@ -100,8 +119,9 @@ const MainLayout = () => {
     }, [currentView, resolvedOrderState]);
 
     const lastKnownOrderState = location.state?.fromOrderState ?? lastOrderState ?? null;
-    const isLoading = tenantsLoading || marketplaceLoading || userLoading || authTenantsLoading;
-    const error = tenantsError || marketplaceError || userError || authTenantsError;
+    const isLoading = productLoading || marketplaceLoading || userLoading || authTenantsLoading;
+    const isFetching = productFetching || marketplaceFetching;
+    const error = productError || marketplaceError || userError || authTenantsError;
 
     const handleChangeView = useCallback((nextView) => {
         switch (nextView) {
@@ -172,6 +192,7 @@ const MainLayout = () => {
         token,
         user,
         isLoading,
+        isFetching,
         error,
         tenants: filteredTenants,
         marketplaceTenants: filteredMarketplaceTenants,
@@ -184,15 +205,15 @@ const MainLayout = () => {
         handleSelectOrderState,
         handleSelectProductState,
         handleSelectPriceState,
-        isAggregated: selectedTenantId === null,
-        allTenants: tenants,
-        allMarketplaceTenants: marketplaceTenants,
+        isAggregated: false,
+        allTenants: allProductTenants,
+        allMarketplaceTenants: allMarketplaceSummary,
         authorizedTenants: authorizedTenants,
     }), [
-        token, user, isLoading, error, filteredTenants, filteredMarketplaceTenants,
+        token, user, isLoading, isFetching, error, filteredTenants, filteredMarketplaceTenants,
         selectedTenantId, selectedTenantName, resolvedOrderState, resolvedProductState,
         resolvedPriceState, lastOrderState, handleSelectOrderState, handleSelectProductState,
-        handleSelectPriceState, tenants, marketplaceTenants, authorizedTenants
+        handleSelectPriceState, allProductTenants, allMarketplaceSummary, authorizedTenants
     ]);
 
     return (

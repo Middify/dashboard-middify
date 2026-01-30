@@ -58,11 +58,10 @@ const StoreCard = ({ card, handleOpenStore, handleKeyDown }) => {
   );
 };
 
-const StoreCards = ({ productTenants = [], marketplaceTenants = [] }) => {
+const StoreCards = ({ productTenants = [], marketplaceTenants = [], authorizedTenants = [] }) => {
   const navigate = useNavigate();
 
   // Optimize: Create a map for marketplace tenants for O(1) lookup
-  // We assume productTenants is the primary list as per user request for speed/simplicity
   const marketplaceMap = useMemo(() => {
     const map = new Map();
     if (Array.isArray(marketplaceTenants)) {
@@ -75,20 +74,37 @@ const StoreCards = ({ productTenants = [], marketplaceTenants = [] }) => {
     return map;
   }, [marketplaceTenants]);
 
+  // Optimize: Create a map for product tenants
+  const productMap = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(productTenants)) {
+      productTenants.forEach(tenant => {
+        if (tenant?.tenantId) {
+          map.set(tenant.tenantId, tenant);
+        }
+      });
+    }
+    return map;
+  }, [productTenants]);
+
   const cards = useMemo(() => {
-    if (!Array.isArray(productTenants)) return [];
+    // Usamos authorizedTenants como la fuente principal de verdad para el listado
+    const baseList = Array.isArray(authorizedTenants) && authorizedTenants.length > 0 
+      ? authorizedTenants 
+      : (Array.isArray(productTenants) ? productTenants : []);
 
-    return productTenants.map((productTenant, index) => {
-      if (!productTenant) return null;
+    return baseList.map((tenant, index) => {
+      if (!tenant) return null;
 
-      const tenantId = productTenant.tenantId;
+      const tenantId = tenant.tenantId;
+      const productTenant = productMap.get(tenantId);
       const marketplaceTenant = marketplaceMap.get(tenantId);
 
-      const name = productTenant.tenantName || marketplaceTenant?.tenantName || `Tienda ${index + 1}`;
-      const totalOrders = Number(productTenant.total) || 0;
+      const name = tenant.tenantName || productTenant?.tenantName || marketplaceTenant?.tenantName || `Tienda ${index + 1}`;
+      const totalOrders = Number(productTenant?.total) || 0;
 
       // Calculate error count directly
-      const errorCount = (Array.isArray(productTenant.states) ? productTenant.states : [])
+      const errorCount = (Array.isArray(productTenant?.states) ? productTenant.states : [])
         .reduce((acc, state) => {
           if (state?._id && (state._id.toLowerCase() === "error" || state._id.toLowerCase() === "errores")) {
             return acc + (Number(state.count) || 0);
@@ -108,7 +124,7 @@ const StoreCards = ({ productTenants = [], marketplaceTenants = [] }) => {
         errorCount
       };
     }).filter(Boolean); // Remove nulls
-  }, [productTenants, marketplaceMap]);
+  }, [authorizedTenants, productTenants, productMap, marketplaceMap]);
 
   const handleOpenStore = (card) => {
     if (!card?.id) return;

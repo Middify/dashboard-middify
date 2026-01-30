@@ -26,11 +26,11 @@ export const DASHBOARD_COLUMNS_TEMPLATE = [
   { title: "Stages", value: "stages", active: true },
 ];
 
-export const buildUrlWithParams = ({ tenantId, tenantName, status, page, pageSize } = {}) => {
+export const buildUrlWithParams = ({ tenantId, tenantName, state, page, pageSize } = {}) => {
   const url = new URL(API_URL);
   if (tenantId) url.searchParams.set("tenantId", tenantId);
   if (tenantName) url.searchParams.set("tenantName", tenantName);
-  if (status) url.searchParams.set("status", status);
+  if (state) url.searchParams.set("state", state);
   if (page) url.searchParams.set("page", page);
   if (pageSize) url.searchParams.set("pageSize", pageSize);
   return url;

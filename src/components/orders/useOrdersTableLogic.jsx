@@ -112,7 +112,7 @@ export const useOrdersTableLogic = ({
   const queryParams = useMemo(() => ({
     tenantId: selectedTenantId || undefined,
     tenantName: selectedTenantName || undefined,
-    status: apiStatus,
+    state: apiStatus,
     page: paginationModel.page + 1,
     pageSize: paginationModel.pageSize,
   }), [selectedTenantId, selectedTenantName, apiStatus, paginationModel.page, paginationModel.pageSize]);
@@ -149,7 +149,7 @@ export const useOrdersTableLogic = ({
     candidateStates.forEach((state) => {
       const params = {
         ...queryParams,
-        status: state,
+        state: state,
         page: 1,
         pageSize: paginationModel.pageSize,
       };
@@ -231,7 +231,7 @@ export const useOrdersTableLogic = ({
   }, [activeColumns]);
 
   const handleExport = useCallback(() => {
-      const filters = { status: apiStatus, tenantId: selectedTenantId, tenantName: selectedTenantName };
+      const filters = { state: apiStatus, tenantId: selectedTenantId, tenantName: selectedTenantName };
       Object.keys(filters).forEach(k => !filters[k] && delete filters[k]);
       startExport(filters);
   }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);

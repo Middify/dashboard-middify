@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 const BASE_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev";
 
-export const getProducts = async ({ 
+export const fetchProducts = async ({ 
     token, 
     tenantId, 
     tenantName, 
@@ -11,11 +11,14 @@ export const getProducts = async ({
     pageSize = 100, 
     signal 
 } = {}) => {
-    // Si hay estado, usamos el endpoint específico de estados
-    const endpoint = state ? `${BASE_URL}/getProductsByState` : `${BASE_URL}/products`;
+    if (!token) throw new Error("Token missing");
+    if (!tenantId) throw new Error("tenantId es obligatorio");
+
+    // Según el backend, el endpoint es único o se maneja por parámetros
+    const endpoint = `${BASE_URL}/getProducts`;
     
     const params = new URLSearchParams();
-    if (tenantId) params.append("tenantId", tenantId);
+    params.append("tenantId", tenantId);
     if (tenantName) params.append("tenantName", tenantName);
     if (state) params.append("state", state);
     params.append("page", String(page));
@@ -24,7 +27,7 @@ export const getProducts = async ({
     const response = await fetch(`${endpoint}?${params}`, {
         headers: {
             "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }),
+            Authorization: `Bearer ${token}`,
         },
         signal,
     });
@@ -34,7 +37,14 @@ export const getProducts = async ({
         throw new Error(error.message || `Error ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    return {
+        products: data.products || [],
+        total: data.total || 0,
+        totalPages: data.totalPages || 0,
+        columnsConfig: data.columnsConfig || []
+    };
 };
 
 export const useProducts = ({
@@ -46,55 +56,29 @@ export const useProducts = ({
     pageSize = 100,
     refreshTrigger = 0,
 } = {}) => {
-    const [data, setData] = useState({
-        products: null,
-        total: 0,
-        loading: true,
-        error: null,
+    const query = useQuery({
+        queryKey: ["products", token, tenantId, tenantName, state, page, pageSize, refreshTrigger],
+        queryFn: ({ signal }) => fetchProducts({ 
+            token, 
+            tenantId, 
+            tenantName, 
+            state, 
+            page, 
+            pageSize, 
+            signal 
+        }),
+        enabled: !!token && !!tenantId,
+        staleTime: 1000 * 60 * 2, // 2 minutos
+        gcTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
     });
 
-    useEffect(() => {
-        if (!token) return;
-
-        const controller = new AbortController();
-        let mounted = true;
-
-        const fetchData = async () => {
-            setData(prev => ({ ...prev, loading: true, error: null }));
-            try {
-                const result = await getProducts({ 
-                    token,
-                    tenantId,
-                    tenantName,
-                    state,
-                    page,
-                    pageSize,
-                    signal: controller.signal,
-                });
-                if (mounted) {
-                    const products = Array.isArray(result) ? result : (result.products || []);
-                    const totalFound = typeof result.total === 'number' ? result.total : products.length;
-
-                    setData({ 
-                        products, 
-                        total: totalFound,
-                        loading: false, 
-                        error: null 
-                    });
-                }
-            } catch (err) {
-                if (err.name !== "AbortError" && mounted) {
-                    setData(prev => ({ ...prev, products: null, total: 0, loading: false, error: err }));
-                }
-            }
-        };
-
-        fetchData();
-        return () => {
-            mounted = false;
-            controller.abort();
-        };
-    }, [token, tenantId, tenantName, refreshTrigger, state, page, pageSize]);
-
-    return data;
+    return {
+        products: query.data?.products ?? null,
+        total: query.data?.total ?? 0,
+        columnsConfig: query.data?.columnsConfig ?? [],
+        loading: query.isLoading,
+        error: query.error,
+        isFetching: query.isFetching
+    };
 };
