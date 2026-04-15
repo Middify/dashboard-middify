@@ -17,16 +17,11 @@ const PRIMARY_NAV_ITEMS = [
 ];
 
 const normalizeStateId = (value = "") =>
-  value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_");
+  value.toString().trim().toLowerCase().replace(/\s+/g, "_");
 
 const ORDER_STATE_ITEMS = STATE_DEFINITIONS.map(({ key, label }) => {
   const id = normalizeStateId(key);
-  const displayLabel =
-    id === "en_proceso" ? "En proceso" : label ?? key;
+  const displayLabel = id === "en_proceso" ? "En proceso" : (label ?? key);
   return { id, label: displayLabel };
 });
 
@@ -41,8 +36,9 @@ export const SIDEBAR_COLLAPSED_WIDTH = 84;
 
 const StatusDot = ({ active }) => (
   <span
-    className={`inline-flex h-2.5 w-2.5 rounded-full transition-all duration-200 ${active ? "bg-white scale-110" : "bg-white/60"
-      }`}
+    className={`inline-flex h-2.5 w-2.5 rounded-full transition-all duration-200 ${
+      active ? "bg-white scale-110" : "bg-white/60"
+    }`}
   />
 );
 
@@ -60,7 +56,7 @@ const Sidebar = ({
   activePriceState = null,
   onChangePriceState,
   isCollapsed = false,
-  onToggleCollapse = () => { },
+  onToggleCollapse = () => {},
   isMobileOpen = false,
   onCloseMobile = null,
   userRole = null,
@@ -73,18 +69,23 @@ const Sidebar = ({
     }
 
     const options = tenants.filter(
-      (tenant) => tenant?.tenantId && tenant?.tenantName
+      (tenant) => tenant?.tenantId && tenant?.tenantName,
     );
-    
+
     // Eliminar duplicados por tenantId
-    const uniqueOptions = Array.from(new Map(options.map(t => [t.tenantId, t])).values());
-    
-    // Filtrar por búsqueda
-    const filteredOptions = uniqueOptions.filter(t => 
-      t.tenantName.toLowerCase().includes(tenantSearch.toLowerCase())
+    const uniqueOptions = Array.from(
+      new Map(options.map((t) => [t.tenantId, t])).values(),
     );
-    
-    return { hasValidTenants: filteredOptions.length > 0, tenantOptions: filteredOptions };
+
+    // Filtrar por búsqueda
+    const filteredOptions = uniqueOptions.filter((t) =>
+      t.tenantName.toLowerCase().includes(tenantSearch.toLowerCase()),
+    );
+
+    return {
+      hasValidTenants: filteredOptions.length > 0,
+      tenantOptions: filteredOptions,
+    };
   }, [tenants, tenantSearch]);
 
   // Cálculo de visibilidad por módulos
@@ -95,21 +96,21 @@ const Sidebar = ({
 
     // Si hay un tenant seleccionado, usamos su configuración específica
     if (selectedTenantId) {
-      const selected = tenants.find(t => t.tenantId === selectedTenantId);
+      const selected = tenants.find((t) => t.tenantId === selectedTenantId);
       if (selected) {
         return {
           orders: selected.orders === "active",
           stock: selected.stock === "active",
-          price: selected.price === "active"
+          price: selected.price === "active",
         };
       }
     }
 
     // Si estamos en "Todas las tiendas", mostramos el módulo si al menos uno está activo
     return {
-      orders: tenants.some(t => t.orders === "active"),
-      stock: tenants.some(t => t.stock === "active"),
-      price: tenants.some(t => t.price === "active")
+      orders: tenants.some((t) => t.orders === "active"),
+      stock: tenants.some((t) => t.stock === "active"),
+      price: tenants.some((t) => t.price === "active"),
     };
   }, [tenants, selectedTenantId]);
 
@@ -139,7 +140,9 @@ const Sidebar = ({
   }, [normalizedRole]);
 
   const [ordersExpanded, setOrdersExpanded] = useState(activeView === "orders");
-  const [productsExpanded, setProductsExpanded] = useState(activeView === "products");
+  const [productsExpanded, setProductsExpanded] = useState(
+    activeView === "products",
+  );
   const [usersExpanded, setUsersExpanded] = useState(activeView === "users");
   const [priceExpanded, setPriceExpanded] = useState(activeView === "price");
   const effectiveCollapsed = isCollapsed && !isMobileOpen;
@@ -284,7 +287,9 @@ const Sidebar = ({
     const primaryButtonClasses = (isActive) =>
       [
         "relative flex w-full items-center rounded-2xl py-2.5 text-[13px] font-medium tracking-wide transition-colors duration-200",
-        isActive ? "bg-white/10 text-white shadow-sm" : "bg-transparent text-white/80 hover:bg-white/5 hover:text-white",
+        isActive
+          ? "bg-white/10 text-white shadow-sm"
+          : "bg-transparent text-white/80 hover:bg-white/5 hover:text-white",
         collapsed ? "justify-center px-0" : "justify-start px-3.5 gap-3",
       ]
         .filter(Boolean)
@@ -323,13 +328,20 @@ const Sidebar = ({
     ].join(" ");
 
     const renderIconWrapper = (icon, isActive) => (
-      <div className={`h-8 w-8 rounded-xl grid place-items-center transition-colors duration-200 ${isActive ? "bg-white/20 text-white" : "bg-white/5 text-white/70"}`}>
+      <div
+        className={`h-8 w-8 rounded-xl grid place-items-center transition-colors duration-200 ${isActive ? "bg-white/20 text-white" : "bg-white/5 text-white/70"}`}
+      >
         {icon}
       </div>
     );
 
-    const selectedTenantOption = (hasValidTenants && tenantOptions.find(t => t.tenantId === selectedTenantId)) || null;
-    const selectedTenantLabel = selectedTenantOption ? selectedTenantOption.tenantName : "Seleccionar tienda";
+    const selectedTenantOption =
+      (hasValidTenants &&
+        tenantOptions.find((t) => t.tenantId === selectedTenantId)) ||
+      null;
+    const selectedTenantLabel = selectedTenantOption
+      ? selectedTenantOption.tenantName
+      : "Seleccionar tienda";
 
     return (
       <div className="flex h-full flex-col">
@@ -339,40 +351,51 @@ const Sidebar = ({
               <img
                 src={collapsed ? LogoCompact : LogoFull}
                 alt="Logo Middify"
-                className={`transition-all duration-200 ${collapsed ? "w-10" : "w-24"
-                  }`}
+                className={`transition-all duration-200 ${
+                  collapsed ? "w-10" : "w-24"
+                }`}
               />
 
               {showTenantFilter && !collapsed && (
                 <div className="mt-4 w-full text-left">
                   <div className="h-px w-full bg-white/15 transition-all duration-200" />
-                  <label
-                    className="mt-3 block text-sm font-medium text-white/80 transition-colors duration-200"
-                  >
+                  <label className="mt-3 block text-sm font-medium text-white/80 transition-colors duration-200">
                     Tienda
                   </label>
                   <div className="relative mt-1.5">
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Buscar tienda..."
-                        value={tenantSearch}
+                        placeholder={
+                          tenantOpen ? "Buscar tienda..." : selectedTenantLabel
+                        }
+                        value={tenantOpen ? tenantSearch : ""}
                         onChange={(e) => {
                           setTenantSearch(e.target.value);
                           setTenantOpen(true);
                         }}
                         onFocus={() => setTenantOpen(true)}
-                        className={`w-full rounded-xl border ${tenantOpen ? "border-white/40 bg-white/15" : "border-white/25 bg-white/10"} px-3 py-2 pr-10 text-sm font-medium text-white placeholder:text-white/40 outline-none transition-all duration-200 hover:border-white/40 hover:bg-white/12 focus:border-white/50 focus:bg-white/15`}
+                        className={`w-full rounded-xl border ${
+                          tenantOpen
+                            ? "border-white/40 bg-white/15"
+                            : "border-white/25 bg-white/10"
+                        } px-3 py-2 pr-10 text-sm font-medium text-white ${
+                          tenantOpen
+                            ? "placeholder:text-white/40"
+                            : "placeholder:text-white font-bold"
+                        } outline-none transition-all duration-200 hover:border-white/40 hover:bg-white/12 cursor-pointer`}
                       />
                       <button
                         type="button"
                         onClick={() => setTenantOpen((v) => !v)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
                       >
-                        <ExpandMoreIcon className={`transition-transform duration-300 ${tenantOpen ? "rotate-180" : ""}`} />
+                        <ExpandMoreIcon
+                          className={`transition-transform duration-300 ${tenantOpen ? "rotate-180" : ""}`}
+                        />
                       </button>
                     </div>
-                    
+
                     <div
                       className={`absolute z-10 mt-2 w-full rounded-xl border border-white/15 bg-[#063279]/95 backdrop-blur-sm shadow-xl shadow-black/20 transition-all duration-300 ease-out ${tenantOpen ? "max-h-[60vh] opacity-100 translate-y-0" : "pointer-events-none max-h-0 opacity-0 -translate-y-1"} ${tenantOpen ? "overflow-auto" : "overflow-hidden"}`}
                       role="listbox"
@@ -386,7 +409,8 @@ const Sidebar = ({
                               key={tenant.tenantId}
                               type="button"
                               onClick={() => {
-                                if (typeof onChangeTenant === "function") onChangeTenant(tenant.tenantId);
+                                if (typeof onChangeTenant === "function")
+                                  onChangeTenant(tenant.tenantId);
                                 setTenantOpen(false);
                                 setTenantSearch(""); // Limpiar búsqueda al seleccionar
                               }}
@@ -395,7 +419,9 @@ const Sidebar = ({
                               aria-selected={isActive}
                             >
                               <StatusDot active={isActive} />
-                              <span className="truncate">{tenant.tenantName}</span>
+                              <span className="truncate">
+                                {tenant.tenantName}
+                              </span>
                             </button>
                           );
                         })
@@ -407,7 +433,6 @@ const Sidebar = ({
                     </div>
                   </div>
                 </div>
-
               )}
             </div>
           </div>
@@ -430,8 +455,11 @@ const Sidebar = ({
                       {renderIconWrapper(<Icon fontSize="small" />, isActive)}
                       {!collapsed && (
                         <span
-                          className={`transition-colors duration-200 ${isActive ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                            }`}
+                          className={`transition-colors duration-200 ${
+                            isActive
+                              ? "text-white font-semibold"
+                              : "text-white/80 group-hover:text-white"
+                          }`}
                         >
                           {label}
                         </span>
@@ -441,67 +469,83 @@ const Sidebar = ({
                 })}
 
                 <button
-                    type="button"
-                    onClick={handleUsersToggle}
-                    className={usersButtonClasses}
+                  type="button"
+                  onClick={handleUsersToggle}
+                  className={usersButtonClasses}
+                >
+                  <div
+                    className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
                   >
-                    <div
-                      className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
-                    >
-                      {renderIconWrapper(<PeopleIcon fontSize="small" />, activeView === "users")}
-                      {!collapsed && (
-                        <span className={`transition-colors duration-200 ${activeView === "users" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                          }`}>
-                          Usuarios
-                        </span>
-                      )}
-                    </div>
-                    {!collapsed && (
-                      <ExpandMoreIcon
-                        className={`text-white/70 transition-all duration-300 ${usersExpanded ? "rotate-180" : ""
-                          }`}
-                        fontSize="small"
-                      />
+                    {renderIconWrapper(
+                      <PeopleIcon fontSize="small" />,
+                      activeView === "users",
                     )}
-                  </button>
-
-                  {!collapsed && (
-                    <div
-                      className={`overflow-hidden transition-all duration-300 ease-in-out ${usersExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                    {!collapsed && (
+                      <span
+                        className={`transition-colors duration-200 ${
+                          activeView === "users"
+                            ? "text-white font-semibold"
+                            : "text-white/80 group-hover:text-white"
                         }`}
-                    >
-                      <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
-                        {normalizedRole === "middifyadmin" && (
-                          <button
-                            type="button"
-                            onClick={() => handleViewChange("users-create")}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 text-white/70 hover:bg-white/5 hover:text-white`}
-                          >
-                            <StatusDot active={false} />
-                            <span>Crear Usuario</span>
-                          </button>
-                        )}
+                      >
+                        Usuarios
+                      </span>
+                    )}
+                  </div>
+                  {!collapsed && (
+                    <ExpandMoreIcon
+                      className={`text-white/70 transition-all duration-300 ${
+                        usersExpanded ? "rotate-180" : ""
+                      }`}
+                      fontSize="small"
+                    />
+                  )}
+                </button>
+
+                {!collapsed && (
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      usersExpanded
+                        ? "max-h-96 opacity-100"
+                        : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
+                      {["superadmin", "middifyadmin", "admin"].includes(
+                        normalizedRole,
+                      ) && (
                         <button
                           type="button"
-                          onClick={() => handleViewChange("users-list")}
+                          onClick={() => handleViewChange("users-create")}
                           className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 text-white/70 hover:bg-white/5 hover:text-white`}
                         >
                           <StatusDot active={false} />
-                          <span>Listar Usuarios</span>
+                          <span>Crear Usuario</span>
                         </button>
-                      </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleViewChange("users-list")}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 text-white/70 hover:bg-white/5 hover:text-white`}
+                      >
+                        <StatusDot active={false} />
+                        <span>Listar Usuarios</span>
+                      </button>
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
                 {!collapsed && (
                   <>
-                    <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-white/45">Inventario</p>
+                    <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-white/45">
+                      Inventario
+                    </p>
                     <div className="my-2 h-px bg-white/10" />
                   </>
                 )}
-                
+
                 {visibility.stock && (
                   <button
                     type="button"
@@ -511,18 +555,27 @@ const Sidebar = ({
                     <div
                       className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
                     >
-                      {renderIconWrapper(<Inventory2Icon fontSize="small" />, activeView === "products")}
+                      {renderIconWrapper(
+                        <Inventory2Icon fontSize="small" />,
+                        activeView === "products",
+                      )}
                       {!collapsed && (
-                        <span className={`transition-colors duration-200 ${activeView === "products" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                          }`}>
+                        <span
+                          className={`transition-colors duration-200 ${
+                            activeView === "products"
+                              ? "text-white font-semibold"
+                              : "text-white/80 group-hover:text-white"
+                          }`}
+                        >
                           Productos
                         </span>
                       )}
                     </div>
                     {!collapsed && (
                       <ExpandMoreIcon
-                        className={`text-white/70 transition-all duration-300 ${productsExpanded ? "rotate-180" : ""
-                          }`}
+                        className={`text-white/70 transition-all duration-300 ${
+                          productsExpanded ? "rotate-180" : ""
+                        }`}
                         fontSize="small"
                       />
                     )}
@@ -531,17 +584,21 @@ const Sidebar = ({
 
                 {visibility.stock && !collapsed && (
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${productsExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                      }`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      productsExpanded
+                        ? "max-h-96 opacity-100"
+                        : "max-h-0 opacity-0"
+                    }`}
                   >
                     <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
                       <button
                         type="button"
                         onClick={handleProductRootClick}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isProductsRootActive
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${
+                          isProductsRootActive
                             ? "bg-white/10 font-medium text-white"
                             : "text-white/70 hover:bg-white/5 hover:text-white"
-                          }`}
+                        }`}
                       >
                         <StatusDot active={isProductsRootActive} />
                         <span>Todos</span>
@@ -553,10 +610,11 @@ const Sidebar = ({
                             key={state.id}
                             type="button"
                             onClick={() => handleProductStateClick(state.id)}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isActive
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${
+                              isActive
                                 ? "bg-white/10 font-medium text-white"
                                 : "text-white/70 hover:bg-white/5 hover:text-white"
-                              }`}
+                            }`}
                           >
                             <StatusDot active={isActive} />
                             <span>{state.label}</span>
@@ -576,18 +634,27 @@ const Sidebar = ({
                     <div
                       className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
                     >
-                      {renderIconWrapper(<AttachMoneyIcon fontSize="small" />, activeView === "price")}
+                      {renderIconWrapper(
+                        <AttachMoneyIcon fontSize="small" />,
+                        activeView === "price",
+                      )}
                       {!collapsed && (
-                        <span className={`transition-colors duration-200 ${activeView === "price" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                          }`}>
+                        <span
+                          className={`transition-colors duration-200 ${
+                            activeView === "price"
+                              ? "text-white font-semibold"
+                              : "text-white/80 group-hover:text-white"
+                          }`}
+                        >
                           Precio
                         </span>
                       )}
                     </div>
                     {!collapsed && (
                       <ExpandMoreIcon
-                        className={`text-white/70 transition-all duration-300 ${priceExpanded ? "rotate-180" : ""
-                          }`}
+                        className={`text-white/70 transition-all duration-300 ${
+                          priceExpanded ? "rotate-180" : ""
+                        }`}
                         fontSize="small"
                       />
                     )}
@@ -596,17 +663,21 @@ const Sidebar = ({
 
                 {visibility.price && !collapsed && (
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${priceExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                      }`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      priceExpanded
+                        ? "max-h-96 opacity-100"
+                        : "max-h-0 opacity-0"
+                    }`}
                   >
                     <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
                       <button
                         type="button"
                         onClick={handlePriceRootClick}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isPriceRootActive
-                          ? "bg-white/10 font-medium text-white"
-                          : "text-white/70 hover:bg-white/5 hover:text-white"
-                          }`}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${
+                          isPriceRootActive
+                            ? "bg-white/10 font-medium text-white"
+                            : "text-white/70 hover:bg-white/5 hover:text-white"
+                        }`}
                       >
                         <StatusDot active={isPriceRootActive} />
                         <span>Todos</span>
@@ -618,10 +689,11 @@ const Sidebar = ({
                             key={state.id}
                             type="button"
                             onClick={() => handlePriceStateClick(state.id)}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isActive
-                              ? "bg-white/10 font-medium text-white"
-                              : "text-white/70 hover:bg-white/5 hover:text-white"
-                              }`}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${
+                              isActive
+                                ? "bg-white/10 font-medium text-white"
+                                : "text-white/70 hover:bg-white/5 hover:text-white"
+                            }`}
                           >
                             <StatusDot active={isActive} />
                             <span>{state.label}</span>
@@ -634,9 +706,11 @@ const Sidebar = ({
               </div>
 
               <div className="space-y-2">
-                {!collapsed && (visibility.orders) && (
+                {!collapsed && visibility.orders && (
                   <>
-                    <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-white/45">Órdenes</p>
+                    <p className="px-1 text-[10px] uppercase tracking-[0.14em] text-white/45">
+                      Órdenes
+                    </p>
                     <div className="my-2 h-px bg-white/10" />
                   </>
                 )}
@@ -649,18 +723,27 @@ const Sidebar = ({
                     <div
                       className={`flex items-center ${collapsed ? "gap-0" : "gap-3"}`}
                     >
-                      {renderIconWrapper(<ShoppingCartIcon fontSize="small" />, activeView === "orders")}
+                      {renderIconWrapper(
+                        <ShoppingCartIcon fontSize="small" />,
+                        activeView === "orders",
+                      )}
                       {!collapsed && (
-                        <span className={`transition-colors duration-200 ${activeView === "orders" ? "text-white font-semibold" : "text-white/80 group-hover:text-white"
-                          }`}>
+                        <span
+                          className={`transition-colors duration-200 ${
+                            activeView === "orders"
+                              ? "text-white font-semibold"
+                              : "text-white/80 group-hover:text-white"
+                          }`}
+                        >
                           Órdenes
                         </span>
                       )}
                     </div>
                     {!collapsed && (
                       <ExpandMoreIcon
-                        className={`text-white/70 transition-all duration-300 ${ordersExpanded ? "rotate-180" : ""
-                          }`}
+                        className={`text-white/70 transition-all duration-300 ${
+                          ordersExpanded ? "rotate-180" : ""
+                        }`}
                         fontSize="small"
                       />
                     )}
@@ -669,17 +752,21 @@ const Sidebar = ({
 
                 {visibility.orders && !collapsed && (
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${ordersExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                      }`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      ordersExpanded
+                        ? "max-h-96 opacity-100"
+                        : "max-h-0 opacity-0"
+                    }`}
                   >
                     <div className="ml-2 space-y-1 border-l border-white/15 pl-4 pt-1">
                       <button
                         type="button"
                         onClick={handleOrderRootClick}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isOrdersRootActive
+                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${
+                          isOrdersRootActive
                             ? "bg-white/10 font-medium text-white"
                             : "text-white/70 hover:bg-white/5 hover:text-white"
-                          }`}
+                        }`}
                       >
                         <StatusDot active={isOrdersRootActive} />
                         <span>Todas</span>
@@ -691,10 +778,11 @@ const Sidebar = ({
                             key={state.id}
                             type="button"
                             onClick={() => handleOrderStateClick(state.id)}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${isActive
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 ${
+                              isActive
                                 ? "bg-white/10 font-medium text-white"
                                 : "text-white/70 hover:bg-white/5 hover:text-white"
-                              }`}
+                            }`}
                           >
                             <StatusDot active={isActive} />
                             <span>{state.label}</span>
@@ -709,7 +797,9 @@ const Sidebar = ({
           </div>
         </div>
 
-        <div className={`mt-auto ${footerPaddingX} pb-4 border-t border-white/10`}>
+        <div
+          className={`mt-auto ${footerPaddingX} pb-4 border-t border-white/10`}
+        >
           <div className={`pt-3 mb-2 flex justify-center`}>
             <button
               type="button"

@@ -22,7 +22,9 @@ const DetailsOrders = lazy(() => import("./DetailsOrders"));
 
 // Componentes secundarios también lazy
 const StoreDetail = lazy(() => import("../components/stores/StoreDetail"));
-const ProductDetails = lazy(() => import("../components/products/ProductDetails"));
+const ProductDetails = lazy(
+  () => import("../components/products/ProductDetails"),
+);
 
 // Loading simplificado para evitar CLS
 const PageLoader = () => (
@@ -56,7 +58,13 @@ const DashboardWrapper = () => {
 };
 
 const StoresWrapper = () => {
-  const { isLoading, error, allTenants, allMarketplaceTenants, authorizedTenants } = useOutletContext();
+  const {
+    isLoading,
+    error,
+    allTenants,
+    allMarketplaceTenants,
+    authorizedTenants,
+  } = useOutletContext();
 
   return (
     <Stores
@@ -100,7 +108,7 @@ const OrdersTableWrapper = () => {
         },
       });
     },
-    [navigate, resolvedOrderState]
+    [navigate, resolvedOrderState],
   );
 
   return (
@@ -129,7 +137,7 @@ const RecycleBinWrapper = () => {
         state: { order },
       });
     },
-    [navigate]
+    [navigate],
   );
 
   return (
@@ -149,7 +157,8 @@ const DetailsRoute = () => {
   const navigate = useNavigate();
 
   const fallbackOrder = location.state?.order ?? null;
-  const lastKnownOrderState = location.state?.fromOrderState ?? lastOrderState ?? null;
+  const lastKnownOrderState =
+    location.state?.fromOrderState ?? lastOrderState ?? null;
 
   const handleCloseOrderDetails = useCallback(() => {
     if (lastKnownOrderState) {
@@ -178,11 +187,11 @@ const ProductDetailsRoute = () => {
   const location = useLocation();
 
   const handleCloseProductDetails = useCallback(() => {
-      if (location.state?.from === 'price') {
-          navigate("/price", { replace: true });
-      } else {
-          navigate("/products", { replace: true });
-      }
+    if (location.state?.from === "price") {
+      navigate("/price", { replace: true });
+    } else {
+      navigate("/products", { replace: true });
+    }
   }, [navigate, location.state]);
 
   return (
@@ -194,21 +203,27 @@ const ProductDetailsRoute = () => {
   );
 };
 
-const Index = () => {
+const Index = ({ token, currentUser }) => {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route element={<MainLayout />}>
+        <Route element={<MainLayout token={token} currentUser={currentUser} />}>
           <Route path="/" element={<DashboardWrapper />} />
           <Route path="/stores" element={<StoresWrapper />} />
           <Route path="/users" element={<Users />} />
           <Route path="/stores/:storeId" element={<StoreDetailWrapper />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/products/:productId" element={<ProductDetailsRoute />} />
+          <Route
+            path="/products/:productId"
+            element={<ProductDetailsRoute />}
+          />
           <Route path="/orders" element={<OrdersTableWrapper />} />
           <Route path="/price" element={<Price />} />
           <Route path="/recycle" element={<RecycleBinWrapper />} />
-          <Route path="/orders/detalle" element={<Navigate to="/orders" replace />} />
+          <Route
+            path="/orders/detalle"
+            element={<Navigate to="/orders" replace />}
+          />
           <Route path="/orders/:orderId" element={<DetailsRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

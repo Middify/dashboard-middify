@@ -1,29 +1,35 @@
 const BASE_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev";
 
-export async function getUsersList({ token, page = 1, pageSize = 20, tenantId = null }) {
-    if (!token) {
-        throw new Error("Token is required");
-    }
+export async function getUsersList({
+  token,
+  page = 1,
+  pageSize = 20,
+  tenantId = null,
+}) {
+  if (!token) throw new Error("Token is required");
 
-    const url = new URL(`${BASE_URL}/users/list`);
-    url.searchParams.append("page", page);
-    url.searchParams.append("pageSize", pageSize);
-    if (tenantId) {
-        url.searchParams.append("tenant", tenantId);
-    }
+  if (!tenantId) {
+    console.warn("getUsersList: tenantId requerido");
+    return { users: [], total: 0 };
+  }
 
-    const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-        },
-    });
+  const url = new URL(`${BASE_URL}/users/list`);
+  url.searchParams.set("page", page);
+  url.searchParams.set("pageSize", pageSize);
+  url.searchParams.set("tenantId", tenantId);
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Error fetching users: ${response.statusText}`);
-    }
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
 
-    return response.json();
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error: ${response.statusText}`);
+  }
+
+  return response.json();
 }

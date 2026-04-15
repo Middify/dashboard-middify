@@ -7,15 +7,16 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-const COGNITO_DOMAIN = "https://us-east-2bws3t9vwm.auth.us-east-2.amazoncognito.com";
+const COGNITO_DOMAIN =
+  "https://us-east-2bws3t9vwm.auth.us-east-2.amazoncognito.com";
 const APP_URL = window.location.origin;
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos de caché antes de considerar la data vieja
+      staleTime: 1000 * 60 * 5,
       retry: 1,
-      refetchOnWindowFocus: false, // Evita recargas molestas al cambiar de ventana
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -37,7 +38,7 @@ const cognitoAuthConfig = {
   },
   onSigninCallback: () => {
     window.history.replaceState({}, document.title, window.location.pathname);
-  }
+  },
 };
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -45,10 +46,12 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <AuthProvider {...cognitoAuthConfig}>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <App />
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  </AuthProvider>
+  </AuthProvider>,
 );
