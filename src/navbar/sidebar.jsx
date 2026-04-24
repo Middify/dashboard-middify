@@ -101,7 +101,8 @@ const Sidebar = ({
         return {
           orders: selected.orders === "active",
           stock: selected.stock === "active",
-          price: selected.price === "active",
+          //price: selected.price === "active",
+          price: true,
         };
       }
     }
@@ -412,7 +413,7 @@ const Sidebar = ({
                                 if (typeof onChangeTenant === "function")
                                   onChangeTenant(tenant.tenantId);
                                 setTenantOpen(false);
-                                setTenantSearch(""); // Limpiar búsqueda al seleccionar
+                                setTenantSearch("");
                               }}
                               className={`flex w-full items-center gap-3 px-3 py-2 text-sm text-left transition-colors duration-150 ${isActive ? "bg-white/10 text-white" : "text-white/90 hover:bg-white/10 hover:text-white"}`}
                               role="option"

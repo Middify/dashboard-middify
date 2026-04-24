@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   DASHBOARD_COLUMNS_TEMPLATE,
   useOrdersData,
-  useTenantColumns
+  useTenantColumns,
 } from "../../api/orders/getOrdersByState";
 import { fetchOrdersByState } from "../../api/orders/getOrdersByState";
 import {
@@ -22,8 +22,10 @@ const PREFETCH_STATES = ["deleted", "en proceso"];
 const getColumnRawValue = (order, key) => {
   if (!order) return null;
   if (key === "_id" || key === "id") return order._id ?? order.id;
-  if (key === "tennantId" || key === "tenantId") return order.tennantId ?? order.tenantId;
-  if (key === "tennantName" || key === "tenantName") return order.tennantName ?? order.tenantName;
+  if (key === "tennantId" || key === "tenantId")
+    return order.tennantId ?? order.tenantId;
+  if (key === "tennantName" || key === "tenantName")
+    return order.tennantName ?? order.tenantName;
   return order[key] ?? order.marketPlace?.[key] ?? null;
 };
 
@@ -35,16 +37,31 @@ const FORMATTERS = {
     return (statusKey && ORDER_STATE_LOOKUP[statusKey]) ?? String(value);
   },
   total: (value) => {
-    const amount = (typeof value === "object" && value !== null && "amount" in value) ? value.amount : value;
+    const amount =
+      typeof value === "object" && value !== null && "amount" in value
+        ? value.amount
+        : value;
     return formatCurrency(amount);
   },
   subTotal: (value) => {
-    const amount = (typeof value === "object" && value !== null && "amount" in value) ? value.amount : value;
+    const amount =
+      typeof value === "object" && value !== null && "amount" in value
+        ? value.amount
+        : value;
     return formatCurrency(amount);
   },
-  marketPlace: (value) => typeof value === "object" ? (value.name || value.displayName || String(value)) : String(value),
-  omniChannel: (value) => typeof value === "object" ? (value.name || value.displayName || String(value)) : String(value),
-  errorDetail: (value) => typeof value === "object" ? (value.message || value.detail || "") : String(value),
+  marketPlace: (value) =>
+    typeof value === "object"
+      ? value.name || value.displayName || String(value)
+      : String(value),
+  omniChannel: (value) =>
+    typeof value === "object"
+      ? value.name || value.displayName || String(value)
+      : String(value),
+  errorDetail: (value) =>
+    typeof value === "object"
+      ? value.message || value.detail || ""
+      : String(value),
 };
 
 const formatColumnValue = (key, order) => {
@@ -64,14 +81,20 @@ const buildColumnDefinition = (column) => {
     sortable: false,
     flex: 1,
     minWidth: 160,
-    renderCell: ({ row }) => <span className="text-sm text-slate-700">{row[column.value] ?? "—"}</span>,
+    renderCell: ({ row }) => (
+      <span className="text-sm text-slate-700">{row[column.value] ?? "—"}</span>
+    ),
   };
 
   if (column.value === "_id") {
     return {
       ...base,
       minWidth: 200,
-      renderCell: ({ row }) => <span className="font-mono text-sm text-slate-700">{row[column.value] ?? "—"}</span>,
+      renderCell: ({ row }) => (
+        <span className="font-mono text-sm text-slate-700">
+          {row[column.value] ?? "—"}
+        </span>
+      ),
     };
   }
 
@@ -91,8 +114,8 @@ export const useOrdersTableLogic = ({
   selectedTenantId = null,
   selectedTenantName = null,
   selectedOrderState = null,
-  onSelectOrder = () => { },
-  onExportSuccess = () => { },
+  onSelectOrder = () => {},
+  onExportSuccess = () => {},
 }) => {
   const {
     paginationModel,
@@ -106,25 +129,36 @@ export const useOrdersTableLogic = ({
     resetPagination,
   } = useTableState({ initialPageSize: 100 });
 
-  const apiStatus = selectedOrderState ? selectedOrderState.replace(/_/g, " ") : undefined;
+  const apiStatus = selectedOrderState
+    ? selectedOrderState.replace(/_/g, " ")
+    : undefined;
   const queryClient = useQueryClient();
 
-  const queryParams = useMemo(() => ({
-    tenantId: selectedTenantId || undefined,
-    tenantName: selectedTenantName || undefined,
-    state: apiStatus,
-    page: paginationModel.page + 1,
-    pageSize: paginationModel.pageSize,
-  }), [selectedTenantId, selectedTenantName, apiStatus, paginationModel.page, paginationModel.pageSize]);
-
-  const { data: ordersData, isLoading: loadingOrders, error } = useOrdersData(
-    token,
-    queryParams,
-    refreshTrigger
+  const queryParams = useMemo(
+    () => ({
+      tenantId: selectedTenantId || undefined,
+      tenantName: selectedTenantName || undefined,
+      state: apiStatus,
+      page: paginationModel.page + 1,
+      pageSize: paginationModel.pageSize,
+    }),
+    [
+      selectedTenantId,
+      selectedTenantName,
+      apiStatus,
+      paginationModel.page,
+      paginationModel.pageSize,
+    ],
   );
 
+  const {
+    data: ordersData,
+    isLoading: loadingOrders,
+    error,
+  } = useOrdersData(token, queryParams, refreshTrigger);
+
   useEffect(() => {
-    if (!token) return;
+    if (!token || !selectedTenantId || selectedTenantId === "") return;
     const currentPage = paginationModel.page + 1;
     const targets = [
       currentPage + 1,
@@ -136,15 +170,23 @@ export const useOrdersTableLogic = ({
       const prefetchParams = { ...queryParams, page };
       queryClient.prefetchQuery({
         queryKey: ["orders", token, prefetchParams, refreshTrigger],
-        queryFn: ({ signal }) => fetchOrdersByState({ token, params: prefetchParams, signal }),
+        queryFn: ({ signal }) =>
+          fetchOrdersByState({ token, params: prefetchParams, signal }),
         staleTime: 1000 * 120,
         cacheTime: 1000 * 600,
       });
     });
-  }, [token, queryParams, refreshTrigger, paginationModel.page, queryClient]);
+  }, [
+    token,
+    selectedTenantId,
+    queryParams,
+    refreshTrigger,
+    paginationModel.page,
+    queryClient,
+  ]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !selectedTenantId || selectedTenantId === "") return;
     const candidateStates = PREFETCH_STATES.filter((s) => s !== apiStatus);
     candidateStates.forEach((state) => {
       const params = {
@@ -160,20 +202,42 @@ export const useOrdersTableLogic = ({
         cacheTime: 1000 * 600,
       });
     });
-  }, [token, queryParams, apiStatus, paginationModel.pageSize, refreshTrigger, queryClient]);
+  }, [
+    token,
+    selectedTenantId,
+    queryParams,
+    apiStatus,
+    paginationModel.pageSize,
+    refreshTrigger,
+    queryClient,
+  ]);
 
-  const { data: columnsData } = useTenantColumns(token, selectedTenantId, selectedTenantName);
-  const { isExporting, startExport } = useExportOrders({ token, onSuccess: onExportSuccess });
+  const { data: columnsData } = useTenantColumns(
+    token,
+    selectedTenantId,
+    selectedTenantName,
+  );
+  const { isExporting, startExport } = useExportOrders({
+    token,
+    onSuccess: onExportSuccess,
+  });
 
   useEffect(() => {
     resetPagination();
   }, [selectedTenantId, selectedOrderState, resetPagination]);
 
   const activeColumns = useMemo(() => {
-    const base = Array.isArray(columnsData) && columnsData.length > 0 ? columnsData : DASHBOARD_COLUMNS_TEMPLATE;
+    const base =
+      Array.isArray(columnsData) && columnsData.length > 0
+        ? columnsData
+        : DASHBOARD_COLUMNS_TEMPLATE;
     return base
       .filter((c) => c?.active)
-      .sort((a, b) => (a.sortOrder ?? a.originalIndex ?? 0) - (b.sortOrder ?? b.originalIndex ?? 0));
+      .sort(
+        (a, b) =>
+          (a.sortOrder ?? a.originalIndex ?? 0) -
+          (b.sortOrder ?? b.originalIndex ?? 0),
+      );
   }, [columnsData]);
 
   const orders = ordersData?.orders || [];
@@ -184,7 +248,9 @@ export const useOrdersTableLogic = ({
       const orderId = order._id ?? order.id ?? `order-${index}`;
       const tenantId = order.tennantId ?? order.tenantId ?? "";
       // Ensure uniqueId is truly unique by appending index if tenantId is missing or to be safe
-      const uniqueId = order._id ? `${order._id}-${index}` : `${orderId}-${tenantId || "no-tenant"}-${index}`;
+      const uniqueId = order._id
+        ? `${order._id}-${index}`
+        : `${orderId}-${tenantId || "no-tenant"}-${index}`;
 
       const row = {
         id: uniqueId,
@@ -204,43 +270,103 @@ export const useOrdersTableLogic = ({
   }, [orders, activeColumns]);
 
   const columns = useMemo(() => {
-    return activeColumns.map(buildColumnDefinition);
-  }, [activeColumns]);
+    // 1. Construimos las columnas normales que vienen del backend
+    const baseColumns = activeColumns.map(buildColumnDefinition);
 
+    // 2. Inyectamos la columna estática del "Ojito"
+    baseColumns.push({
+      field: "detalles",
+      headerName: "DETALLES",
+      sortable: false,
+      width: 100,
+      align: "center",
+      headerAlign: "center",
+      renderCell: ({ row }) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Evita que se seleccione el checkbox al hacer clic
+            onSelectOrder(row); // Llama a tu función para abrir la página de detalles
+          }}
+          className="flex h-full w-full items-center justify-center text-indigo-600 transition-colors hover:text-indigo-800"
+          title="Ver Detalles"
+        >
+          {/* El SVG del Ojito */}
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
+          </svg>
+        </button>
+      ),
+    });
+
+    return baseColumns;
+  }, [activeColumns, onSelectOrder]);
 
   const rowCount = useMemo(() => {
-    if (meta?.totalPages && meta?.pageSize) return meta.totalPages * meta.pageSize;
+    if (meta?.totalPages && meta?.pageSize)
+      return meta.totalPages * meta.pageSize;
     if (meta?.total) return meta.total;
     return orders.length;
   }, [meta, orders.length]);
 
-  const getSelectedOrderIds = useCallback(() => 
-    rows.filter(r => rowSelectionModel.includes(r.id)).map(r => r.internalId),
-  [rows, rowSelectionModel]);
+  const getSelectedOrderIds = useCallback(
+    () =>
+      rows
+        .filter((r) => rowSelectionModel.includes(r.id))
+        .map((r) => r.internalId),
+    [rows, rowSelectionModel],
+  );
 
-  const getSelectedOrders = useCallback(() => 
-    rows.filter(r => rowSelectionModel.includes(r.id)).map(r => r.rawOrder),
-  [rows, rowSelectionModel]);
+  const getSelectedOrders = useCallback(
+    () =>
+      rows
+        .filter((r) => rowSelectionModel.includes(r.id))
+        .map((r) => r.rawOrder),
+    [rows, rowSelectionModel],
+  );
 
-  const formatOrdersForExportFunc = useCallback((list) => {
+  const formatOrdersForExportFunc = useCallback(
+    (list) => {
       return list.map((order, i) => {
         const row = { id: i };
-        activeColumns.forEach(c => row[c.value] = formatColumnValue(c.value, order));
+        activeColumns.forEach(
+          (c) => (row[c.value] = formatColumnValue(c.value, order)),
+        );
         return row;
       });
-  }, [activeColumns]);
+    },
+    [activeColumns],
+  );
 
   const handleExport = useCallback(() => {
-      const filters = { state: apiStatus, tenantId: selectedTenantId, tenantName: selectedTenantName };
-      Object.keys(filters).forEach(k => !filters[k] && delete filters[k]);
-      startExport(filters);
+    const filters = {
+      state: apiStatus,
+      tenantId: selectedTenantId,
+      tenantName: selectedTenantName,
+    };
+    Object.keys(filters).forEach((k) => !filters[k] && delete filters[k]);
+    startExport(filters);
   }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);
 
   return {
     loading: loadingOrders,
     error,
     selectedStateLabel: getSelectedStateLabel(selectedOrderState),
-    selectedRowIds: rowSelectionModel, 
+    selectedRowIds: rowSelectionModel,
     getSelectedOrderIds,
     getSelectedOrders,
     clearSelection: () => handleSelectionModelChange([]),
@@ -257,11 +383,12 @@ export const useOrdersTableLogic = ({
       pageSizeOptions: PAGE_SIZE_OPTIONS,
       rowCount: Number(rowCount) || 0,
       onViewDetails: (row) => onSelectOrder(row),
-      
+
       rowSelectionModel,
       onRowSelectionModelChange: handleSelectionModelChange,
       onToggleRowSelection: handleToggleRowSelection,
-      onToggleAllRows: (ids) => handleToggleAllRows(ids || rows.map(r => r.id)),
+      onToggleAllRows: (ids) =>
+        handleToggleAllRows(ids || rows.map((r) => r.id)),
       checkboxSelection: true,
     },
   };

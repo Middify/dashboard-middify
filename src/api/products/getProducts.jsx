@@ -7,6 +7,7 @@ export const fetchProducts = async ({
   tenantId,
   tenantName,
   state,
+  sku,
   page = 1,
   pageSize = 100,
   signal,
@@ -20,6 +21,7 @@ export const fetchProducts = async ({
   params.append("tenantId", tenantId);
   if (tenantName) params.append("tenantName", tenantName);
   if (state) params.append("state", state);
+  if (sku) params.append("sku", sku);
   params.append("page", String(page));
   params.append("pageSize", String(pageSize));
 
@@ -51,6 +53,7 @@ export const useProducts = ({
   tenantId,
   tenantName,
   state,
+  sku,
   page = 1,
   pageSize = 100,
   refreshTrigger = 0,
@@ -62,6 +65,7 @@ export const useProducts = ({
       tenantId,
       tenantName,
       state,
+      sku,
       page,
       pageSize,
       refreshTrigger,
@@ -72,6 +76,7 @@ export const useProducts = ({
         tenantId,
         tenantName,
         state,
+        sku,
         page,
         pageSize,
         signal,

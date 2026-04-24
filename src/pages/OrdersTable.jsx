@@ -14,7 +14,7 @@ const OrdersTable = ({
   selectedTenantId = null,
   selectedTenantName = null,
   selectedOrderState = null,
-  onSelectOrder = () => { },
+  onSelectOrder = () => {},
   user = null,
 }) => {
   const {
@@ -36,7 +36,11 @@ const OrdersTable = ({
     selectedTenantName,
     onSelectOrder,
     onExportSuccess: () => {
-      setSnackbar({ open: true, message: "Exportación lista. La descarga comenzará automáticamente.", severity: "success" });
+      setSnackbar({
+        open: true,
+        message: "Exportación lista. La descarga comenzará automáticamente.",
+        severity: "success",
+      });
     },
   });
 
@@ -45,7 +49,11 @@ const OrdersTable = ({
   const [pendingStatus, setPendingStatus] = useState(null);
   const [selectedStatusValue, setSelectedStatusValue] = useState("");
   const [isExportingSelection, setIsExportingSelection] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   const stateOptions = useMemo(() => {
     const baseOptions =
@@ -85,11 +93,11 @@ const OrdersTable = ({
         option ?? {
           value,
           label: value,
-        }
+        },
       );
       setShowStatusModal(true);
     },
-    [getSelectedOrderIds, stateOptions]
+    [getSelectedOrderIds, stateOptions],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -135,16 +143,29 @@ const OrdersTable = ({
       setSelectedStatusValue("");
     } catch (err) {
       console.error("Error al actualizar órdenes:", err);
-      alert(`Error al actualizar las órdenes: ${err.message || "Error desconocido"}`);
+      alert(
+        `Error al actualizar las órdenes: ${err.message || "Error desconocido"}`,
+      );
     } finally {
       setIsUpdatingStatus(false);
     }
-  }, [token, user, getSelectedOrderIds, pendingStatus, refreshData, clearSelection]);
+  }, [
+    token,
+    user,
+    getSelectedOrderIds,
+    pendingStatus,
+    refreshData,
+    clearSelection,
+  ]);
 
   const exportFileName = useMemo(() => {
     const parts = ["ordenes"];
     const sanitize = (value) =>
-      String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-_]+/g, "_").toLowerCase();
+      String(value)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9-_]+/g, "_")
+        .toLowerCase();
 
     if (selectedTenantName) parts.push(selectedTenantName);
     if (selectedStateLabel) parts.push(selectedStateLabel);
@@ -159,16 +180,19 @@ const OrdersTable = ({
 
   const handleExportSelectedOrders = useCallback(async () => {
     const selectedOrders = getSelectedOrders();
-    if (!selectedOrders || selectedOrders.length === 0) return alert("Selecciona al menos una orden para exportar.");
+    if (!selectedOrders || selectedOrders.length === 0)
+      return alert("Selecciona al menos una orden para exportar.");
 
     setIsExportingSelection(true);
     try {
       const formattedRows = formatOrdersForExport(selectedOrders);
-      if (!formattedRows || formattedRows.length === 0) return alert("No se pudo preparar la exportación.");
-      
+      if (!formattedRows || formattedRows.length === 0)
+        return alert("No se pudo preparar la exportación.");
+
       const baseName = exportFileName?.trim() || "ordenes.xlsx";
-      const selectionFileName = baseName.replace(/\.xlsx$/i, "") + "_seleccion.xlsx";
-      
+      const selectionFileName =
+        baseName.replace(/\.xlsx$/i, "") + "_seleccion.xlsx";
+
       exportOrdersToExcel({
         rows: formattedRows,
         columns: grid.columns,
