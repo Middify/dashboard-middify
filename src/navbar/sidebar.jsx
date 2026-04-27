@@ -100,7 +100,8 @@ const Sidebar = ({
       if (selected) {
         return {
           orders: selected.orders === "active",
-          stock: selected.stock === "active",
+          //stock: selected.stock === "active",
+          stock: true,
           //price: selected.price === "active",
           price: true,
         };

@@ -151,7 +151,7 @@ const ProductsTableHeader = ({
             </button>
           </div>
         </div>
-        {/* AQUÍ AGREGAMOS LA BARRA DE BÚSQUEDA Y LOS CHIPS */}
+        {/* aqui agregamos la barra de busqueda */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-100">
           {/* El nuevo buscador */}
           <div className="relative w-full sm:w-72">

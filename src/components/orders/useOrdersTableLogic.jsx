@@ -46,7 +46,13 @@ const getColumnRawValue = (order, key) => {
     case "logoTienda":
       return order.marketPlace?.name || order.tennantName || "Desconocida";
     case "idOrden":
-      return order.marketPlace?.orderId || "—";
+      return (
+        order.extras?.idOrderMarket ||
+        order.idOrderMarket ||
+        order.marketPlace?.orderId ||
+        order.market?.orderId ||
+        "Sin ID"
+      );
     case "fechaOrigen":
       return order.marketPlace?.creation || "—";
     case "fechaMiddify":

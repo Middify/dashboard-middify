@@ -18,10 +18,6 @@ export const fetchProductStates = async ({ token, tenantId, signal }) => {
     signal,
   });
 
-  // if (!response.ok) {
-  //   const error = await response.json().catch(() => ({}));
-  //   throw new Error(error.message || `Error ${response.status}`);
-  // }
   if (!response.ok) {
     // Si es 404, asumimos que no hay datos para este rol/tenant y devolvemos un array vacío silenciosamente.
     if (response.status === 404) {

@@ -12,7 +12,7 @@ const Users = () => {
   const view = searchParams.get("view") || "list";
 
   const userRole = user?.role?.toLowerCase() || "";
-  const canCreateUser = ROLES_QUE_PUEDEN_CREAR.includes(userRole); // ✅ Los 3 roles
+  const canCreateUser = ROLES_QUE_PUEDEN_CREAR.includes(userRole);
 
   return (
     <div className="mt-8 mx-auto w-full">
