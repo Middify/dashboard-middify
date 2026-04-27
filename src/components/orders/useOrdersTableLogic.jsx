@@ -16,62 +16,96 @@ import {
 import { useExportOrders } from "./useExportOrders";
 import { useTableState } from "../../hooks/useTableState";
 
+//Importa automáticamente todas las imágenes de esa carpeta
+const marketplaceLogos = import.meta.glob(
+  "../../assets/marketplace/*.{png,jpg,jpeg,webp}",
+  { eager: true },
+);
+
+const getLogoUrl = (marketName) => {
+  if (!marketName) return null;
+  const normalized = String(marketName).toLowerCase().replace(/\s+/g, "");
+  for (const path in marketplaceLogos) {
+    const fileName = path.split("/").pop().toLowerCase();
+    if (
+      fileName.includes(normalized) ||
+      normalized.includes(fileName.split(".")[0])
+    ) {
+      return marketplaceLogos[path].default || marketplaceLogos[path];
+    }
+  }
+  return null;
+};
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const PREFETCH_STATES = ["deleted", "en proceso"];
 
 const getColumnRawValue = (order, key) => {
   if (!order) return null;
-  if (key === "_id" || key === "id") return order._id ?? order.id;
-  if (key === "tennantId" || key === "tenantId")
-    return order.tennantId ?? order.tenantId;
-  if (key === "tennantName" || key === "tenantName")
-    return order.tennantName ?? order.tenantName;
-  return order[key] ?? order.marketPlace?.[key] ?? null;
-};
 
-const FORMATTERS = {
-  creation: formatDateTime,
-  lastUpdate: formatDateTime,
-  status: (value) => {
-    const statusKey = normalizeStatusKey(value);
-    return (statusKey && ORDER_STATE_LOOKUP[statusKey]) ?? String(value);
-  },
-  total: (value) => {
-    const amount =
-      typeof value === "object" && value !== null && "amount" in value
-        ? value.amount
-        : value;
-    return formatCurrency(amount);
-  },
-  subTotal: (value) => {
-    const amount =
-      typeof value === "object" && value !== null && "amount" in value
-        ? value.amount
-        : value;
-    return formatCurrency(amount);
-  },
-  marketPlace: (value) =>
-    typeof value === "object"
-      ? value.name || value.displayName || String(value)
-      : String(value),
-  omniChannel: (value) =>
-    typeof value === "object"
-      ? value.name || value.displayName || String(value)
-      : String(value),
-  errorDetail: (value) =>
-    typeof value === "object"
-      ? value.message || value.detail || ""
-      : String(value),
+  switch (key) {
+    case "logoTienda":
+      return order.marketPlace?.name || order.tennantName || "Desconocida";
+    case "idOrden":
+      return order.marketPlace?.orderId || "—";
+    case "fechaOrigen":
+      return order.marketPlace?.creation || "—";
+    case "fechaMiddify":
+      return order.creation || "—";
+    case "fechaActualizacion":
+      return order.lastUpdate || "—";
+    case "estadoMiddify":
+      return order.status || order.state || "—";
+    case "estadoOrigen":
+      return order.marketPlace?.status || "—";
+    case "costoEnvio":
+      return order.shipping?.cost?.amount ?? 0;
+    case "totalPagado": {
+      const totalVal = order.total ?? order.marketPlace?.total ?? 0;
+      return typeof totalVal === "object" && totalVal !== null
+        ? totalVal.amount || 0
+        : totalVal;
+    }
+    case "folioBoleta": {
+      const doc = (order.documents || []).find((d) => {
+        const t = String(d?.type || "").toLowerCase();
+        return (
+          t.includes("boleta") ||
+          t.includes("invoice") ||
+          t.includes("dte") ||
+          t.includes("factura")
+        );
+      });
+
+      return doc?.folio || doc?.number || doc?.idDocNo || doc?.name || "—";
+    }
+    case "boletaPdf": {
+      const doc = (order.documents || []).find((d) => {
+        const t = String(d?.type || "").toLowerCase();
+        return (
+          t.includes("boleta") ||
+          t.includes("invoice") ||
+          t.includes("dte") ||
+          t.includes("factura")
+        );
+      });
+
+      return doc?.url || doc?.URL || doc?.link || doc?.pdf || null;
+    }
+    case "mensaje":
+      return order.message || "—";
+    default:
+      return order[key];
+  }
 };
 
 const formatColumnValue = (key, order) => {
   const value = getColumnRawValue(order, key);
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "—") return "—";
 
-  const formatter = FORMATTERS[key];
-  if (formatter) return formatter(value);
-
-  return typeof value === "object" ? "[Detalle]" : String(value);
+  if (["fechaOrigen", "fechaMiddify", "fechaActualizacion"].includes(key))
+    return formatDateTime(value);
+  if (["costoEnvio", "totalPagado"].includes(key)) return formatCurrency(value);
+  return String(value);
 };
 
 const buildColumnDefinition = (column) => {
@@ -86,27 +120,149 @@ const buildColumnDefinition = (column) => {
     ),
   };
 
-  if (column.value === "_id") {
-    return {
-      ...base,
-      minWidth: 200,
-      renderCell: ({ row }) => (
-        <span className="font-mono text-sm text-slate-700">
-          {row[column.value] ?? "—"}
-        </span>
-      ),
-    };
-  }
+  switch (column.value) {
+    case "logoTienda":
+      return {
+        ...base,
+        minWidth: 100,
+        align: "center",
+        headerAlign: "center",
+        renderCell: ({ row }) => {
+          const brandName = row.rawOrder?.marketPlace?.name || "";
+          const logoUrl = getLogoUrl(brandName);
+          return logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={brandName}
+              className="h-8 w-auto object-contain"
+              title={brandName}
+            />
+          ) : (
+            <span className="text-xs font-bold text-slate-500 uppercase">
+              {brandName.substring(0, 8)}
+            </span>
+          );
+        },
+      };
 
-  if (["total", "subTotal"].includes(column.value)) {
-    return { ...base, align: "right", headerAlign: "right", minWidth: 140 };
-  }
+    case "estadoMiddify":
+      return {
+        ...base,
+        minWidth: 150,
+        renderCell: ({ row }) => {
+          const val = String(row[column.value] || "").toLowerCase();
+          const isSuccess =
+            val.includes("procesada") || val.includes("success");
+          const isError = val.includes("error") || val.includes("descartada");
 
-  if (["creation", "lastUpdate"].includes(column.value)) {
-    return { ...base, minWidth: 180 };
-  }
+          let colors = "bg-slate-100 text-slate-700 border-slate-200"; // Default (Gris)
+          if (isSuccess)
+            colors = "bg-emerald-50 text-emerald-700 border-emerald-200"; // Verde
+          if (isError) colors = "bg-rose-50 text-rose-700 border-rose-200"; // Rojo
 
-  return base;
+          return (
+            <span
+              className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${colors} capitalize`}
+            >
+              {row[column.value] ?? "—"}
+            </span>
+          );
+        },
+      };
+
+    case "boletaPdf":
+      return {
+        ...base,
+        minWidth: 90,
+        align: "center",
+        headerAlign: "center",
+        renderCell: ({ row }) => {
+          const pdfUrl = row[column.value];
+          if (!pdfUrl || pdfUrl === "—") {
+            return (
+              <svg
+                className="h-5 w-5 text-slate-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                />
+              </svg>
+            );
+          }
+          return (
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-600 hover:text-indigo-800 transition-colors"
+              title="Ver Boleta PDF"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                />
+              </svg>
+            </a>
+          );
+        },
+      };
+
+    case "idOrden":
+      return {
+        ...base,
+        minWidth: 160,
+        renderCell: ({ row }) => (
+          <span className="font-mono text-xs text-slate-600">
+            {row[column.value]}
+          </span>
+        ),
+      };
+
+    case "mensaje":
+      return {
+        ...base,
+        minWidth: 200,
+        renderCell: ({ row }) => (
+          <span
+            className="text-xs text-slate-500 truncate"
+            title={row[column.value]}
+          >
+            {row[column.value]}
+          </span>
+        ),
+      };
+
+    case "costoEnvio":
+    case "totalPagado":
+      return {
+        ...base,
+        align: "right",
+        headerAlign: "right",
+        minWidth: 120,
+        renderCell: ({ row }) => (
+          <span className="text-sm font-medium text-slate-700">
+            {row[column.value]}
+          </span>
+        ),
+      };
+
+    default:
+      return base;
+  }
 };
 
 export const useOrdersTableLogic = ({
@@ -247,33 +403,27 @@ export const useOrdersTableLogic = ({
     return orders.map((order, index) => {
       const orderId = order._id ?? order.id ?? `order-${index}`;
       const tenantId = order.tennantId ?? order.tenantId ?? "";
-      // Ensure uniqueId is truly unique by appending index if tenantId is missing or to be safe
-      const uniqueId = order._id
-        ? `${order._id}-${index}`
-        : `${orderId}-${tenantId || "no-tenant"}-${index}`;
 
       const row = {
-        id: uniqueId,
+        id: orderId,
+        _id: orderId,
         internalId: orderId,
         tenantId,
         rawOrder: order,
       };
-
-      const len = activeColumns.length;
-      for (let i = 0; i < len; i++) {
-        const col = activeColumns[i];
+      activeColumns.forEach((col) => {
         row[col.value] = formatColumnValue(col.value, order);
-      }
+      });
 
       return row;
     });
   }, [orders, activeColumns]);
 
   const columns = useMemo(() => {
-    // 1. Construimos las columnas normales que vienen del backend
+    // columnas normales que vienen del backend
     const baseColumns = activeColumns.map(buildColumnDefinition);
 
-    // 2. Inyectamos la columna estática del "Ojito"
+    // columna estática del "Ojito"
     baseColumns.push({
       field: "detalles",
       headerName: "DETALLES",
@@ -284,13 +434,12 @@ export const useOrdersTableLogic = ({
       renderCell: ({ row }) => (
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Evita que se seleccione el checkbox al hacer clic
-            onSelectOrder(row); // Llama a tu función para abrir la página de detalles
+            e.stopPropagation();
+            onSelectOrder(row);
           }}
           className="flex h-full w-full items-center justify-center text-indigo-600 transition-colors hover:text-indigo-800"
           title="Ver Detalles"
         >
-          {/* El SVG del Ojito */}
           <svg
             className="h-5 w-5"
             fill="none"

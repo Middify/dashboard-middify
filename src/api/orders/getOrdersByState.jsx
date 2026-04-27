@@ -4,27 +4,18 @@ const API_URL =
   "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getOrdersByState";
 
 export const DASHBOARD_COLUMNS_TEMPLATE = [
-  { title: "_id", value: "_id", active: true },
-  { title: "LastUpdate", value: "lastUpdate", active: true },
-  { title: "TennantId", value: "tennantId", active: true },
-  { title: "TennantName", value: "tennantName", active: true },
-  { title: "Brand", value: "brand", active: true },
-  { title: "Attempts", value: "attempts", active: true },
-  { title: "Creation", value: "creation", active: true },
-  { title: "Discounts", value: "discounts", active: true },
-  { title: "ErrorDetail", value: "errorDetail", active: true },
-  { title: "Message", value: "message", active: true },
-  { title: "Status", value: "status", active: true },
-  { title: "MarketPlace", value: "marketPlace", active: true },
-  { title: "OmniChannel", value: "omniChannel", active: true },
-  { title: "Taxes", value: "taxes", active: true },
-  { title: "SubTotal", value: "subTotal", active: true },
-  { title: "Total", value: "total", active: true },
-  { title: "ItemQuantity", value: "itemQuantity", active: true },
-  { title: "Extras", value: "extras", active: true },
-  { title: "Documents", value: "documents", active: true },
-  { title: "Comments", value: "comments", active: true },
-  { title: "Stages", value: "stages", active: true },
+  { title: "TIENDA", value: "logoTienda", active: true },
+  { title: "ID ORDEN", value: "idOrden", active: true },
+  { title: "CREACIÓN ORIGEN", value: "fechaOrigen", active: true },
+  { title: "INGRESO MIDDIFY", value: "fechaMiddify", active: true },
+  { title: "ACTUALIZACIÓN", value: "fechaActualizacion", active: true },
+  { title: "PROCESAMIENTO", value: "estadoMiddify", active: true },
+  { title: "ESTADO ORDEN", value: "estadoOrigen", active: true },
+  { title: "COSTO ENVÍO", value: "costoEnvio", active: true },
+  { title: "TOTAL PAGADO", value: "totalPagado", active: true },
+  { title: "FOLIO BOLETA", value: "folioBoleta", active: true },
+  { title: "BOLETA", value: "boletaPdf", active: true },
+  { title: "MENSAJE", value: "mensaje", active: true },
 ];
 
 export const buildUrlWithParams = ({
@@ -45,9 +36,9 @@ export const buildUrlWithParams = ({
 
 export const fetchOrdersByState = async ({ token, params = {}, signal }) => {
   if (!token) throw new Error("Token missing");
-  // 👇 EL KILL SWITCH DEFINITIVO: Cortamos el cable antes de que salga a internet
+
   if (!params.tenantId || params.tenantId === "") {
-    console.log("👻 Petición fantasma bloqueada exitosamente");
+    console.log("Petición fantasma bloqueada exitosamente");
     return { orders: [], meta: { total: 0, totalPages: 0 } }; // Le damos un resultado vacío a React para que se quede tranquilo
   }
   const response = await fetch(buildUrlWithParams(params), {
