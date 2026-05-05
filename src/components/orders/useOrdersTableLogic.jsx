@@ -457,7 +457,18 @@ export const useOrdersTableLogic = ({
       const row = {
         id: orderId,
         _id: orderId,
-        internalId: orderId,
+        internalId:
+          order.internalId ||
+          order.idOrderMarket ||
+          order.marketPlace?.orderId ||
+          orderId,
+        customerName: order.customerName || "",
+        total:
+          typeof order.total === "object"
+            ? order.total?.amount
+            : order.total || order.marketPlace?.total || 0,
+        status: order.status || order.state || order.marketPlace?.status || "—",
+        creation: order.creation || order.marketPlace?.creation || "",
         tenantId,
         rawOrder: order,
       };
