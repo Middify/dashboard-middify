@@ -1,6 +1,15 @@
 import PropTypes from "prop-types";
 import { safeArray, formatText } from "./formatters";
 
+const STAGES_DICTIONARY = {
+  getOrderDetail: "Recepción de la Orden",
+  createSalesOrder: "Registro en Sistema (ERP)",
+  createInvoice: "Generación de Boleta/Factura",
+  uploadDte: "Carga de Documento (DTE)",
+  sendMailCreateInvoice: "Envío de Correo al Cliente",
+  createDelivery: "Preparación de Envío",
+  getLabel: "Etiqueta de Envío Creada",
+};
 const PanelSix = ({ data }) => {
   const stages = safeArray(data?.stages);
 
@@ -12,6 +21,11 @@ const PanelSix = ({ data }) => {
     <ol className="relative border-l border-slate-200 pl-4">
       {stages.map((stage, index) => {
         const isCompleted = Boolean(stage?.isCompleted);
+        const rawName = stage?.name || "";
+        const displayName =
+          STAGES_DICTIONARY[rawName] ||
+          formatText(rawName) ||
+          "Etapa desconocida";
         return (
           <li key={`${stage?.name ?? "stage"}-${index}`} className="mb-6 ml-2">
             <span
@@ -25,9 +39,7 @@ const PanelSix = ({ data }) => {
                 {isCompleted ? "Completado" : "Pendiente"}
               </span>
             </span>
-            <p className="text-sm font-medium text-slate-800">
-              {formatText(stage?.name)}
-            </p>
+            <p className="text-sm font-medium text-slate-800">{displayName}</p>
             <p
               className={`text-xs font-semibold uppercase ${
                 isCompleted ? "text-emerald-600" : "text-amber-600"
@@ -53,6 +65,3 @@ PanelSix.defaultProps = {
 };
 
 export default PanelSix;
-
-
-

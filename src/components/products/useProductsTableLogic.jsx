@@ -7,6 +7,11 @@ import { useTableState } from "../../hooks/useTableState";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250];
 
+const STATUS_MAP = {
+  procesada: "SUCCESS",
+  error: "FAILED",
+  creada: "CREATED",
+};
 export const useProductsTableLogic = ({
   token = null,
   selectedTenantId = null,
@@ -32,11 +37,16 @@ export const useProductsTableLogic = ({
     resetPagination,
   } = useTableState({ initialPageSize: 50 });
 
+  const apiStatusTranslated = resolvedProductState
+    ? STATUS_MAP[resolvedProductState.toLowerCase().trim()] ||
+      resolvedProductState
+    : null;
+
   const { products, loading, error, total } = useProducts({
     token,
     tenantId: selectedTenantId,
     tenantName: selectedTenantName,
-    state: resolvedProductState,
+    state: apiStatusTranslated,
     page: paginationModel.page + 1,
     pageSize: paginationModel.pageSize,
     refreshTrigger,
@@ -93,7 +103,7 @@ export const useProductsTableLogic = ({
     loading,
     error,
     total,
-    selectedRowIds: new Set(rowSelectionModel), // Compatibility with Header props if needed
+    selectedRowIds: new Set(rowSelectionModel),
     getSelectedProductIds,
     refreshData: triggerRefresh,
     isExporting,
@@ -111,8 +121,8 @@ export const useProductsTableLogic = ({
       // Selection Props
       rowSelectionModel,
       onRowSelectionModelChange: handleSelectionModelChange,
-      onToggleRowSelection: handleToggleRowSelection, // For mobile
-      onToggleAllRows: handleToggleAllRows, // For mobile
+      onToggleRowSelection: handleToggleRowSelection,
+      onToggleAllRows: handleToggleAllRows,
       checkboxSelection: true,
     },
   };

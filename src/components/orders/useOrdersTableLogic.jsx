@@ -24,7 +24,12 @@ const marketplaceLogos = import.meta.glob(
 
 const getLogoUrl = (marketName) => {
   if (!marketName) return null;
-  const normalized = String(marketName).toLowerCase().replace(/\s+/g, "");
+  let normalized = String(marketName).toLowerCase().replace(/\s+/g, "");
+
+  if (normalized.includes("meli")) {
+    normalized = "mercadolibre";
+  }
+
   for (const path in marketplaceLogos) {
     const fileName = path.split("/").pop().toLowerCase();
     if (
@@ -171,6 +176,45 @@ const buildColumnDefinition = (column) => {
               className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${colors} capitalize`}
             >
               {row[column.value] ?? "—"}
+            </span>
+          );
+        },
+      };
+    case "estadoOrigen":
+      return {
+        ...base,
+        minWidth: 150,
+        renderCell: ({ row }) => {
+          const rawStatus = String(row[column.value] || "");
+          const val = rawStatus.toLowerCase().trim();
+          const STATUS_TRANSLATIONS = {
+            abandoned: "Abandonada",
+            "pending payment": "Pago Pendiente",
+            paid: "Pagada",
+            shipped: "Enviada",
+            delivered: "Entregada",
+            canceled: "Cancelada",
+            cancelled: "Cancelada",
+            open: "Abierta",
+            created: "Creada",
+            unfulfilled: "No Procesada",
+            fulfilled: "Procesada",
+            closed: "Cerrada",
+            confirmed: "Confirmado",
+            "ready-for-handling": "Lista para Preparación",
+            handling: "En Preparación",
+            pending: "Pendiente",
+            ready_to_ship: "Lista para Envío",
+            acknowledged: "Recibida",
+            close: "Cerrada",
+          };
+          const displayStatus =
+            STATUS_TRANSLATIONS[val] ||
+            rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+
+          return (
+            <span className="text-sm font-medium text-slate-700 capitalize">
+              {displayStatus}
             </span>
           );
         },
@@ -426,10 +470,8 @@ export const useOrdersTableLogic = ({
   }, [orders, activeColumns]);
 
   const columns = useMemo(() => {
-    // columnas normales que vienen del backend
     const baseColumns = activeColumns.map(buildColumnDefinition);
 
-    // columna estática del "Ojito"
     baseColumns.push({
       field: "detalles",
       headerName: "DETALLES",

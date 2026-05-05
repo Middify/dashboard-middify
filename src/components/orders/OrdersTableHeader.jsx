@@ -5,6 +5,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 const OrdersTableHeader = ({
   title,
   subtitle,
+  tenantName,
   infoChips,
   selectedCount,
   onChangeState,
@@ -19,7 +20,8 @@ const OrdersTableHeader = ({
   exportSelectedDisabled,
 }) => {
   const hasSelection = selectedCount > 0;
-  const canTriggerExport = typeof onExportData === "function" && !exportDisabled;
+  const canTriggerExport =
+    typeof onExportData === "function" && !exportDisabled;
   const canTriggerExportSelected =
     hasSelection &&
     typeof onExportSelectedData === "function" &&
@@ -30,9 +32,20 @@ const OrdersTableHeader = ({
       <header className="mx-auto min-w-[800px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:min-w-full">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2">
-            <div className="flex items-baseline gap-3">
-              <h1 className="text-lg font-semibold text-slate-800 whitespace-nowrap">{title}</h1>
-              {subtitle && <p className="text-xs text-slate-500 whitespace-nowrap">{subtitle}</p>}
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-semibold text-slate-800 whitespace-nowrap">
+                {title}
+              </h1>
+              {tenantName && (
+                <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-600 border border-indigo-100 shadow-sm">
+                  {tenantName}
+                </span>
+              )}
+              {subtitle && (
+                <p className="text-xs text-slate-500 whitespace-nowrap">
+                  {subtitle}
+                </p>
+              )}
             </div>
             {Array.isArray(infoChips) && infoChips.length > 0 && (
               <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-600">
@@ -90,7 +103,9 @@ const OrdersTableHeader = ({
             <div className="flex flex-nowrap gap-2">
               <button
                 type="button"
-                onClick={() => canTriggerExport && !isExportingData && onExportData()}
+                onClick={() =>
+                  canTriggerExport && !isExportingData && onExportData()
+                }
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
                 disabled={!canTriggerExport || isExportingData}
                 title="Exportar órdenes a Excel"
@@ -106,9 +121,15 @@ const OrdersTableHeader = ({
               {hasSelection && (
                 <button
                   type="button"
-                  onClick={() => canTriggerExportSelected && !isExportingSelectedData && onExportSelectedData()}
+                  onClick={() =>
+                    canTriggerExportSelected &&
+                    !isExportingSelectedData &&
+                    onExportSelectedData()
+                  }
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
-                  disabled={!canTriggerExportSelected || isExportingSelectedData}
+                  disabled={
+                    !canTriggerExportSelected || isExportingSelectedData
+                  }
                   title="Exportar selección"
                 >
                   {isExportingSelectedData ? (
@@ -130,13 +151,15 @@ const OrdersTableHeader = ({
 OrdersTableHeader.propTypes = {
   title: PropTypes.string,
   subtitle: PropTypes.string,
+  tenantName: PropTypes.string,
   infoChips: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.string.isRequired,
       label: PropTypes.string.isRequired,
-      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+        .isRequired,
       accentClass: PropTypes.string,
-    })
+    }),
   ),
   selectedCount: PropTypes.number,
   onChangeState: PropTypes.func,
@@ -145,7 +168,7 @@ OrdersTableHeader.propTypes = {
     PropTypes.shape({
       value: PropTypes.string.isRequired,
       label: PropTypes.string.isRequired,
-    })
+    }),
   ),
   selectedState: PropTypes.string,
   onExportData: PropTypes.func,
@@ -159,9 +182,10 @@ OrdersTableHeader.propTypes = {
 OrdersTableHeader.defaultProps = {
   title: "Órdenes",
   subtitle: "",
+  tenantName: "",
   infoChips: [],
   selectedCount: 0,
-  onChangeState: () => { },
+  onChangeState: () => {},
   isProcessing: false,
   stateOptions: [],
   selectedState: "",

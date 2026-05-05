@@ -210,6 +210,8 @@ const OrdersTable = ({
     <>
       <div className="flex flex-col gap-6 pt-4">
         <OrdersTableHeader
+          title={`Órdenes ${selectedStateLabel ? `· ${selectedStateLabel}` : ""}`}
+          tenantName={selectedTenantName}
           selectedCount={selectedRowIds.length}
           onChangeState={handleStateSelection}
           isProcessing={isUpdatingStatus}

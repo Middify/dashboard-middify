@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 const BASE_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev";
 
@@ -85,6 +85,7 @@ export const useProducts = ({
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 
   return {
