@@ -1,7 +1,12 @@
 import PropTypes from "prop-types";
 import { formatDateTime } from "./helpers";
 
-const OrderMobileCard = ({ row, isSelected, onToggleSelection, onViewDetails }) => (
+const OrderMobileCard = ({
+  row,
+  isSelected,
+  onToggleSelection,
+  onViewDetails,
+}) => (
   <div
     className={`mb-3 flex flex-col gap-3 rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
       isSelected
@@ -66,4 +71,3 @@ OrderMobileCard.propTypes = {
 };
 
 export default OrderMobileCard;
-

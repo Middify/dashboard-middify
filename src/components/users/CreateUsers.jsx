@@ -13,22 +13,22 @@ const CreateUsers = ({
 }) => {
   const getTenantsDisponibles = () => {
     const role = currentUser?.role;
-    // Si es Super o MiddifyAdmin, le mostramos TODOS los tenants (usamos allTenants como prioridad)
+
     if (role === "SuperAdmin" || role === "MiddifyAdmin") {
       return allTenants && allTenants.length > 0
         ? allTenants
         : authorizedTenants || [];
     }
-    // Si es Admin normal, SOLO ve los tenants que el backend le autorizó
     return authorizedTenants || [];
   };
 
   const tenantsParaMostrar = getTenantsDisponibles();
+
   const getRolesPermitidos = (role) => {
     switch (role) {
       case "SuperAdmin":
         return [
-          { value: "SuperAdmin", label: "super adminMiddify" },
+          { value: "SuperAdmin", label: "SuperAdmin Middify" },
           { value: "MiddifyAdmin", label: "MiddifyAdmin" },
           { value: "Admin", label: "AdminTenant" },
           { value: "User", label: "UserTenant" },
@@ -49,30 +49,70 @@ const CreateUsers = ({
         return [];
     }
   };
+
   const rolesPermitidos = getRolesPermitidos(currentUser?.role);
+
   const [formData, setFormData] = useState({
     email: "",
     fullName: "",
     tenantId: "",
     role: rolesPermitidos[0]?.value || "",
   });
+
   const [loading, setLoading] = useState(false);
+
+  // Detectamos si el rol que vamos a crear es de acceso global
+  const isGlobalRole =
+    formData.role === "SuperAdmin" || formData.role === "MiddifyAdmin";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+
+      if (name === "role") {
+        const isNowGlobal = value === "SuperAdmin" || value === "MiddifyAdmin";
+        if (!isNowGlobal) newData.tenantId = "";
+      }
+      return newData;
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.tenantId) {
+
+    // Validamos solo si NO es un rol global
+    if (!isGlobalRole && !formData.tenantId) {
       toast.error("Por favor selecciona una tienda (tenant)");
       return;
     }
+
     setLoading(true);
     try {
-      await createUser({ token, ...formData });
+      const payload = { ...formData };
+
+      // LÓGICA MULTI-TENANT
+      if (isGlobalRole) {
+        payload.tenantId = "ALL";
+
+        payload.tenant = tenantsParaMostrar.map((t) => ({
+          tenantId: t.tenantId,
+          tenantName: t.tenantName,
+        }));
+      } else {
+        const selectedT = tenantsParaMostrar.find(
+          (t) => t.tenantId === formData.tenantId,
+        );
+        if (selectedT) {
+          payload.tenant = [
+            { tenantId: selectedT.tenantId, tenantName: selectedT.tenantName },
+          ];
+        }
+      }
+
+      await createUser({ token, ...payload });
       toast.success("Usuario creado exitosamente");
+
       setFormData({
         email: "",
         fullName: "",
@@ -85,11 +125,13 @@ const CreateUsers = ({
       setLoading(false);
     }
   };
+
   useEffect(() => {
     if (rolesPermitidos.length > 0 && !formData.role) {
       setFormData((prev) => ({ ...prev, role: rolesPermitidos[0].value }));
     }
   }, [rolesPermitidos, formData.role]);
+
   return (
     <div className="mt-8 max-w-2xl mx-auto">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -141,29 +183,7 @@ const CreateUsers = ({
               />
             </div>
 
-            <div className="flex flex-col">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Tienda (Tenant)
-              </label>
-              <select
-                name="tenantId"
-                required
-                value={formData.tenantId}
-                onChange={handleChange}
-                className="text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50/30 transition-all cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                }}
-              >
-                <option value="">Selecciona una tienda</option>
-                {tenantsParaMostrar?.map((tenant) => (
-                  <option key={tenant.tenantId} value={tenant.tenantId}>
-                    {tenant.tenantName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+            {/* SELECTOR DE ROL */}
             <div className="flex flex-col">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Rol de Usuario
@@ -183,6 +203,41 @@ const CreateUsers = ({
                     {label}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* SELECTOR DE TIENDA INTELIGENTE */}
+            <div className="flex flex-col">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Tienda (Tenant)
+              </label>
+              <select
+                name="tenantId"
+                required={!isGlobalRole}
+                disabled={isGlobalRole}
+                value={isGlobalRole ? "ALL" : formData.tenantId}
+                onChange={handleChange}
+                className={`text-sm font-semibold transition-all outline-none rounded-xl px-4 py-3 appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em] border ${
+                  isGlobalRole
+                    ? "bg-indigo-50 text-indigo-700 border-indigo-200 cursor-not-allowed"
+                    : "bg-slate-50/30 text-slate-700 border-slate-200 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                }`}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23${isGlobalRole ? "4f46e5" : "64748b"}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                }}
+              >
+                {isGlobalRole ? (
+                  <option value="ALL">Todas las tiendas (Acceso Global)</option>
+                ) : (
+                  <>
+                    <option value="">Selecciona una tienda</option>
+                    {tenantsParaMostrar?.map((tenant) => (
+                      <option key={tenant.tenantId} value={tenant.tenantId}>
+                        {tenant.tenantName}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
           </div>

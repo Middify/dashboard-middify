@@ -6,13 +6,30 @@ import CreateUsers from "../components/users/CreateUsers";
 const ROLES_QUE_PUEDEN_CREAR = ["superadmin", "middifyadmin", "admin"];
 
 const Users = () => {
-  const { token, authorizedTenants, user, selectedTenantId, allTenants } =
-    useOutletContext();
+  const contextData = useOutletContext();
+  const {
+    token,
+    authorizedTenants,
+    user,
+    selectedTenantId,
+    allTenants,
+    tenants,
+  } = contextData;
+
   const [searchParams] = useSearchParams();
   const view = searchParams.get("view") || "list";
 
   const userRole = user?.role?.toLowerCase() || "";
   const canCreateUser = ROLES_QUE_PUEDEN_CREAR.includes(userRole);
+
+  const array1 = allTenants || [];
+  const array2 = tenants || [];
+  const array3 = user?.tenant || [];
+  const array4 = authorizedTenants || [];
+
+  const listaMaestraTiendas = [array1, array2, array3, array4].sort(
+    (a, b) => b.length - a.length,
+  )[0];
 
   return (
     <div className="mt-8 mx-auto w-full">
@@ -21,12 +38,12 @@ const Users = () => {
           token={token}
           currentUser={user}
           authorizedTenants={authorizedTenants}
-          allTenants={allTenants}
+          allTenants={listaMaestraTiendas}
         />
       ) : (
         <UsersTable
           token={token}
-          allTenants={authorizedTenants || []}
+          allTenants={listaMaestraTiendas}
           selectedTenantId={selectedTenantId}
           currentUser={user}
         />

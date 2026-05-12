@@ -23,11 +23,28 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const CAN_EDIT_ROLES = ["SuperAdmin", "MiddifyAdmin", "Admin", "admin"];
-  const canEdit = CAN_EDIT_ROLES.includes(currentUser?.role);
 
+  const canEditUser = (targetUser) => {
+    const currentRole = currentUser?.role;
+    const targetRole = targetUser?.role;
+
+    if (!currentRole) return false;
+
+    if (currentRole === "SuperAdmin") return true;
+
+    if (currentRole === "MiddifyAdmin") {
+      return targetRole !== "SuperAdmin" && targetRole !== "MiddifyAdmin";
+    }
+
+    if (currentRole === "Admin" || currentRole === "admin") {
+      return !["SuperAdmin", "MiddifyAdmin", "Admin", "admin"].includes(
+        targetRole,
+      );
+    }
+
+    return false;
+  };
   const fetchUsers = async () => {
-    // Si selectedTenantId es null, undefined o vacío, no hagas la llamada
     if (!selectedTenantId) return;
     try {
       setLoading(true);
@@ -35,11 +52,10 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
         token,
         page: pagination.page,
         pageSize: pagination.pageSize,
-        tenantId: selectedTenantId, // Asegúrate que aquí no vaya null
+        tenantId: selectedTenantId,
       });
       setUsers(data.users || []);
       setPagination((prev) => ({
-        // ✅ Actualizar con datos reales
         ...prev,
         count: data.total ?? data.count ?? 0,
         totalPages:
@@ -53,11 +69,9 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
   };
 
   useEffect(() => {
-    // Solo dispara la petición si tienes el token Y el tenantId
     if (token && selectedTenantId) {
       fetchUsers();
     } else {
-      // Si no hay tenantId, limpiamos la lista para que no cargue infinito
       setUsers([]);
       setLoading(false);
     }
@@ -165,6 +179,7 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
                 key={user._id}
                 className="hover:bg-slate-50/50 transition-colors group"
               >
+                {/* 1. Columna Usuario / Email */}
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">
@@ -179,10 +194,10 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getRoleBadgeColor(user.role)}`}
                   >
-                    {/* Cambia user.role por esto: */}
                     {roleDisplayNames[user.role] || user.role}
                   </span>
                 </td>
+
                 <td className="px-6 py-4">
                   <div className="flex flex-wrap gap-2">
                     {user.tenant && user.tenant.length > 0 ? (
@@ -205,15 +220,22 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  {canEdit ? (
+                  {canEditUser(user) ? (
                     <IconButton
                       onClick={() => handleEditClick(user)}
                       size="small"
+                      className="text-slate-400 hover:text-indigo-600 transition-colors"
+                      title="Editar usuario"
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
                   ) : (
-                    <span className="text-xs text-slate-300">—</span> // ✅ User ve guión
+                    <span
+                      className="text-xs text-slate-300 cursor-not-allowed"
+                      title="No tienes jerarquía para editar a este usuario"
+                    >
+                      —
+                    </span>
                   )}
                 </td>
               </tr>

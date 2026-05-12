@@ -72,11 +72,9 @@ const MainLayout = () => {
     [location.pathname, detailOrderId],
   );
 
-  // Polling solo en dashboard, cada 30s para ahorrar recursos
   const autoRefresh = currentView === "dashboard" ? 30000 : null;
 
-  // ─── DATA FETCHING ────────────────────────────────────────────────────────
-
+  // DATA FETCHING
   const { user, loading: userLoading, error: userError } = useUsers(token);
 
   const {
@@ -84,9 +82,8 @@ const MainLayout = () => {
     loading: authTenantsLoading,
     error: authTenantsError,
   } = useUsersByTenant(token);
+  const apiTenantId = selectedTenantId;
 
-  // FIX: Una sola llamada a cada hook, con el tenantId seleccionado.
-  // Ya no se hacen llamadas secundarias con IDs concatenados (causaban 404 en loop).
   const {
     data: tenants = [],
     isLoading: productLoading,
@@ -101,9 +98,6 @@ const MainLayout = () => {
     error: marketplaceError,
   } = useMarketplaceSummary(token, selectedTenantId, autoRefresh);
 
-  // ─── AUTO-SELECCIÓN DEL PRIMER TENANT ────────────────────────────────────
-
-  // Seleccionar automáticamente el primer tenant cuando cargan los autorizados
   useEffect(() => {
     if (
       !selectedTenantId &&
@@ -114,8 +108,7 @@ const MainLayout = () => {
     }
   }, [selectedTenantId, authorizedTenants]);
 
-  // ─── ESTADO DERIVADO ──────────────────────────────────────────────────────
-
+  // ESTADO DERIVADO
   const sidebarActiveView = useMemo(() => {
     if (currentView === "detailsOrders") return "orders";
     if (currentView === "products" && location.state?.from === "price")
@@ -132,8 +125,6 @@ const MainLayout = () => {
   const lastKnownOrderState =
     location.state?.fromOrderState ?? lastOrderState ?? null;
 
-  // FIX: allTenants y allMarketplaceTenants reutilizan los datos ya cargados.
-  // Antes se hacían llamadas extra con IDs concatenados que la API no soporta.
   const allProductTenants = tenants;
   const allMarketplaceSummary = marketplaceTenants;
 
@@ -143,8 +134,7 @@ const MainLayout = () => {
   const error =
     productError || marketplaceError || userError || authTenantsError;
 
-  // ─── FILTROS ──────────────────────────────────────────────────────────────
-
+  // FILTROS
   const filteredTenants = useMemo(() => {
     if (!selectedTenantId) return tenants || [];
     return (tenants || []).filter((t) => t.tenantId === selectedTenantId);
@@ -165,7 +155,7 @@ const MainLayout = () => {
     );
   }, [selectedTenantId, marketplaceTenants]);
 
-  // ─── HANDLERS ────────────────────────────────────────────────────────────
+  // HANDLERS
 
   const handleChangeView = useCallback(
     (nextView) => {
@@ -259,13 +249,10 @@ const MainLayout = () => {
     return () => window.removeEventListener("resize", updateSidebarState);
   }, []);
 
-  // ─── CONTEXTO ────────────────────────────────────────────────────────────
-
-  // Memoización crítica: evita re-renders innecesarios en todo el árbol de rutas
   const contextValue = useMemo(
     () => ({
       token,
-      user, // Incluye user.role para permisos
+      user,
       isLoading,
       isFetching,
       error,
@@ -281,7 +268,7 @@ const MainLayout = () => {
       handleSelectProductState,
       handleSelectPriceState,
       isAggregated: false,
-      // FIX: reutiliza los datos ya cargados en lugar de llamadas extra con IDs concatenados
+
       allTenants: allProductTenants,
       allMarketplaceTenants: allMarketplaceSummary,
       authorizedTenants: authorizedTenants ?? [],
@@ -312,7 +299,7 @@ const MainLayout = () => {
   const sidebarOrderState =
     currentView === "detailsOrders" ? lastKnownOrderState : resolvedOrderState;
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────
+  //  RENDER
 
   return (
     <div className="min-h-screen bg-slate-50 lg:flex">

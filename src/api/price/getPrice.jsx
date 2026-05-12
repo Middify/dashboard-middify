@@ -70,32 +70,18 @@ export const usePrice = ({
           pageSize,
           signal: controller.signal,
         });
+
         if (mounted) {
           const allProducts = Array.isArray(result)
             ? result
             : result.products || [];
 
-          // Aplicamos el filtro de tópico y estado en el frontend
-          // ya que la API principal puede no estar filtrando por 'state' todavía
-          const products = allProducts.filter((p) => {
-            const matchesTopic = p.topic === "price-change";
-            const matchesState =
-              !state || p.state?.toLowerCase() === state.toLowerCase();
-            return matchesTopic && matchesState;
-          });
-
-          // El total debe reflejar los productos filtrados encontrados en esta página
-          // o el total que devuelva la API si ya viene filtrado.
-          // Si aplicamos filtros en frontend, el total real es products.length
-          const totalFound = state
-            ? products.length
-            : typeof result.total === "number"
-              ? result.total
-              : products.length;
-
           setData({
-            products,
-            total: totalFound,
+            products: allProducts,
+            total:
+              typeof result.total === "number"
+                ? result.total
+                : allProducts.length,
             loading: false,
             error: null,
           });

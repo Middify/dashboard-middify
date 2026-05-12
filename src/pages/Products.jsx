@@ -1,9 +1,26 @@
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProductsTableHeader from "../components/products/ProductsTableHeader";
 import TableGrid from "../components/common/TableGrid";
 import ProductMobileCard from "../components/products/ProductMobileCard";
 import { useProductsTableLogic } from "../components/products/useProductsTableLogic";
+
+//buscador por sku
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 const Products = () => {
   const {
@@ -16,6 +33,8 @@ const Products = () => {
   const navigate = useNavigate();
   const [skuSearch, setSkuSearch] = useState("");
 
+  const debouncedSkuSearch = useDebounce(skuSearch, 500); // Espera 500ms
+
   const {
     loading,
     error,
@@ -25,6 +44,7 @@ const Products = () => {
     refreshData,
     isExporting,
     handleExportProducts,
+    isStateChangeLockedForAdmin,
     grid,
   } = useProductsTableLogic({
     token,
@@ -33,7 +53,7 @@ const Products = () => {
     resolvedProductState,
     user,
     navigate,
-    sku: skuSearch,
+    sku: debouncedSkuSearch,
     showPrice: false,
     showStock: true,
   });
@@ -77,6 +97,7 @@ const Products = () => {
         tenantId={selectedTenantId}
         tenantName={selectedTenantName}
         onDeleteSuccess={refreshData}
+        isStateChangeLockedForAdmin={isStateChangeLockedForAdmin}
       />
 
       <TableGrid

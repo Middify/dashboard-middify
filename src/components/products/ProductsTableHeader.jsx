@@ -28,6 +28,7 @@ const ProductsTableHeader = ({
   tenantName,
   searchValue = "",
   onSearchChange = () => {},
+  // isStateChangeLockedForAdmin = false,
 }) => {
   const [loading, setLoading] = useState(null); // 'update' | 'delete' | null
   const [modal, setModal] = useState(null); // 'update' | 'delete' | 'import' | 'sync'
@@ -87,7 +88,29 @@ const ProductsTableHeader = ({
         </div>
       </div>
     );
+  const userGroups = Array.isArray(user?.authInfo?.groups)
+    ? user.authInfo.groups
+    : [];
+  const userRole = String(user?.role || "")
+    .toLowerCase()
+    .trim();
 
+  // Poder Absoluto
+  const isSuperOrMiddifyAdmin =
+    userRole === "superadmin" ||
+    userRole === "middifyadmin" ||
+    userRole === "meddifyadmin" ||
+    userGroups.includes("SuperAdmin") ||
+    userGroups.includes("MiddifyAdmin") ||
+    userGroups.includes("MeddifyAdmin");
+
+  // Admin Normal
+  const isAdmin =
+    !isSuperOrMiddifyAdmin &&
+    (userRole === "admin" || userGroups.includes("Admin"));
+
+  // Usuario Básico
+  const isBasicUser = !isSuperOrMiddifyAdmin && !isAdmin;
   return (
     <div className="flex flex-col gap-4">
       <header className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
@@ -111,11 +134,21 @@ const ProductsTableHeader = ({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {selectedCount > 0 && (
+            {/*{selectedCount > 0 && !isBasicUser && (
               <>
                 <button
                   onClick={() => setModal("update")}
-                  className="px-4 py-2 rounded-2xl bg-slate-100 text-slate-700 text-sm font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-sm active:scale-95"
+                  disabled={isAdmin && isStateChangeLockedForAdmin}
+                  title={
+                    isAdmin && isStateChangeLockedForAdmin
+                      ? "El rol Admin no puede alterar productos Procesados o con Error."
+                      : ""
+                  }
+                  className={`px-4 py-2 rounded-2xl text-sm font-bold shadow-sm transition-all active:scale-95 ${
+                    isAdmin && isStateChangeLockedForAdmin
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed opacity-70"
+                      : "bg-slate-100 text-slate-700 hover:bg-indigo-600 hover:text-white"
+                  }`}
                 >
                   Cambiar Estado
                 </button>
@@ -126,13 +159,19 @@ const ProductsTableHeader = ({
                   Eliminar
                 </button>
               </>
+            )} */}
+
+            {/* Solo SuperAdmins y Admins ven Importar y Sincronizar */}
+            {!isBasicUser && (
+              <>
+                <button
+                  onClick={() => setModal("import")}
+                  className="px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-600 text-sm font-bold hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95"
+                >
+                  Importar
+                </button>
+              </>
             )}
-            <button
-              onClick={() => setModal("import")}
-              className="px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-600 text-sm font-bold hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95"
-            >
-              Importar
-            </button>
             <button
               onClick={() => setModal("sync")}
               className="px-4 py-2 rounded-2xl bg-amber-50 text-amber-600 text-sm font-bold hover:bg-amber-600 hover:text-white transition-all shadow-sm active:scale-95"
@@ -201,7 +240,7 @@ const ProductsTableHeader = ({
         </div>
       </header>
 
-      <Modal
+      {/* <Modal
         type="update"
         title="Cambiar Estado"
         confirmText="Actualizar"
@@ -237,7 +276,7 @@ const ProductsTableHeader = ({
           </span>
           .
         </p>
-      </Modal>
+      </Modal>*/}
 
       <Suspense fallback={null}>
         {modal === "import" && (

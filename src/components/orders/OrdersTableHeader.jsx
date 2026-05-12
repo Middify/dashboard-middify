@@ -18,6 +18,7 @@ const OrdersTableHeader = ({
   onExportSelectedData,
   isExportingSelectedData,
   exportSelectedDisabled,
+  canEditState,
 }) => {
   const hasSelection = selectedCount > 0;
   const canTriggerExport =
@@ -77,14 +78,27 @@ const OrdersTableHeader = ({
                     className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-8 text-xs font-semibold text-slate-700 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
                     onChange={(event) => onChangeState(event.target.value)}
                     value={selectedState}
-                    disabled={isProcessing || stateOptions.length === 0}
+                    disabled={
+                      !canEditState || isProcessing || stateOptions.length === 0
+                    }
+                    title={
+                      !canEditState
+                        ? "No tienes permisos para alterar órdenes procesadas"
+                        : "Cambiar estado de las órdenes"
+                    }
                   >
-                    <option value="">Cambiar estado...</option>
-                    {stateOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
+                    <option value="">
+                      {!canEditState
+                        ? " Edición Bloqueada"
+                        : "Cambiar estado..."}
+                    </option>
+                    {/* Solo mostramos las opciones si tiene permiso */}
+                    {canEditState &&
+                      stateOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                   </select>
                   {isProcessing && (
                     <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
@@ -177,6 +191,7 @@ OrdersTableHeader.propTypes = {
   onExportSelectedData: PropTypes.func,
   isExportingSelectedData: PropTypes.bool,
   exportSelectedDisabled: PropTypes.bool,
+  canEditState: PropTypes.bool,
 };
 
 OrdersTableHeader.defaultProps = {
@@ -195,6 +210,7 @@ OrdersTableHeader.defaultProps = {
   onExportSelectedData: undefined,
   isExportingSelectedData: false,
   exportSelectedDisabled: false,
+  canEditState: true,
 };
 
 export default OrdersTableHeader;

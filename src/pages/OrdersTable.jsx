@@ -55,6 +55,36 @@ const OrdersTable = ({
     severity: "info",
   });
 
+  const canEditState = useMemo(() => {
+    const role = user?.role;
+
+    if (role === "SuperAdmin" || role === "MiddifyAdmin") return true;
+
+    const selectedOrders = getSelectedOrders();
+    if (selectedOrders.length === 0) return true;
+
+    const lockedStatuses = [
+      "procesada",
+      "procesado",
+      "completada",
+      "completado",
+      "completed",
+      "finalizada",
+    ];
+
+    const hasLockedOrder = selectedOrders.some((order) => {
+      const currentStatus = (
+        order.status ||
+        order.state ||
+        order.marketPlace?.status ||
+        ""
+      ).toLowerCase();
+      return lockedStatuses.includes(currentStatus);
+    });
+
+    return !hasLockedOrder;
+  }, [user, getSelectedOrders, selectedRowIds]);
+
   const stateOptions = useMemo(() => {
     const baseOptions =
       STATE_DEFINITIONS?.map(({ key, label }) => ({
@@ -223,6 +253,7 @@ const OrdersTable = ({
           onExportSelectedData={handleExportSelectedOrders}
           isExportingSelectedData={isExportingSelection}
           exportSelectedDisabled={selectedRowIds.length === 0}
+          canEditState={canEditState}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <TableGrid

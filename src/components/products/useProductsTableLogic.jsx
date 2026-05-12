@@ -61,6 +61,29 @@ export const useProductsTableLogic = ({
     return (products || []).map((p, i) => ({ id: p._id || i, ...p }));
   }, [products]);
 
+  //candado inteligente para roles
+  const isStateChangeLockedForAdmin = useMemo(() => {
+    if (!rowSelectionModel || rowSelectionModel.length === 0) return false;
+
+    const lockedStates = [
+      "success",
+      "procesada",
+      "error",
+      "failed",
+      "aprobado",
+      "rejected",
+    ];
+
+    return rowSelectionModel.some((id) => {
+      const product = rows.find((r) => r.id === id);
+      if (!product) return false;
+      const state = String(product.state || product.status || "")
+        .toLowerCase()
+        .trim();
+      return lockedStates.includes(state);
+    });
+  }, [rowSelectionModel, rows]);
+
   const handleViewDetails = useCallback(
     (id) => {
       navigate(`/products/${id}`);
@@ -103,6 +126,7 @@ export const useProductsTableLogic = ({
     loading,
     error,
     total,
+    isStateChangeLockedForAdmin,
     selectedRowIds: new Set(rowSelectionModel),
     getSelectedProductIds,
     refreshData: triggerRefresh,

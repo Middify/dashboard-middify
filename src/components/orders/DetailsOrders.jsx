@@ -29,7 +29,8 @@ const buildFallbackPanels = (order) => {
     panel_1: {
       orderId: marketplace.orderId ?? order.orderId ?? null,
       idOrdenMarket: marketplace.idOrdenMarket ?? null,
-      nombre: marketplace.nombre ?? order.tennantName ?? order.tenantName ?? null,
+      nombre:
+        marketplace.nombre ?? order.tennantName ?? order.tenantName ?? null,
       creation: marketplace.creation ?? order.creation ?? null,
       lastUpdate: marketplace.lastUpdate ?? order.lastUpdate ?? null,
       status: marketplace.status ?? order.status ?? null,
@@ -49,7 +50,13 @@ const buildFallbackPanels = (order) => {
   };
 };
 
-const DetailsOrders = ({ token, orderId, fallbackOrder, onClose }) => {
+const DetailsOrders = ({
+  token,
+  orderId,
+  fallbackOrder,
+  onClose,
+  currentUser,
+}) => {
   const { details, loading, error } = useOrderDetails(token, orderId, {
     enabled: Boolean(token && orderId),
   });
@@ -66,6 +73,34 @@ const DetailsOrders = ({ token, orderId, fallbackOrder, onClose }) => {
   const handleGoBack = () => {
     onClose();
   };
+
+  const checkEditPermission = () => {
+    const role = currentUser?.role;
+    if (!role) return false;
+
+    if (role === "SuperAdmin" || role === "MiddifyAdmin") return true;
+
+    const currentStatus = (
+      resolvedPanels?.panel_1?.statusOrder ||
+      resolvedPanels?.panel_1?.status ||
+      ""
+    ).toLowerCase();
+
+    const lockedStatuses = [
+      "procesada",
+      "procesado",
+      "completada",
+      "completado",
+      "completed",
+      "finalizada",
+    ];
+
+    const isLocked = lockedStatuses.includes(currentStatus);
+
+    return !isLocked;
+  };
+
+  const canEdit = checkEditPermission();
 
   return (
     <div className="flex flex-col pt-6 gap-6">
@@ -84,8 +119,8 @@ const DetailsOrders = ({ token, orderId, fallbackOrder, onClose }) => {
 
         {orderId && !loading && error && (
           <div className="mx-6 mt-6 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
-            Error al cargar los detalles desde la API: {error.message}. Se muestra la
-            información disponible localmente.
+            Error al cargar los detalles desde la API: {error.message}. Se
+            muestra la información disponible localmente.
           </div>
         )}
 
@@ -114,22 +149,23 @@ const DetailsOrders = ({ token, orderId, fallbackOrder, onClose }) => {
                   data={resolvedPanels.panel_1}
                   fallbackOrder={fallbackOrder}
                   orderId={orderId}
+                  canEdit={canEdit}
                 />
               )}
               {activeTab === "panel2" && (
-                <PanelTwo data={resolvedPanels.panel_2} />
+                <PanelTwo data={resolvedPanels.panel_2} canEdit={canEdit} />
               )}
               {activeTab === "panel3" && (
-                <PanelThree data={resolvedPanels.panel_3} />
+                <PanelThree data={resolvedPanels.panel_3} canEdit={canEdit} />
               )}
               {activeTab === "panel4" && (
-                <PanelFour data={resolvedPanels.panel_4} />
+                <PanelFour data={resolvedPanels.panel_4} canEdit={canEdit} />
               )}
               {activeTab === "panel5" && (
-                <PanelFive data={resolvedPanels.panel_5} />
+                <PanelFive data={resolvedPanels.panel_5} canEdit={canEdit} />
               )}
               {activeTab === "panel6" && (
-                <PanelSix data={resolvedPanels.panel_6} />
+                <PanelSix data={resolvedPanels.panel_6} canEdit={canEdit} />
               )}
             </div>
           </div>
@@ -154,6 +190,7 @@ DetailsOrders.propTypes = {
   orderId: PropTypes.string,
   fallbackOrder: PropTypes.object,
   onClose: PropTypes.func,
+  currentUser: PropTypes.object,
 };
 
 DetailsOrders.defaultProps = {
@@ -161,7 +198,7 @@ DetailsOrders.defaultProps = {
   orderId: null,
   fallbackOrder: null,
   onClose: () => {},
+  currentUser: null,
 };
 
 export default DetailsOrders;
-

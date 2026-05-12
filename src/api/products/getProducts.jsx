@@ -25,11 +25,20 @@ export const fetchProducts = async ({
   params.append("page", String(page));
   params.append("pageSize", String(pageSize));
 
-  const response = await fetch(`${endpoint}?${params}`, {
+  /*const response = await fetch(`${endpoint}?${params}`, {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    signal,
+  });*/
+  const response = await fetch(`${endpoint}?${params}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
     signal,
   });
 

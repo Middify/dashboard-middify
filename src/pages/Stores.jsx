@@ -1,6 +1,7 @@
 import StoreCards from "../components/stores/StoreCards";
 
 const Stores = ({
+  token,
   isLoading = false,
   error = null,
   productTenants = [],
@@ -36,4 +37,3 @@ const Stores = ({
 };
 
 export default Stores;
-

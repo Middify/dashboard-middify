@@ -19,9 +19,15 @@ export const formatPrice = (p) =>
 
 export const formatDate = (date) => {
   if (!date) return "-";
-  const rawDate = date?.$date || date;
+  let rawDate = date?.$date || date;
+  if (typeof rawDate === "string" && rawDate.includes(" ")) {
+    rawDate = rawDate.replace(" ", "T");
+  }
+
   const d = new Date(rawDate);
+
   if (isNaN(d.getTime())) return "-";
+
   return d.toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "2-digit",

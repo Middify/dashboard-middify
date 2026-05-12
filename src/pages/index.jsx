@@ -58,20 +58,13 @@ const DashboardWrapper = () => {
 };
 
 const StoresWrapper = () => {
-  const {
-    isLoading,
-    error,
-    allTenants,
-    allMarketplaceTenants,
-    authorizedTenants,
-  } = useOutletContext();
+  const { token, isLoading, error, authorizedTenants } = useOutletContext();
 
   return (
     <Stores
+      token={token}
       isLoading={isLoading}
       error={error}
-      productTenants={allTenants || []}
-      marketplaceTenants={allMarketplaceTenants || []}
       authorizedTenants={authorizedTenants || []}
     />
   );
