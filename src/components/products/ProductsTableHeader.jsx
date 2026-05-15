@@ -30,8 +30,8 @@ const ProductsTableHeader = ({
   onSearchChange = () => {},
   // isStateChangeLockedForAdmin = false,
 }) => {
-  const [loading, setLoading] = useState(null); // 'update' | 'delete' | null
-  const [modal, setModal] = useState(null); // 'update' | 'delete' | 'import' | 'sync'
+  const [loading, setLoading] = useState(null);
+  const [modal, setModal] = useState(null);
   const [selectedState, setSelectedState] = useState("");
 
   const handleAction = async (state, type) => {

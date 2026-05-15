@@ -14,9 +14,21 @@ export const getStateColor = (s) => {
   return states[s?.toLowerCase()] || "bg-slate-100 text-slate-600";
 };
 
-export const formatPrice = (p) =>
-  p ? `$${Number(p).toLocaleString("es-ES")}` : "-";
+export const formatPrice = (p) => {
+  if (p === null || p === undefined || p === "" || p === "—" || p === "-") {
+    return "—";
+  }
 
+  const num = Number(p);
+  if (isNaN(num)) return p;
+
+  return num.toLocaleString("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+};
 export const formatDate = (date) => {
   if (!date) return "-";
   let rawDate = date?.$date || date;

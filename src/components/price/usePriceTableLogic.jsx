@@ -67,7 +67,6 @@ export const usePriceTableLogic = ({
       };
     });
 
-    console.log("FILAS ENVIADAS A LA TABLA MUI:", mappedRows);
     return mappedRows;
   }, [productsArray]);
 

@@ -31,6 +31,12 @@ const PRODUCT_STATE_ITEMS = [
   { id: "procesada", label: "Procesada" },
 ];
 
+const PRICE_STATE_ITEMS = [
+  { id: "creada", label: "Pendientes" },
+  { id: "error", label: "Error al Sincronizar" },
+  { id: "procesada", label: "Actualizados" },
+];
+
 export const SIDEBAR_WIDTH = 280;
 export const SIDEBAR_COLLAPSED_WIDTH = 84;
 
@@ -684,7 +690,7 @@ const Sidebar = ({
                         <StatusDot active={isPriceRootActive} />
                         <span>Todos</span>
                       </button>
-                      {PRODUCT_STATE_ITEMS.map((state) => {
+                      {PRICE_STATE_ITEMS.map((state) => {
                         const isActive = activePriceState === state.id;
                         return (
                           <button
