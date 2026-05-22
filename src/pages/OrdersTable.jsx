@@ -16,6 +16,7 @@ const OrdersTable = ({
   selectedOrderState = null,
   onSelectOrder = () => {},
   user = null,
+  availableMarketplaces = [],
 }) => {
   const {
     error,
@@ -27,6 +28,8 @@ const OrdersTable = ({
     refreshData,
     selectedStateLabel,
     formatOrdersForExport,
+    selectedMarketplace,
+    setSelectedMarketplace,
     exporting,
     onExport,
   } = useOrdersTableLogic({
@@ -43,6 +46,7 @@ const OrdersTable = ({
       });
     },
   });
+  //filtro por marketplace
 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -65,11 +69,16 @@ const OrdersTable = ({
 
     const lockedStatuses = [
       "procesada",
-      "procesado",
-      "completada",
-      "completado",
-      "completed",
-      "finalizada",
+      "procesad",
+      "procesda",
+      "error",
+      "error_",
+      "Descartada",
+      "descartada",
+      "descatada",
+      "disabled",
+      "discarded",
+      "failed",
     ];
 
     const hasLockedOrder = selectedOrders.some((order) => {
@@ -92,11 +101,18 @@ const OrdersTable = ({
         label,
       })) ?? [];
 
-    const hasDeleted = baseOptions.some((option) => option.value === "deleted");
+    const ALLOWED_STATES = ["procesada", "error", "deleted"];
+
+    const filteredOptions = baseOptions.filter((option) =>
+      ALLOWED_STATES.includes(String(option.value).toLowerCase()),
+    );
+    const hasDeleted = filteredOptions.some(
+      (option) => option.value === "deleted",
+    );
 
     return hasDeleted
-      ? baseOptions
-      : [...baseOptions, { value: "deleted", label: "Eliminada" }];
+      ? filteredOptions
+      : [...filteredOptions, { value: "deleted", label: "Eliminada" }];
   }, []);
 
   const handleStateSelection = useCallback(
@@ -254,6 +270,9 @@ const OrdersTable = ({
           isExportingSelectedData={isExportingSelection}
           exportSelectedDisabled={selectedRowIds.length === 0}
           canEditState={canEditState}
+          selectedMarketplace={selectedMarketplace}
+          onMarketplaceChange={(e) => setSelectedMarketplace(e.target.value)}
+          availableMarketplaces={availableMarketplaces}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <TableGrid

@@ -144,9 +144,12 @@ export const useProductsTableLogic = ({
 
       // Selection Props
       rowSelectionModel,
-      onRowSelectionModelChange: handleSelectionModelChange,
-      onToggleRowSelection: handleToggleRowSelection,
-      onToggleAllRows: handleToggleAllRows,
+      onRowSelectionModelChange: (newSelectionModel) => {
+        if (typeof handleSelectionModelChange === "function") {
+          handleSelectionModelChange(newSelectionModel);
+        }
+      },
+      keepNonExistentRowsSelected: true,
       checkboxSelection: true,
     },
   };

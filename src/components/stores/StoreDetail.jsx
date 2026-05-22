@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { saveDashboardColumns } from "../../api/orders/postParamTable";
 import {
@@ -29,23 +30,24 @@ const prepareColumns = (columns = []) =>
     };
   });
 
-const StoreDetail = ({ token }) => {
+const StoreDetail = ({ token, currentUser }) => {
   const navigate = useNavigate();
   const { storeId } = useParams();
   const location = useLocation();
   const storeName = location.state?.store?.name ?? storeId ?? "Tienda";
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [columns, setColumns] = useState(() =>
-    prepareColumns(DASHBOARD_COLUMNS_TEMPLATE)
+    prepareColumns(DASHBOARD_COLUMNS_TEMPLATE),
   );
   const [loadingColumns, setLoadingColumns] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const selectedCount = useMemo(
     () => columns.filter((column) => column.active).length,
-    [columns]
+    [columns],
   );
   const allSelected = selectedCount === columns.length;
+  // const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!token) {
@@ -70,15 +72,17 @@ const StoreDetail = ({ token }) => {
           prepareColumns(
             Array.isArray(result) && result.length
               ? result
-              : DASHBOARD_COLUMNS_TEMPLATE
-          )
+              : DASHBOARD_COLUMNS_TEMPLATE,
+          ),
         );
       } catch (error) {
         if (error.name === "AbortError" || !isMounted) {
           return;
         }
         setColumns(prepareColumns(DASHBOARD_COLUMNS_TEMPLATE));
-        setMessage(error.message || "No se pudo cargar la configuración actual.");
+        setMessage(
+          `Error: ${error.message || "No se pudo cargar la configuración actual."}`,
+        );
       } finally {
         if (isMounted) {
           setLoadingColumns(false);
@@ -94,14 +98,16 @@ const StoreDetail = ({ token }) => {
   }, [token, storeName]);
 
   const handleToggleColumn = (value) => {
+    setMessage("");
     setColumns((prev) =>
       prev.map((column) =>
-        column.value === value ? { ...column, active: !column.active } : column
-      )
+        column.value === value ? { ...column, active: !column.active } : column,
+      ),
     );
   };
 
   const handleToggleAllColumns = () => {
+    setMessage("");
     setColumns((prev) => {
       if (prev.length === 0) {
         return prev;
@@ -137,9 +143,10 @@ const StoreDetail = ({ token }) => {
         tenantName: storeName,
         params: activeColumnValues,
       });
+
       setMessage("Columnas guardadas correctamente.");
     } catch (error) {
-      setMessage(error.message || "Error al guardar columnas.");
+      setMessage(`${error.message || "Error al guardar columnas."}`);
     } finally {
       setSaving(false);
     }
@@ -164,11 +171,15 @@ const StoreDetail = ({ token }) => {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isActive
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setMessage("");
+                }}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  isActive
                     ? "bg-catalina-blue-600 text-white shadow-sm"
                     : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-                  }`}
+                }`}
               >
                 {tab.label}
               </button>
@@ -191,7 +202,12 @@ const StoreDetail = ({ token }) => {
         )}
 
         {activeTab === "users" && (
-          <StoreUsersTab token={token} storeName={storeName} storeId={storeId} />
+          <StoreUsersTab
+            token={token}
+            storeName={storeName}
+            storeId={storeId}
+            currentUser={currentUser}
+          />
         )}
       </section>
     </div>

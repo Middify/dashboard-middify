@@ -4,18 +4,18 @@ const API_URL =
   "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/getOrdersByState";
 
 export const DASHBOARD_COLUMNS_TEMPLATE = [
-  { title: "TIENDA", value: "logoTienda", active: true },
-  { title: "ID ORDEN", value: "idOrden", active: true },
-  { title: "CREACIÓN ORIGEN", value: "fechaOrigen", active: true },
-  { title: "INGRESO MIDDIFY", value: "fechaMiddify", active: true },
-  { title: "ACTUALIZACIÓN", value: "fechaActualizacion", active: true },
-  { title: "PROCESAMIENTO", value: "estadoMiddify", active: true },
-  { title: "ESTADO ORDEN", value: "estadoOrigen", active: true },
-  { title: "COSTO ENVÍO", value: "costoEnvio", active: true },
-  { title: "TOTAL PAGADO", value: "totalPagado", active: true },
-  { title: "FOLIO BOLETA", value: "folioBoleta", active: true },
-  { title: "BOLETA", value: "boletaPdf", active: true },
-  { title: "MENSAJE", value: "mensaje", active: true },
+  { value: "marketPlace", title: "TIENDA", active: true },
+  { value: "_id", title: "ID ORDEN", active: true },
+  { value: "creation", title: "CREACIÓN ORIGEN", active: true },
+  { value: "brand", title: "INGRESO MIDDIFY", active: true },
+  { value: "lastUpdate", title: "ACTUALIZACIÓN", active: true },
+  { value: "stages", title: "PROCESAMIENTO", active: true },
+  { value: "status", title: "ESTADO ORDEN", active: true },
+  { value: "subTotal", title: "COSTO ENVÍO", active: true },
+  { value: "total", title: "TOTAL PAGADO", active: true },
+  { value: "taxes", title: "FOLIO BOLETA", active: true },
+  { value: "documents", title: "BOLETA", active: true },
+  { value: "message", title: "MENSAJE", active: true },
 ];
 
 export const buildUrlWithParams = ({
@@ -24,6 +24,7 @@ export const buildUrlWithParams = ({
   state,
   page,
   pageSize,
+  marketPlace,
 } = {}) => {
   const url = new URL(API_URL);
   if (tenantId) url.searchParams.set("tenantId", tenantId);
@@ -31,6 +32,7 @@ export const buildUrlWithParams = ({
   if (state) url.searchParams.set("state", state);
   if (page) url.searchParams.set("page", page);
   if (pageSize) url.searchParams.set("pageSize", pageSize);
+  if (marketPlace) url.searchParams.set("marketPlace", marketPlace);
   return url;
 };
 
@@ -58,7 +60,34 @@ export const fetchOrdersByState = async ({ token, params = {}, signal }) => {
   };
 };
 
-export const fetchTenantColumns = async () => DASHBOARD_COLUMNS_TEMPLATE;
+export const fetchTenantColumns = async ({ token, tenantName, signal }) => {
+  if (!token || !tenantName) return DASHBOARD_COLUMNS_TEMPLATE;
+
+  try {
+    const result = await fetchOrdersByState({
+      token,
+      params: { tenantName, pageSize: 1 },
+      signal,
+    });
+
+    const columnsConfig = result.meta?.columnsConfig;
+
+    if (Array.isArray(columnsConfig) && columnsConfig.length > 0) {
+      return DASHBOARD_COLUMNS_TEMPLATE.map((col) => {
+        const backendCol = columnsConfig.find((bc) => bc.value === col.value);
+        return {
+          ...col,
+          active: backendCol ? backendCol.active : col.active,
+        };
+      });
+    }
+
+    return DASHBOARD_COLUMNS_TEMPLATE;
+  } catch (error) {
+    console.error("Error atrapando al pasajero clandestino:", error);
+    return DASHBOARD_COLUMNS_TEMPLATE;
+  }
+};
 
 export const fetchOrdersByStateAllPages = async ({
   token,
@@ -121,9 +150,9 @@ export const useOrdersData = (token, params = {}, refreshTrigger = 0) => {
 
 export const useTenantColumns = (token, tenantId, tenantName) => {
   return useQuery({
-    queryKey: ["columns", token, tenantId, tenantName],
-    queryFn: fetchTenantColumns,
-    enabled: !!token && !!tenantId,
+    queryKey: ["tenantColumns", token, tenantId, tenantName],
+    queryFn: ({ signal }) => fetchTenantColumns({ token, tenantName, signal }),
+    enabled: !!token && !!tenantName,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
     initialData: DASHBOARD_COLUMNS_TEMPLATE,

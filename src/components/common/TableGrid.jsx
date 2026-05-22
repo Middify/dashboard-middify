@@ -1,11 +1,13 @@
 import PropTypes from "prop-types";
 import { useMemo } from "react";
-import { 
-  DataGrid, 
-  GridOverlay, 
-  GridPagination, 
-} from "@mui/x-data-grid";
-import { Paper, Box, CircularProgress, Typography, Skeleton } from "@mui/material";
+import { DataGrid, GridOverlay, GridPagination } from "@mui/x-data-grid";
+import {
+  Paper,
+  Box,
+  CircularProgress,
+  Typography,
+  Skeleton,
+} from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
@@ -58,7 +60,14 @@ const LoadingSkeleton = () => (
 
 const CustomFooter = () => {
   return (
-    <Box sx={{ p: 1, display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0' }}>
+    <Box
+      sx={{
+        p: 1,
+        display: "flex",
+        justifyContent: "flex-end",
+        borderTop: "1px solid #e2e8f0",
+      }}
+    >
       <GridPagination />
     </Box>
   );
@@ -87,12 +96,17 @@ const TableGrid = ({
   const totalPages = Math.max(1, Math.ceil((rowCount || 0) / pageSize));
 
   const allRowIds = useMemo(() => rows.map((r) => r.id), [rows]);
-  const allSelected = allRowIds.length > 0 && allRowIds.every((id) => rowSelectionModel.includes(id));
+  const allSelected =
+    allRowIds.length > 0 &&
+    allRowIds.every((id) => rowSelectionModel.includes(id));
 
-  const gridRowSelectionModel = useMemo(() => ({
-    type: "include",
-    ids: new Set(rowSelectionModel || []),
-  }), [rowSelectionModel]);
+  const gridRowSelectionModel = useMemo(
+    () => ({
+      type: "include",
+      ids: new Set(rowSelectionModel || []),
+    }),
+    [rowSelectionModel],
+  );
 
   const handleGridSelectionChange = (model) => {
     if (!onRowSelectionModelChange) return;
@@ -100,7 +114,12 @@ const TableGrid = ({
       onRowSelectionModelChange(model);
       return;
     }
-    const next = model?.ids instanceof Set ? Array.from(model.ids) : Array.isArray(model?.ids) ? model.ids : [];
+    const next =
+      model?.ids instanceof Set
+        ? Array.from(model.ids)
+        : Array.isArray(model?.ids)
+          ? model.ids
+          : [];
     onRowSelectionModelChange(next);
   };
 
@@ -113,7 +132,7 @@ const TableGrid = ({
   };
 
   return (
-    <div className="mx-auto w-full min-w-full md:min-w-[70rem] max-w-full lg:max-w-[94rem] overflow-hidden">
+    <div className="mx-auto w-full max-w-full overflow-hidden">
       <div className="md:hidden">
         <div className="mb-3 flex justify-between items-center text-xs font-medium text-slate-500 px-1">
           <span>{(rowCount || 0).toLocaleString()} Resultados</span>
@@ -146,14 +165,19 @@ const TableGrid = ({
                   onViewDetails={onViewDetails}
                   {...mobileComponentProps}
                 />
-              ) : null
+              ) : null,
             )
           )}
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-white/95 backdrop-blur px-4 py-3 flex justify-between items-center shadow-lg">
           <button
-            onClick={() => onPaginationModelChange({ ...paginationModel, page: Math.max(0, page - 1) })}
+            onClick={() =>
+              onPaginationModelChange({
+                ...paginationModel,
+                page: Math.max(0, page - 1),
+              })
+            }
             disabled={page === 0}
             className="p-1 disabled:opacity-30 flex items-center gap-1 text-xs font-medium text-slate-600"
           >
@@ -163,7 +187,12 @@ const TableGrid = ({
             Pág. {page + 1} de {totalPages || 1}
           </span>
           <button
-            onClick={() => onPaginationModelChange({ ...paginationModel, page: Math.min(totalPages - 1, page + 1) })}
+            onClick={() =>
+              onPaginationModelChange({
+                ...paginationModel,
+                page: Math.min(totalPages - 1, page + 1),
+              })
+            }
             disabled={page >= totalPages - 1}
             className="p-1 disabled:opacity-30 flex items-center gap-1 text-xs font-medium text-slate-600"
           >
@@ -173,9 +202,22 @@ const TableGrid = ({
       </div>
 
       <div className="hidden md:block">
-        <Paper elevation={0} className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-          <div style={{ height: Math.min(Math.max(rows.length * rowHeight + 110, 400), 800), width: "100%", maxHeight: "calc(100vh - 240px)" }}>
+        <Paper
+          elevation={0}
+          className="rounded-xl border border-slate-200 overflow-hidden bg-white"
+        >
+          <div
+            style={{
+              height: Math.min(
+                Math.max(rows.length * rowHeight + 110, 400),
+                800,
+              ),
+              width: "100%",
+              maxHeight: "calc(100vh - 240px)",
+            }}
+          >
             <DataGrid
+              key={`datagrid-${columns.length}`}
               rows={rows}
               columns={columns}
               loading={loading}
@@ -187,6 +229,7 @@ const TableGrid = ({
               checkboxSelection={checkboxSelection}
               rowSelectionModel={gridRowSelectionModel}
               onRowSelectionModelChange={handleGridSelectionChange}
+              keepNonExistentRowsSelected={true}
               disableRowSelectionOnClick
               disableColumnMenu
               rowHeight={rowHeight}
@@ -198,11 +241,25 @@ const TableGrid = ({
               }}
               sx={{
                 border: 0,
-                "& .MuiDataGrid-columnHeaders": { backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" },
-                "& .MuiDataGrid-columnHeaderTitle": { fontWeight: 600, fontSize: "0.7rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" },
-                "& .MuiDataGrid-cell": { borderBottom: "1px solid #f1f5f9", outline: "none !important" },
+                "& .MuiDataGrid-columnHeaders": {
+                  backgroundColor: "#f8fafc",
+                  borderBottom: "1px solid #e2e8f0",
+                },
+                "& .MuiDataGrid-columnHeaderTitle": {
+                  fontWeight: 600,
+                  fontSize: "0.7rem",
+                  color: "#64748b",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                },
+                "& .MuiDataGrid-cell": {
+                  borderBottom: "1px solid #f1f5f9",
+                  outline: "none !important",
+                },
                 "& .MuiDataGrid-row:hover": { backgroundColor: "#f8fafc" },
-                "& .MuiDataGrid-footerContainer": { borderTop: "1px solid #e2e8f0" },
+                "& .MuiDataGrid-footerContainer": {
+                  borderTop: "1px solid #e2e8f0",
+                },
               }}
             />
           </div>

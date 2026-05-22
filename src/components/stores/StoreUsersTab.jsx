@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Outlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -8,33 +8,41 @@ import ConfirmModal from "../../utils/ConfirmModal";
 import { useStoreUsersLogic } from "./useStoreUsersLogic";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 
-const getUserColumns = (onRemove, canManage) => [
-  { field: "email", headerName: "Email", flex: 1, minWidth: 200 },
-  { field: "role", headerName: "Rol", width: 150 },
-  { field: "fullName", headerName: "Nombre", width: 200 },
+const getUserColumns = (onRemove, canManage) => {
+  const columns = [
+    { field: "email", headerName: "Email", flex: 1, minWidth: 200 },
+    { field: "role", headerName: "Rol", width: 130 },
+    { field: "fullName", headerName: "Nombre", flex: 1, minWidth: 150 },
+  ];
 
-  ...(canManage
-    ? [
-        {
-          field: "actions",
-          headerName: "Acciones",
-          width: 100,
-          align: "right",
-          headerAlign: "right",
-          renderCell: ({ row }) => (
-            <button
-              onClick={() => onRemove(row)}
-              className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full transition-colors"
-              title="Eliminar usuario de esta tienda"
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </button>
-          ),
-        },
-      ]
-    : []),
-];
+  if (canManage) {
+    columns.push({
+      field: "eliminar_usuario",
+      headerName: "Acciones",
+      width: 100,
+      align: "center",
+      headerAlign: "center",
+      sortable: false,
+      disableColumnMenu: true,
+      renderCell: ({ row }) => (
+        <div className="flex h-full w-full items-center justify-center">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(row);
+            }}
+            className="flex items-center justify-center rounded-full p-2 text-red-600 transition-colors hover:bg-red-50 hover:text-red-900"
+            title="Eliminar usuario de esta tienda"
+          >
+            <DeleteOutlineIcon fontSize="small" />
+          </button>
+        </div>
+      ),
+    });
+  }
 
+  return columns;
+};
 const UserMobileCard = ({ row, canManage, ...props }) => (
   <div className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
     <div className="flex justify-between items-start">
@@ -59,8 +67,8 @@ const UserMobileCard = ({ row, canManage, ...props }) => (
     )}
   </div>
 );
+
 const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
-  // Pasamos el currentUser al hook para que bloquee las peticiones API internamente
   const {
     users,
     loading,
@@ -89,14 +97,23 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
   const isTenantAdmin =
     currentUser?.role === "Admin" || currentUser?.role === "admin";
 
-  // El adminTenant y los superiores pueden gestionar
   const canManage = isSuperAdmin || isMiddifyAdmin || isTenantAdmin;
-  // El userTenant tiene acceso restringido
+
+  //desaparece el "asignar usuario" hasta enclarecer requerimiento
+  const ENABLE_ASSIGN_FEATURE = false;
+
   const isRestricted = currentUser?.role === "User";
 
-  // Prepare rows for TableGrid
   const rows = users.map((u) => ({ id: u._id, ...u }));
 
+  const memoizedColumns = useMemo(
+    () =>
+      getUserColumns((user) => {
+        setUserToDelete(user);
+        setIsDeleteModalOpen(true);
+      }, canManage),
+    [canManage],
+  );
   // Rendering condicional para userTenant
   if (isRestricted) {
     return (
@@ -173,7 +190,7 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
           </p>
         </div>
         {/* Solo mostramos el botón de asignar si tiene permisos */}
-        {canManage && (
+        {canManage && ENABLE_ASSIGN_FEATURE && (
           <button
             onClick={() => {
               if (!isAssigning) loadAvailableUsers();
@@ -187,7 +204,7 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
         )}
       </header>
 
-      {isAssigning && canManage && (
+      {isAssigning && canManage && ENABLE_ASSIGN_FEATURE && (
         <div className="rounded-xl border border-catalina-blue-100 bg-catalina-blue-50 p-4 transition-all animate-in fade-in slide-in-from-top-2">
           <h3 className="mb-3 text-sm font-medium text-catalina-blue-900">
             Asignar nuevo usuario
@@ -238,27 +255,27 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
           )}
         </div>
       )}
+      <div className="w-full h-[500px] min-h-[400px] overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <TableGrid
+          key={`table-users-${canManage}`}
+          rows={rows}
+          columns={memoizedColumns}
+          loading={loading}
+          rowCount={rows.length}
+          paginationModel={grid.paginationModel}
+          onPaginationModelChange={grid.onPaginationModelChange}
+          pageSizeOptions={[5, 10, 25]}
+          MobileComponent={UserMobileCard}
+          mobileComponentProps={{
+            onRemove: (u) => {
+              setUserToDelete(u);
+              setIsDeleteModalOpen(true);
+            },
+            canManage,
+          }}
+        />
+      </div>
 
-      <TableGrid
-        rows={rows}
-        columns={getUserColumns((user) => {
-          setUserToDelete(user);
-          setIsDeleteModalOpen(true);
-        }, canManage)}
-        loading={loading}
-        rowCount={rows.length}
-        paginationModel={grid.paginationModel}
-        onPaginationModelChange={grid.onPaginationModelChange}
-        pageSizeOptions={[5, 10, 25]}
-        MobileComponent={UserMobileCard}
-        mobileComponentProps={{
-          onRemove: (u) => {
-            setUserToDelete(u);
-            setIsDeleteModalOpen(true);
-          },
-          canManage,
-        }}
-      />
       {canManage && (
         <ConfirmModal
           isOpen={isDeleteModalOpen}

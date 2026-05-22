@@ -11,7 +11,7 @@ const numberFormatter = new Intl.NumberFormat("es-CL");
 
 const aggregateTenants = (
   tenants,
-  { id = "all-tenants", name = "Todas las tiendas" } = {}
+  { id = "all-tenants", name = "Todas las tiendas" } = {},
 ) => {
   const stateOrder = [];
   const stateMap = new Map();
@@ -72,7 +72,7 @@ const aggregateTenantsById = (tenants = []) => {
   });
 
   return Array.from(groups.values()).map(({ id, name, entries }) =>
-    aggregateTenants(entries, { id, name })
+    aggregateTenants(entries, { id, name }),
   );
 };
 
@@ -85,17 +85,16 @@ export const STATE_DEFINITIONS = [
   { key: "procesada", label: "Procesada" },
 ];
 
-// Mapeo de estados técnicos a los 6 estados oficiales
 const STATE_MAPPING = {
   success: "procesada",
   failed: "error",
   discarded: "descartada",
-  // Puedes añadir más mapeos aquí si el backend envía otros nombres
 };
 
 const stateStyles = {
   ingresada: {
-    badge: "bg-catalina-blue-50 text-catalina-blue-600 border border-catalina-blue-200",
+    badge:
+      "bg-catalina-blue-50 text-catalina-blue-600 border border-catalina-blue-200",
     accent: "text-catalina-blue-600",
     gradient: "from-slate-50 via-transparent to-catalina-blue-50",
     border: "border-catalina-blue-100",
@@ -176,9 +175,7 @@ const normalizeStateName = (value = "") =>
     .replace(/[\u0300-\u036f]/g, "");
 
 const toOrderStateId = (value = "") =>
-  normalizeStateName(value)
-    .trim()
-    .replace(/\s+/g, "_");
+  normalizeStateName(value).trim().replace(/\s+/g, "_");
 
 const getStateStyles = (stateName = "") => {
   const normalized = normalizeStateName(stateName);
@@ -210,7 +207,6 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
             return;
           }
 
-          // Mapear el estado técnico al estado oficial, o usar el original si no hay mapeo
           const key = STATE_MAPPING[rawKey] || rawKey;
 
           const currentValue = normalizedStates.get(key);
@@ -238,7 +234,7 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
 
         const totalOrders = states.reduce(
           (acc, state) => acc + (Number(state?.count) || 0),
-          0
+          0,
         );
 
         return (
@@ -282,7 +278,8 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                     state?.variant ?? normalizeStateName(state?.name);
                   const theme = getStateStyles(variantKey);
                   const badgeClasses = theme.badge ?? stateStyles.default.badge;
-                  const accentClasses = theme.accent ?? stateStyles.default.accent;
+                  const accentClasses =
+                    theme.accent ?? stateStyles.default.accent;
                   const gradientClasses =
                     theme.gradient ?? stateStyles.default.gradient;
                   const cardBorder = theme.border ?? stateStyles.default.border;
@@ -308,17 +305,20 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                         role={isClickable ? "button" : undefined}
                         tabIndex={isClickable ? 0 : undefined}
                         onClick={handleClick}
-                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleClick()}
+                        onKeyDown={(e) =>
+                          (e.key === "Enter" || e.key === " ") && handleClick()
+                        }
                         data-order-state={orderStateId}
-                        className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border-2 ${cardBorder} bg-white p-1 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${isClickable
+                        className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border-2 ${cardBorder} bg-white p-1 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${
+                          isClickable
                             ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-catalina-blue-500 focus-visible:ring-offset-2"
                             : ""
-                          }`}
+                        }`}
                       >
                         <div
                           className={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10 bg-gradient-to-br ${gradientClasses}`}
                         />
-                        
+
                         <div className="relative flex h-full flex-col justify-between p-5">
                           <div className="flex items-center justify-between">
                             <div
@@ -332,7 +332,9 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                               )}
                             </div>
                             <div className="text-right">
-                              <p className={`text-[10px] font-black uppercase tracking-widest ${accentClasses}`}>
+                              <p
+                                className={`text-[10px] font-black uppercase tracking-widest ${accentClasses}`}
+                              >
                                 {stateLabel}
                               </p>
                             </div>
@@ -344,15 +346,17 @@ const CardsStates = ({ tenants, isAggregated, onSelectState }) => {
                                 {numberFormatter.format(stateCount)}
                               </span>
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                                <div 
-                                  className={`h-full rounded-full transition-all duration-1000 ease-out ${accentClasses.replace('text', 'bg')}`}
+                                <div
+                                  className={`h-full rounded-full transition-all duration-1000 ease-out ${accentClasses.replace("text", "bg")}`}
                                   style={{ width: `${percentage}%` }}
                                 />
                               </div>
-                              <span className={`text-xs font-bold ${accentClasses}`}>
+                              <span
+                                className={`text-xs font-bold ${accentClasses}`}
+                              >
                                 {percentage.toFixed(0)}%
                               </span>
                             </div>

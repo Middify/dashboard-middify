@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { getUsersList } from "../../api/users/getUsersList";
 import { updateUser } from "../../api/users/updateUser";
 import { useTableState } from "../../hooks/useTableState";
-import { alertsProducts } from "../../utils/alertsProducts";
 
 export const useStoreUsersLogic = ({
   token,
@@ -20,7 +19,7 @@ export const useStoreUsersLogic = ({
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [allUsers, setAllUsers] = useState([]); // For assignment dropdown
+  const [allUsers, setAllUsers] = useState([]);
   const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
   const tenantEntry = useMemo(() => {
@@ -34,8 +33,6 @@ export const useStoreUsersLogic = ({
   }, [storeId, storeName]);
 
   const loadStoreUsers = useCallback(async () => {
-    // Validacion de rol ---
-    // Si no hay token o el rol es 'userTenant', cancelamos la carga
     if (!token || currentUser?.role === "User") {
       setLoading(false);
       return;
@@ -44,43 +41,37 @@ export const useStoreUsersLogic = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await getUsersList({ token, pageSize: 200, page: 1 });
+      const response = await getUsersList({
+        token,
+        pageSize: 200,
+        page: 1,
+        tenantId: storeId,
+      });
       const fetchedUsers = response.users || [];
 
-      const filtered = fetchedUsers.filter((user) => {
-        if (!Array.isArray(user.tenant)) return false;
-        return user.tenant.some(
-          (t) => t.tenantId === storeId || t.tenantName === storeName,
-        );
-      });
-      setUsers(filtered);
+      setUsers(fetchedUsers);
     } catch (err) {
       console.error("Error loading users:", err);
       setError("No se pudieron cargar los usuarios.");
     } finally {
       setLoading(false);
     }
-  }, [token, storeId, storeName, currentUser?.role]);
+  }, [token, storeId, currentUser?.role]);
 
-  // Roles con permiso de gestión
   const CAN_MANAGE_ROLES = ["SuperAdmin", "MiddifyAdmin", "Admin", "admin"];
 
   const canUserManage = (role) => CAN_MANAGE_ROLES.includes(role);
 
-  // En loadAvailableUsers — usar el storeId real del tenant actual
   const loadAvailableUsers = useCallback(async () => {
     if (!token || allUsers.length > 0) return;
-    if (!storeId) {
-      console.warn("loadAvailableUsers: storeId no disponible");
-      return;
-    }
+
     setLoadingAllUsers(true);
     try {
       const response = await getUsersList({
         token,
         pageSize: 200,
         page: 1,
-        tenantId: storeId, // ✅ Dinámico, no hardcodeado
+        tenantId: storeId,
       });
       setAllUsers(response.users || []);
     } catch (err) {
@@ -94,7 +85,6 @@ export const useStoreUsersLogic = ({
     loadStoreUsers();
   }, [loadStoreUsers, refreshTrigger]);
 
-  // En handleAssignUser — respeta todos los roles con permiso
   const handleAssignUser = async (userId) => {
     if (!canUserManage(currentUser?.role)) {
       return {
@@ -117,10 +107,8 @@ export const useStoreUsersLogic = ({
     }
   };
 
-  // En handleRemoveUser — igual
   const handleRemoveUser = async (userId) => {
     if (!canUserManage(currentUser?.role)) {
-      // ✅
       return {
         success: false,
         message: "No tienes permisos para eliminar usuarios",

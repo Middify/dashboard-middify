@@ -1,4 +1,4 @@
-import { useCallback, useState, lazy, Suspense } from "react";
+import { useCallback, useState, lazy, Suspense, useMemo } from "react";
 import {
   Routes,
   Route,
@@ -71,8 +71,8 @@ const StoresWrapper = () => {
 };
 
 const StoreDetailWrapper = () => {
-  const { token } = useOutletContext();
-  return <StoreDetail token={token} />;
+  const { token, user } = useOutletContext();
+  return <StoreDetail token={token} currentUser={user} />;
 };
 
 const OrdersTableWrapper = () => {
@@ -82,10 +82,44 @@ const OrdersTableWrapper = () => {
     selectedTenantId,
     selectedTenantName,
     resolvedOrderState,
+    marketplaceTenants,
   } = useOutletContext();
 
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const availableMarketplaces = useMemo(() => {
+    if (!Array.isArray(marketplaceTenants)) return [];
+
+    const cleanMarketplaceName = (name) => {
+      if (!name) return "";
+      return String(name).replace(/[-_]+/g, " ").trim();
+    };
+
+    let rawNames = [];
+
+    if (selectedTenantId) {
+      const currentTenant = marketplaceTenants.find(
+        (t) => t.tenantId === selectedTenantId || t.id === selectedTenantId,
+      );
+      if (currentTenant && Array.isArray(currentTenant.marketplaces)) {
+        rawNames = currentTenant.marketplaces.map((m) => m.name);
+      }
+    } else {
+      rawNames = marketplaceTenants.flatMap((t) =>
+        Array.isArray(t.marketplaces) ? t.marketplaces.map((m) => m.name) : [],
+      );
+    }
+
+    const uniqueRawNames = Array.from(new Set(rawNames.filter(Boolean)));
+
+    return uniqueRawNames
+      .map((rawName) => ({
+        raw: rawName,
+        clean: cleanMarketplaceName(rawName),
+      }))
+      .sort((a, b) => a.clean.localeCompare(b.clean));
+  }, [marketplaceTenants, selectedTenantId]);
 
   const handleSelectOrder = useCallback(
     (order) => {
@@ -112,6 +146,7 @@ const OrdersTableWrapper = () => {
       selectedOrderState={resolvedOrderState}
       onSelectOrder={handleSelectOrder}
       user={user}
+      availableMarketplaces={availableMarketplaces}
     />
   );
 };

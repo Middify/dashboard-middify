@@ -8,8 +8,17 @@ import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 
 const numberFormatter = new Intl.NumberFormat("es-CL");
 
+const cleanMarketplaceName = (name) => {
+  if (!name || String(name).toLowerCase() === "sin nombre")
+    return "Desconocido";
+  return String(name).replace(/[-_]+/g, " ").trim();
+};
 const normalizeStateName = (value = "") =>
-  value.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  value
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
 const ALLOWED_STATE_SET = new Set([
   "ingresada",
@@ -42,12 +51,13 @@ const aggregateTenants = (tenants) => {
         const name = marketplace?.name ?? "Sin nombre";
         const countValue = sumAllowedStatesCount(marketplace);
         map.set(name, (map.get(name) || 0) + countValue);
-      }
+      },
     );
   });
   return Array.from(map.entries()).map(([name, count]) => ({
     id: name,
     name,
+    cleanName: cleanMarketplaceName(name),
     count,
   }));
 };
@@ -55,10 +65,13 @@ const aggregateTenants = (tenants) => {
 const normalizeTenantMarketplaces = (tenant, index) =>
   (Array.isArray(tenant?.marketplaces) ? tenant.marketplaces : []).map(
     (marketplace, marketplaceIndex) => ({
-      id: marketplace?.name ?? `tenant-${tenant?.tenantId ?? index}-marketplace-${marketplaceIndex}`,
+      id:
+        marketplace?.name ??
+        `tenant-${tenant?.tenantId ?? index}-marketplace-${marketplaceIndex}`,
       name: marketplace?.name ?? "Sin nombre",
+      cleanName: cleanMarketplaceName(name),
       count: sumAllowedStatesCount(marketplace),
-    })
+    }),
   );
 
 const CardMarketplace = ({ tenants, isAggregated }) => {
@@ -66,15 +79,15 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
     if (!Array.isArray(tenants) || tenants.length === 0) return null;
     return isAggregated
       ? {
-        id: "marketplace-all",
-        title: "Todas las tiendas",
-        marketplaces: aggregateTenants(tenants),
-      }
+          id: "marketplace-all",
+          title: "Todas las tiendas",
+          marketplaces: aggregateTenants(tenants),
+        }
       : {
-        id: `marketplace-${tenants[0].tenantId ?? "tenant"}`,
-        title: tenants[0]?.tenantName ?? "Sin nombre",
-        marketplaces: normalizeTenantMarketplaces(tenants[0], 0),
-      };
+          id: `marketplace-${tenants[0].tenantId ?? "tenant"}`,
+          title: tenants[0]?.tenantName ?? "Sin nombre",
+          marketplaces: normalizeTenantMarketplaces(tenants[0], 0),
+        };
   }, [tenants, isAggregated]);
 
   const [page, setPage] = useState(1);
@@ -86,7 +99,10 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
       const reserved = 220;
       const available = Math.max(300, window.innerHeight - reserved);
       const itemHeight = 84;
-      const nextRows = Math.max(2, Math.min(5, Math.floor(available / itemHeight)));
+      const nextRows = Math.max(
+        2,
+        Math.min(5, Math.floor(available / itemHeight)),
+      );
       setRows(nextRows);
     };
     computeRows();
@@ -107,7 +123,10 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
     list.sort((a, b) => {
       const countDiff = (b.count || 0) - (a.count || 0);
       if (countDiff !== 0) return countDiff;
-      return (a.name || "").toString().toLowerCase().localeCompare((b.name || "").toString().toLowerCase());
+      return (a.name || "")
+        .toString()
+        .toLowerCase()
+        .localeCompare((b.name || "").toString().toLowerCase());
     });
     return list;
   }, [cardData?.marketplaces]);
@@ -136,7 +155,10 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
 
   if (!cardData) return null;
 
-  const totalOrders = sortedMarketplaces.reduce((acc, mp) => acc + (mp.count || 0), 0);
+  const totalOrders = sortedMarketplaces.reduce(
+    (acc, mp) => acc + (mp.count || 0),
+    0,
+  );
 
   return (
     <section className="animate-in fade-in slide-in-from-bottom-6 duration-1000 flex flex-col overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
@@ -151,7 +173,10 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                 Distribución de Marketplaces
               </h2>
               <p className="text-sm font-medium text-slate-500">
-                Canales de venta activos para <span className="font-bold text-catalina-blue-600">{cardData.title}</span>
+                Canales de venta activos para{" "}
+                <span className="font-bold text-catalina-blue-600">
+                  {cardData.title}
+                </span>
               </p>
             </div>
           </div>
@@ -180,8 +205,19 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                   disabled={currentPage === 1}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-catalina-blue-600 disabled:opacity-20"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 19.5 8.25 12l7.5-7.5"
+                    />
                   </svg>
                 </button>
                 <span className="text-[11px] font-black text-slate-400">
@@ -193,8 +229,19 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                   disabled={currentPage === totalPages}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-catalina-blue-600 disabled:opacity-20"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                    />
                   </svg>
                 </button>
               </div>
@@ -213,7 +260,12 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
           <div className="min-h-[300px]">
             {viewMode === "pie" ? (
               <div className="flex items-center justify-center py-4">
-                <MarketplacePie items={sortedMarketplaces} />
+                <MarketplacePie
+                  items={sortedMarketplaces.map((mp) => ({
+                    ...mp,
+                    name: cleanMarketplaceName(mp.name),
+                  }))}
+                />
               </div>
             ) : (
               <ul
@@ -221,7 +273,10 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                 style={{ opacity: isFading ? 0 : 1 }}
               >
                 {paginatedMarketplaces.map((marketplace) => {
-                  const mpPercentage = totalOrders > 0 ? (marketplace.count / totalOrders) * 100 : 0;
+                  const mpPercentage =
+                    totalOrders > 0
+                      ? (marketplace.count / totalOrders) * 100
+                      : 0;
                   return (
                     <li
                       key={marketplace.id}
@@ -229,25 +284,35 @@ const CardMarketplace = ({ tenants, isAggregated }) => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 ring-1 ring-slate-100 transition-all duration-300 group-hover:scale-110 group-hover:bg-white group-hover:shadow-md group-hover:ring-catalina-blue-100">
-                          <MarketplaceLogo name={marketplace.name} className="h-8 w-8" />
+                          <MarketplaceLogo
+                            name={marketplace.name}
+                            className="h-8 w-8"
+                          />
                         </div>
                         <div className="text-right">
                           <span className="text-2xl font-black text-slate-900">
                             {numberFormatter.format(marketplace.count || 0)}
                           </span>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Órdenes</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            Órdenes
+                          </p>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-black text-slate-700 truncate max-w-[70%]" title={marketplace.name}>
-                            {marketplace.name}
+                          <span
+                            className="font-black text-slate-700 truncate max-w-[70%]"
+                            title={cleanMarketplaceName(marketplace.name)}
+                          >
+                            {cleanMarketplaceName(marketplace.name)}
                           </span>
-                          <span className="font-bold text-catalina-blue-600">{mpPercentage.toFixed(1)}%</span>
+                          <span className="font-bold text-catalina-blue-600">
+                            {mpPercentage.toFixed(1)}%
+                          </span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                          <div 
+                          <div
                             className="h-full rounded-full bg-gradient-to-r from-catalina-blue-500 to-catalina-blue-700 transition-all duration-1000 ease-out"
                             style={{ width: `${mpPercentage}%` }}
                           />

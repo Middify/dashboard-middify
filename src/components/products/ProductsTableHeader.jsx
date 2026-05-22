@@ -186,7 +186,11 @@ const ProductsTableHeader = ({
               {isExportingData && (
                 <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               )}
-              {isExportingData ? "Exportando..." : "Exportar"}
+              {isExportingData
+                ? "Exportando..."
+                : selectedCount > 0
+                  ? `Exportar (${selectedCount})`
+                  : "Exportar Todo"}
             </button>
           </div>
         </div>

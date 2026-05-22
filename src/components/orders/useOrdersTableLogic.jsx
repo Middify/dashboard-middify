@@ -16,7 +16,7 @@ import {
 import { useExportOrders } from "./useExportOrders";
 import { useTableState } from "../../hooks/useTableState";
 
-//Importa automáticamente todas las imágenes de esa carpeta
+//Importa todas las imágenes de esa carpeta
 const marketplaceLogos = import.meta.glob(
   "../../assets/marketplace/*.{png,jpg,jpeg,webp}",
   { eager: true },
@@ -48,8 +48,11 @@ const getColumnRawValue = (order, key) => {
   if (!order) return null;
 
   switch (key) {
+    case "marketPlace":
+    case "marketplace":
     case "logoTienda":
       return order.marketPlace?.name || order.tennantName || "Desconocida";
+    case "_id":
     case "idOrden":
       return (
         order.extras?.idOrderMarket ||
@@ -58,24 +61,32 @@ const getColumnRawValue = (order, key) => {
         order.market?.orderId ||
         "Sin ID"
       );
+    case "creation":
     case "fechaOrigen":
       return order.marketPlace?.creation || "—";
+    case "brand":
     case "fechaMiddify":
       return order.creation || "—";
+    case "lastUpdate":
     case "fechaActualizacion":
       return order.lastUpdate || "—";
+    case "stages":
     case "estadoMiddify":
       return order.status || order.state || "—";
+    case "status":
     case "estadoOrigen":
       return order.marketPlace?.status || "—";
+    case "subTotal":
     case "costoEnvio":
       return order.shipping?.cost?.amount ?? 0;
+    case "total":
     case "totalPagado": {
       const totalVal = order.total ?? order.marketPlace?.total ?? 0;
       return typeof totalVal === "object" && totalVal !== null
         ? totalVal.amount || 0
         : totalVal;
     }
+    case "taxes":
     case "folioBoleta": {
       const doc = (order.documents || []).find((d) => {
         const t = String(d?.type || "").toLowerCase();
@@ -89,6 +100,7 @@ const getColumnRawValue = (order, key) => {
 
       return doc?.folio || doc?.number || doc?.idDocNo || doc?.name || "—";
     }
+    case "documents":
     case "boletaPdf": {
       const doc = (order.documents || []).find((d) => {
         const t = String(d?.type || "").toLowerCase();
@@ -102,6 +114,7 @@ const getColumnRawValue = (order, key) => {
 
       return doc?.url || doc?.URL || doc?.link || doc?.pdf || null;
     }
+    case "message":
     case "mensaje":
       return order.message || "—";
     default:
@@ -115,7 +128,8 @@ const formatColumnValue = (key, order) => {
 
   if (["fechaOrigen", "fechaMiddify", "fechaActualizacion"].includes(key))
     return formatDateTime(value);
-  if (["costoEnvio", "totalPagado"].includes(key)) return formatCurrency(value);
+  if (["costoEnvio", "totalPagado", "subTotal", "total"].includes(key))
+    return formatCurrency(value);
   return String(value);
 };
 
@@ -132,6 +146,8 @@ const buildColumnDefinition = (column) => {
   };
 
   switch (column.value) {
+    case "marketPlace":
+    case "marketplace":
     case "logoTienda":
       return {
         ...base,
@@ -156,6 +172,7 @@ const buildColumnDefinition = (column) => {
         },
       };
 
+    case "stages":
     case "estadoMiddify":
       return {
         ...base,
@@ -180,6 +197,7 @@ const buildColumnDefinition = (column) => {
           );
         },
       };
+    case "status":
     case "estadoOrigen":
       return {
         ...base,
@@ -220,6 +238,7 @@ const buildColumnDefinition = (column) => {
         },
       };
 
+    case "documents":
     case "boletaPdf":
       return {
         ...base,
@@ -270,18 +289,19 @@ const buildColumnDefinition = (column) => {
           );
         },
       };
-
+    case "_id":
     case "idOrden":
       return {
         ...base,
         minWidth: 160,
         renderCell: ({ row }) => (
           <span className="font-mono text-xs text-slate-600">
-            {row[column.value]}
+            {row.displayId}
           </span>
         ),
       };
 
+    case "message":
     case "mensaje":
       return {
         ...base,
@@ -296,6 +316,8 @@ const buildColumnDefinition = (column) => {
         ),
       };
 
+    case "subTotal":
+    case "total":
     case "costoEnvio":
     case "totalPagado":
       return {
@@ -335,6 +357,9 @@ export const useOrdersTableLogic = ({
     resetPagination,
   } = useTableState({ initialPageSize: 100 });
 
+  //filtro por marketplace
+  const [selectedMarketplace, setSelectedMarketplace] = useState("");
+
   const apiStatus = selectedOrderState
     ? selectedOrderState.replace(/_/g, " ")
     : undefined;
@@ -347,6 +372,7 @@ export const useOrdersTableLogic = ({
       state: apiStatus,
       page: paginationModel.page + 1,
       pageSize: paginationModel.pageSize,
+      marketPlace: selectedMarketplace || undefined,
     }),
     [
       selectedTenantId,
@@ -354,6 +380,7 @@ export const useOrdersTableLogic = ({
       apiStatus,
       paginationModel.page,
       paginationModel.pageSize,
+      selectedMarketplace,
     ],
   );
 
@@ -423,6 +450,7 @@ export const useOrdersTableLogic = ({
     selectedTenantId,
     selectedTenantName,
   );
+
   const { isExporting, startExport } = useExportOrders({
     token,
     onSuccess: onExportSuccess,
@@ -433,11 +461,22 @@ export const useOrdersTableLogic = ({
   }, [selectedTenantId, selectedOrderState, resetPagination]);
 
   const activeColumns = useMemo(() => {
-    const base =
-      Array.isArray(columnsData) && columnsData.length > 0
-        ? columnsData
-        : DASHBOARD_COLUMNS_TEMPLATE;
-    return base
+    let mergedColumns = [...DASHBOARD_COLUMNS_TEMPLATE];
+
+    if (Array.isArray(columnsData) && columnsData.length > 0) {
+      mergedColumns = mergedColumns.map((templateCol) => {
+        const backendCol = columnsData.find(
+          (bc) => bc.value === templateCol.value,
+        );
+        return {
+          ...templateCol,
+
+          active: backendCol ? backendCol.active : templateCol.active,
+        };
+      });
+    }
+
+    return mergedColumns
       .filter((c) => c?.active)
       .sort(
         (a, b) =>
@@ -457,6 +496,12 @@ export const useOrdersTableLogic = ({
       const row = {
         id: orderId,
         _id: orderId,
+        displayId:
+          order.extras?.idOrderMarket ||
+          order.idOrderMarket ||
+          order.marketPlace?.orderId ||
+          order.market?.orderId ||
+          "Sin ID",
         internalId:
           order.internalId ||
           order.idOrderMarket ||
@@ -473,12 +518,36 @@ export const useOrdersTableLogic = ({
         rawOrder: order,
       };
       activeColumns.forEach((col) => {
-        row[col.value] = formatColumnValue(col.value, order);
+        if (col.value !== "_id") {
+          row[col.value] = formatColumnValue(col.value, order);
+        }
       });
 
       return row;
     });
   }, [orders, activeColumns]);
+  //Cambiar solo a estados finales
+  const isStateChangeLocked = useMemo(() => {
+    if (!rowSelectionModel || rowSelectionModel.length === 0) return false;
+
+    const lockedStates = [
+      "procesada",
+      "success",
+      "error",
+      "failed",
+      "descartada",
+      "eliminada",
+    ];
+
+    return rowSelectionModel.some((id) => {
+      const order = rows.find((r) => r.id === id);
+      if (!order) return false;
+      const state = String(order.status || order.state || "")
+        .toLowerCase()
+        .trim();
+      return lockedStates.includes(state);
+    });
+  }, [rowSelectionModel, rows]);
 
   const columns = useMemo(() => {
     const baseColumns = activeColumns.map(buildColumnDefinition);
@@ -577,6 +646,9 @@ export const useOrdersTableLogic = ({
     selectedRowIds: rowSelectionModel,
     getSelectedOrderIds,
     getSelectedOrders,
+    isStateChangeLocked,
+    selectedMarketplace,
+    setSelectedMarketplace,
     clearSelection: () => handleSelectionModelChange([]),
     refreshData: triggerRefresh,
     formatOrdersForExport: formatOrdersForExportFunc,
