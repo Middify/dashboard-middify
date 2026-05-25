@@ -126,8 +126,18 @@ const formatColumnValue = (key, order) => {
   const value = getColumnRawValue(order, key);
   if (value === null || value === undefined || value === "—") return "—";
 
-  if (["fechaOrigen", "fechaMiddify", "fechaActualizacion"].includes(key))
+  if (
+    [
+      "creation",
+      "fechaOrigen",
+      "brand",
+      "fechaMiddify",
+      "lastUpdate",
+      "fechaActualizacion",
+    ].includes(key)
+  ) {
     return formatDateTime(value);
+  }
   if (["costoEnvio", "totalPagado", "subTotal", "total"].includes(key))
     return formatCurrency(value);
   return String(value);
@@ -344,6 +354,8 @@ export const useOrdersTableLogic = ({
   selectedOrderState = null,
   onSelectOrder = () => {},
   onExportSuccess = () => {},
+  orderIdFilter,
+  dateFilter,
 }) => {
   const {
     paginationModel,
@@ -373,6 +385,8 @@ export const useOrdersTableLogic = ({
       page: paginationModel.page + 1,
       pageSize: paginationModel.pageSize,
       marketPlace: selectedMarketplace || undefined,
+      orderId: orderIdFilter,
+      date: dateFilter,
     }),
     [
       selectedTenantId,
@@ -381,6 +395,8 @@ export const useOrdersTableLogic = ({
       paginationModel.page,
       paginationModel.pageSize,
       selectedMarketplace,
+      orderIdFilter,
+      dateFilter,
     ],
   );
 

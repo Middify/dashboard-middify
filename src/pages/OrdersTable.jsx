@@ -18,6 +18,8 @@ const OrdersTable = ({
   user = null,
   availableMarketplaces = [],
 }) => {
+  const [orderIdFilter, setOrderIdFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const {
     error,
     grid,
@@ -37,6 +39,8 @@ const OrdersTable = ({
     selectedTenantId,
     selectedOrderState,
     selectedTenantName,
+    orderIdFilter,
+    dateFilter,
     onSelectOrder,
     onExportSuccess: () => {
       setSnackbar({
@@ -273,6 +277,10 @@ const OrdersTable = ({
           selectedMarketplace={selectedMarketplace}
           onMarketplaceChange={(e) => setSelectedMarketplace(e.target.value)}
           availableMarketplaces={availableMarketplaces}
+          orderIdFilter={orderIdFilter}
+          onOrderIdChange={setOrderIdFilter}
+          dateFilter={dateFilter}
+          onDateChange={setDateFilter}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <TableGrid

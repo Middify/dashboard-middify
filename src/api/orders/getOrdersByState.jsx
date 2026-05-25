@@ -25,6 +25,8 @@ export const buildUrlWithParams = ({
   page,
   pageSize,
   marketPlace,
+  orderId,
+  date,
 } = {}) => {
   const url = new URL(API_URL);
   if (tenantId) url.searchParams.set("tenantId", tenantId);
@@ -33,6 +35,8 @@ export const buildUrlWithParams = ({
   if (page) url.searchParams.set("page", page);
   if (pageSize) url.searchParams.set("pageSize", pageSize);
   if (marketPlace) url.searchParams.set("marketPlace", marketPlace);
+  if (orderId) url.searchParams.set("orderId", orderId);
+  if (date) url.searchParams.set("date", date);
   return url;
 };
 
