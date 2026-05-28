@@ -1,12 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { postExportOrders } from "../../api/orders/postExportOrdes";
-import { getExportJob } from "../../api/orders/getExportJob";
+import { postExportProducts } from "../../api/products/postExportProducts";
+import { getProductExportJob } from "../../api/products/getProductExportJob";
 
 const POLLING_INTERVAL = 2000;
 
-export const useExportOrders = ({ token, onSuccess }) => {
+export const useExportProducts = ({ token, onSuccess, onError }) => {
   const [isExporting, setIsExporting] = useState(false);
-  const [error, setError] = useState(null);
   const pollingRef = useRef(null);
 
   const stopPolling = useCallback(() => {
@@ -19,77 +18,64 @@ export const useExportOrders = ({ token, onSuccess }) => {
   const pollStatus = useCallback(
     async (jobId) => {
       try {
-        const data = await getExportJob(token, jobId);
+        const data = await getProductExportJob(token, jobId);
 
         if (!data || !data.ok || !data.job) {
-          throw new Error("Invalid response from getExportJob");
+          throw new Error("Respuesta inválida del servidor");
         }
 
         const { status, downloadUrl } = data.job;
 
         if (status === "completed") {
           setIsExporting(false);
-
           if (downloadUrl) {
             window.open(downloadUrl, "_blank");
-          } else {
-            console.warn(
-              "La exportación terminó pero no se encontró un archivo (0 registros).",
-            );
           }
-
           if (onSuccess) onSuccess();
           return;
         }
 
         if (status === "failed") {
           setIsExporting(false);
-          setError(new Error(data.job.message || "Export failed"));
+          if (onError)
+            onError(new Error(data.job.message || "La exportación falló"));
           return;
         }
 
-        // Continue polling
         pollingRef.current = setTimeout(
           () => pollStatus(jobId),
           POLLING_INTERVAL,
         );
       } catch (err) {
-        console.error("Polling error:", err);
+        console.error("Error en polling:", err);
         setIsExporting(false);
-        setError(err);
+        if (onError) onError(err);
       }
     },
-    [token, onSuccess],
+    [token, onSuccess, onError],
   );
 
   const startExport = useCallback(
     async (filters) => {
       setIsExporting(true);
-      setError(null);
       try {
-        const response = await postExportOrders(token, filters);
+        const response = await postExportProducts(token, filters);
         if (response && response.ok && response.jobId) {
           setIsExporting(false);
           pollStatus(response.jobId);
         } else {
-          throw new Error("Failed to start export job");
+          throw new Error("No se pudo iniciar la exportación");
         }
       } catch (err) {
-        console.error("Start export error:", err);
+        console.error("Error iniciando exportación:", err);
         setIsExporting(false);
-        setError(err);
+        if (onError) onError(err);
       }
     },
-    [token, pollStatus],
+    [token, pollStatus, onError],
   );
 
-  // Cleanup on unmount
   useEffect(() => stopPolling, [stopPolling]);
 
-  return {
-    isExporting,
-    error,
-    startExport,
-    stopPolling,
-  };
+  return { isExporting, startExport, stopPolling };
 };

@@ -4,10 +4,10 @@ import { patchExportProducts } from "../../api/products/patchStateProduct";
 import { alertsProducts } from "../../utils/alertsProducts";
 
 const PRODUCT_STATES = [
-  { value: "creada", label: "Creada" },
+  { value: "success", label: "Exitoso" },
+  { value: "created", label: "Creado" },
   { value: "error", label: "Error" },
-  { value: "procesada", label: "Procesada" },
-  //cambiar segun lo solicitado, ej: comparación
+  { value: "discarded", label: "Descartado" },
 ];
 
 const PriceTableHeader = ({

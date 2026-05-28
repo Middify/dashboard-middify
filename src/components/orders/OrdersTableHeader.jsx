@@ -161,7 +161,7 @@ const OrdersTableHeader = ({
                 disabled={!canTriggerExport || isExportingData}
                 title="Exportar todas las órdenes de la base de datos"
               >
-                {isExportingData ? (
+                {isExportingData && !hasSelection ? (
                   <CircularProgress size={14} color="inherit" />
                 ) : (
                   <FileDownloadOutlinedIcon className="text-[16px]" />
@@ -176,15 +176,13 @@ const OrdersTableHeader = ({
                   onClick={() =>
                     canTriggerExportSelected &&
                     !isExportingSelectedData &&
-                    onExportSelectedData()
+                    onExportData()
                   }
                   className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
-                  disabled={
-                    !canTriggerExportSelected || isExportingSelectedData
-                  }
+                  disabled={!canTriggerExport || isExportingData}
                   title="Exportar solo las órdenes seleccionadas"
                 >
-                  {isExportingSelectedData ? (
+                  {isExportingData && hasSelection ? (
                     <CircularProgress size={14} color="inherit" />
                   ) : (
                     <FileDownloadOutlinedIcon className="text-[16px]" />

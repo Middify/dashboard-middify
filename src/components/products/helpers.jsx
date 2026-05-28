@@ -1,15 +1,33 @@
 import { Visibility } from "@mui/icons-material";
 
+const STATUS_TRANSLATIONS = {
+  SUCCESS: "Exitoso",
+  CREATED: "Creado",
+  ERROR: "Error",
+  FAILED: "Fallido",
+  DISCARDED: "Descartado",
+
+  EXITOSO: "Exitoso",
+  CREADO: "Creado",
+  FALLIDO: "Fallido",
+  DESCARTADO: "Descartado",
+};
+
 export const getStateColor = (s) => {
+  if (!s || s === "null") return "bg-slate-100 text-slate-400";
   const states = {
     success: "bg-green-100 text-green-700",
+    exitoso: "bg-green-100 text-green-700",
     procesada: "bg-green-100 text-green-700",
     failed: "bg-red-100 text-red-700",
+    fallido: "bg-red-100 text-red-700",
     error: "bg-red-100 text-red-700",
     created: "bg-blue-100 text-blue-700",
+    creado: "bg-blue-100 text-blue-700",
     creada: "bg-blue-100 text-blue-700",
     discard: "bg-slate-100 text-slate-600",
     discarded: "bg-slate-100 text-slate-600",
+    descartado: "bg-slate-100 text-slate-600",
   };
   return states[s?.toLowerCase()] || "bg-slate-100 text-slate-600";
 };

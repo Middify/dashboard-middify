@@ -5,6 +5,14 @@ import { useTableState } from "../../hooks/useTableState";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250];
 
+const PRICE_STATUS_TRANSLATIONS = {
+  SUCCESS: "Exitoso",
+  CREATED: "Creado",
+  ERROR: "Error",
+  FAILED: "Error",
+  DESCARTED: "Descartada",
+};
+
 export const usePriceTableLogic = ({
   token = null,
   selectedTenantId = null,
@@ -57,6 +65,12 @@ export const usePriceTableLogic = ({
         precioAnterior = p.price.PrecioBol || p.price.precioBol || "—";
       }
 
+      const rawStatus = p.estado || p.status || p.state;
+      const translatedStatus = rawStatus
+        ? PRICE_STATUS_TRANSLATIONS[String(rawStatus).toUpperCase()] ||
+          rawStatus
+        : "—";
+
       return {
         ...p,
         id: p._id || p.id || `price-${i}`,
@@ -64,6 +78,9 @@ export const usePriceTableLogic = ({
         oldPrice: precioAnterior,
         ingresoMiddify: p.createdDate || p.createdAt,
         actualizacion: p.updatedDate || p.updatedAt,
+        estado: translatedStatus,
+        status: translatedStatus,
+        state: translatedStatus,
       };
     });
 

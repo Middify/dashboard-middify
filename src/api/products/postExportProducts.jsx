@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_URL =
-  "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/exportOrders";
+  "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/exportProducts";
 
 export const postExportProducts = async (token, body) => {
   try {

@@ -1,16 +1,26 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useProducts } from "../../api/products/getProducts";
 import { postExportProducts } from "../../api/products/postExportProducts";
+import { useExportProducts } from "./useExportProducts";
 import { alertsProducts } from "../../utils/alertsProducts";
 import { getProductColumns } from "./helpers";
 import { useTableState } from "../../hooks/useTableState";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250];
+const PRODUCT_STATUS_TRANSLATIONS = {
+  SUCCESS: "Exitoso",
+  CREATED: "Creado",
+  ERROR: "Error",
+  FAILED: "Error",
+  DESCARTED: "Descartada",
+};
 
 const STATUS_MAP = {
-  procesada: "SUCCESS",
-  error: "FAILED",
-  creada: "CREATED",
+  procesada: "success",
+  error: "error",
+  creada: "created",
+  fallido: "failed",
+  descartada: "discarded",
 };
 export const useProductsTableLogic = ({
   token = null,
@@ -22,7 +32,13 @@ export const useProductsTableLogic = ({
   showStock = true,
   sku,
 }) => {
-  const [isExporting, setIsExporting] = useState(false);
+  const { isExporting, startExport } = useExportProducts({
+    token,
+    onSuccess: () =>
+      alertsProducts.exportSuccess("¡Excel exportado correctamente!"),
+    onError: () =>
+      alertsProducts.exportError("Hubo un problema con la exportación"),
+  });
 
   // Updated useTableState returns rowSelectionModel as Array now
   const {
@@ -58,7 +74,21 @@ export const useProductsTableLogic = ({
   }, [selectedTenantId, resolvedProductState, resetPagination]);
 
   const rows = useMemo(() => {
-    return (products || []).map((p, i) => ({ id: p._id || i, ...p }));
+    return (products || []).map((p, i) => {
+      const rawStatus = p.state || p.status || "";
+      const translatedStatus = rawStatus
+        ? PRODUCT_STATUS_TRANSLATIONS[String(rawStatus).toUpperCase()] ||
+          rawStatus
+        : "—";
+
+      return {
+        ...p,
+        id: p._id || i,
+        state: translatedStatus,
+        status: translatedStatus,
+        _rawState: rawStatus,
+      };
+    });
   }, [products]);
 
   //candado inteligente para roles
@@ -67,9 +97,11 @@ export const useProductsTableLogic = ({
 
     const lockedStates = [
       "success",
+      "exitoso",
       "procesada",
       "error",
       "failed",
+      "fallido",
       "aprobado",
       "rejected",
     ];
@@ -108,20 +140,35 @@ export const useProductsTableLogic = ({
 
   const handleExportProducts = useCallback(async () => {
     if (!token) return;
-    setIsExporting(true);
-    try {
-      const response = await postExportProducts(token, {
-        tenantId: selectedTenantId,
-        tenantName: selectedTenantName,
-      });
-      if (response?.message) alertsProducts.exportSuccess(response.message);
-    } catch (err) {
-      alertsProducts.exportError();
-    } finally {
-      setIsExporting(false);
-    }
-  }, [token, selectedTenantId, selectedTenantName]);
 
+    const filters = {
+      tenantId: selectedTenantId,
+      tenantName: selectedTenantName,
+      state: apiStatusTranslated,
+      sku: sku,
+    };
+
+    const selectedIds = getSelectedProductIds();
+    if (selectedIds && selectedIds.length > 0) {
+      filters.productIds = selectedIds;
+    }
+
+    Object.keys(filters).forEach((key) => {
+      if (!filters[key]) delete filters[key];
+    });
+
+    // Avisar visualmente
+    alertsProducts.exportSuccess("Exportación en proceso...");
+    startExport(filters);
+  }, [
+    token,
+    selectedTenantId,
+    selectedTenantName,
+    apiStatusTranslated,
+    sku,
+    getSelectedProductIds,
+    startExport,
+  ]);
   return {
     loading,
     error,

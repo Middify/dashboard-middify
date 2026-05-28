@@ -15,6 +15,7 @@ import { useUsers } from "../api/users/getUsers";
 import { useUsersByTenant } from "../api/users/getUsersByTenant";
 import Navbar from "../navbar/navbar";
 import Sidebar from "../navbar/sidebar";
+import { AidaChatWidget } from "../components/common/AidaChatWidget";
 
 const ORDER_STATE_IDS = new Set([
   "ingresada",
@@ -338,6 +339,7 @@ const MainLayout = () => {
         </div>
       </div>
       <ToastContainer position="bottom-right" autoClose={2000} />
+      <AidaChatWidget />
     </div>
   );
 };

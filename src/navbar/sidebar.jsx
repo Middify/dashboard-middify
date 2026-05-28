@@ -78,12 +78,10 @@ const Sidebar = ({
       (tenant) => tenant?.tenantId && tenant?.tenantName,
     );
 
-    // Eliminar duplicados por tenantId
     const uniqueOptions = Array.from(
       new Map(options.map((t) => [t.tenantId, t])).values(),
     );
 
-    // Filtrar por búsqueda
     const filteredOptions = uniqueOptions.filter((t) =>
       t.tenantName.toLowerCase().includes(tenantSearch.toLowerCase()),
     );

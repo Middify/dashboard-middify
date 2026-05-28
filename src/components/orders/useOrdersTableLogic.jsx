@@ -16,7 +16,6 @@ import {
 import { useExportOrders } from "./useExportOrders";
 import { useTableState } from "../../hooks/useTableState";
 
-//Importa todas las imágenes de esa carpeta
 const marketplaceLogos = import.meta.glob(
   "../../assets/marketplace/*.{png,jpg,jpeg,webp}",
   { eager: true },
@@ -193,7 +192,7 @@ const buildColumnDefinition = (column) => {
             val.includes("procesada") || val.includes("success");
           const isError = val.includes("error") || val.includes("descartada");
 
-          let colors = "bg-slate-100 text-slate-700 border-slate-200"; // Default (Gris)
+          let colors = "bg-slate-100 text-slate-700 border-slate-200"; // Gris
           if (isSuccess)
             colors = "bg-emerald-50 text-emerald-700 border-emerald-200"; // Verde
           if (isError) colors = "bg-rose-50 text-rose-700 border-rose-200"; // Rojo
@@ -645,7 +644,8 @@ export const useOrdersTableLogic = ({
     [activeColumns],
   );
 
-  const handleExport = useCallback(() => {
+  //Antes
+  /*const handleExport = useCallback(() => {
     const filters = {
       state: apiStatus,
       tenantId: selectedTenantId,
@@ -653,7 +653,29 @@ export const useOrdersTableLogic = ({
     };
     Object.keys(filters).forEach((k) => !filters[k] && delete filters[k]);
     startExport(filters);
-  }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);
+  }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);*/
+  const handleExport = useCallback(() => {
+    const filters = {
+      state: apiStatus,
+      tenantId: selectedTenantId,
+      tenantName: selectedTenantName,
+    };
+
+    const selectedIds = getSelectedOrderIds();
+    if (selectedIds && selectedIds.length > 0) {
+      filters.orderIds = selectedIds;
+    }
+
+    Object.keys(filters).forEach((k) => !filters[k] && delete filters[k]);
+
+    startExport(filters);
+  }, [
+    apiStatus,
+    selectedTenantId,
+    selectedTenantName,
+    startExport,
+    getSelectedOrderIds,
+  ]);
 
   return {
     loading: loadingOrders,
