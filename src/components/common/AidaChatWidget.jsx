@@ -10,12 +10,12 @@ export const AidaChatWidget = () => {
     }
   }, []);
 
-  const chatUrl = `https://builder.prod.soyaida.com/public/chat/middify/eb70d6d7-fb8e-46f1-9b3d-23bdacbec67a?hostedDomain=${currentDomain}`;
+  const chatUrl = `https://builder.prod.soyaida.com/public/chat/middify/8ec8e75d-0947-4d5c-b309-82285aee4987?hostedDomain=${currentDomain}`;
   const middifyBlue = "#2563EB";
 
   return (
     <>
-      {/* VENTANA DEL CHAT  */}
+      {/* VENTANA DEL CHAT */}
       <div
         className={`fixed bottom-[100px] right-6 z-[9999] transition-all duration-300 origin-bottom-right bg-white rounded-2xl overflow-hidden
           ${isOpen ? "scale-100 opacity-100 pointer-events-auto" : "scale-90 opacity-0 pointer-events-none"}

@@ -8,15 +8,19 @@ export async function getUsersList({
 }) {
   if (!token) throw new Error("Token is required");
 
-  if (!tenantId) {
+  /* if (!tenantId) {
     console.warn("getUsersList: tenantId requerido");
     return { users: [], total: 0 };
-  }
+  }*/
 
   const url = new URL(`${BASE_URL}/users/list`);
   url.searchParams.set("page", page);
   url.searchParams.set("pageSize", pageSize);
-  url.searchParams.set("tenantId", tenantId);
+  //url.searchParams.set("tenantId", tenantId);
+
+  if (tenantId && tenantId !== "ALL") {
+    url.searchParams.set("tenantId", tenantId);
+  }
 
   const response = await fetch(url.toString(), {
     method: "GET",

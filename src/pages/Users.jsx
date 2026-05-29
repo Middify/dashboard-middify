@@ -5,6 +5,8 @@ import CreateUsers from "../components/users/CreateUsers";
 
 const ROLES_QUE_PUEDEN_CREAR = ["superadmin", "middifyadmin", "admin"];
 
+const ROLES_VISION_GLOBAL = ["superadmin", "middifyadmin"];
+
 const Users = () => {
   const contextData = useOutletContext();
   const {
@@ -21,6 +23,9 @@ const Users = () => {
 
   const userRole = user?.role?.toLowerCase() || "";
   const canCreateUser = ROLES_QUE_PUEDEN_CREAR.includes(userRole);
+
+  const hasGlobalVision = ROLES_VISION_GLOBAL.includes(userRole);
+  const effectiveTenantId = hasGlobalVision ? "ALL" : selectedTenantId;
 
   const array1 = allTenants || [];
   const array2 = tenants || [];
@@ -44,7 +49,7 @@ const Users = () => {
         <UsersTable
           token={token}
           allTenants={listaMaestraTiendas}
-          selectedTenantId={selectedTenantId}
+          selectedTenantId={effectiveTenantId}
           currentUser={user}
         />
       )}

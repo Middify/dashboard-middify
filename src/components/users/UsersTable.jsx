@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getUsersList } from "../../api/users/getUsersList";
+import { deleteUser } from "../../api/users/deleteUser";
 import { toast } from "react-toastify";
 import CircularProgress from "@mui/material/CircularProgress";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -10,6 +11,7 @@ import ShieldIcon from "@mui/icons-material/Shield";
 import EmailIcon from "@mui/icons-material/Email";
 import EditIcon from "@mui/icons-material/Edit";
 import IconButton from "@mui/material/IconButton";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditUserModal from "./EditUserModal";
 
 const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
@@ -23,6 +25,19 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+
+  // ESTADOS PARA ELIMINACIÓN
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const rawRole = currentUser?.role || currentUser?.authInfo?.role || "";
+  const currentRole = String(rawRole).trim().toLowerCase();
+
+  // Imprimimos en consola para asegurarnos de qué está leyendo React
+  console.log("Rol detectado para eliminar:", currentRole);
+  const canDeleteUser =
+    currentRole === "superadmin" || currentRole === "middifyadmin";
 
   const canEditUser = (targetUser) => {
     const currentRole = currentUser?.role;
@@ -90,6 +105,29 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
 
   const handleEditSuccess = () => {
     fetchUsers();
+  };
+
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      setIsDeleting(true);
+      await deleteUser({ token, userId: userToDelete._id });
+      toast.success(
+        "Usuario eliminado correctamente de la Base de Datos y Cognito",
+      );
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      fetchUsers(); // Recargamos la tabla
+    } catch (error) {
+      console.error("Error al eliminar usuario:", error);
+      toast.error(error.message || "Hubo un error al eliminar el usuario");
+    } finally {
+      setIsDeleting(false);
+    }
   };
   const roleDisplayNames = {
     SuperAdmin: "SuperAdmin Middify",
@@ -237,6 +275,17 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
                       —
                     </span>
                   )}
+                  {/*BOTÓN DE ELIMINAR RESTRINGIDO */}
+                  {canDeleteUser && (
+                    <IconButton
+                      onClick={() => handleDeleteClick(user)}
+                      size="small"
+                      className="text-slate-400 hover:text-red-500 transition-colors ml-1"
+                      title="Eliminar usuario permanentemente"
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  )}
                 </td>
               </tr>
             ))}
@@ -270,7 +319,49 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
           </button>
         </div>
       )}
-
+      {/* MODAL DE ELIMINACIÓN */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-4 text-red-600">
+              <div className="p-2 bg-red-100 rounded-full">
+                <DeleteOutlineIcon />
+              </div>
+              <h3 className="text-lg font-bold">¿Eliminar Usuario?</h3>
+            </div>
+            <p className="text-sm text-slate-600 mb-2">
+              Estás a punto de eliminar permanentemente a:
+            </p>
+            <p className="text-sm font-bold text-slate-800 mb-6 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
+              {userToDelete?.email}
+            </p>
+            <p className="text-xs text-red-500 mb-6 font-medium italic">
+              Esta acción eliminará al usuario de AWS Cognito y de la Base de
+              Datos. No se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="flex-1 rounded-2xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <CircularProgress size={16} sx={{ color: "white" }} />
+                ) : (
+                  "Sí, Eliminar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <EditUserModal
         open={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
