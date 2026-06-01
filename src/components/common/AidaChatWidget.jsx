@@ -10,7 +10,7 @@ export const AidaChatWidget = () => {
     }
   }, []);
 
-  const chatUrl = `https://builder.prod.soyaida.com/public/chat/middify/8ec8e75d-0947-4d5c-b309-82285aee4987?hostedDomain=${currentDomain}`;
+  const chatUrl = `https://builder.prod.soyaida.com/public/chat/middify/8ec8e75d-0947-4d5c-b309-82285aee4987?hostedDomain=https%3A%2F%2Fbuilder.prod.soyaida.com`;
   const middifyBlue = "#2563EB";
 
   return (

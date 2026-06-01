@@ -142,9 +142,7 @@ const OrdersTableHeader = ({
             <div className="flex flex-nowrap items-center gap-2">
               {/* Texto de ayuda dinámico */}
               {!hasSelection && (
-                <span className="hidden sm:block text-xs text-slate-400 italic mr-1">
-                  Exportará todas las órdenes
-                </span>
+                <span className="hidden sm:block text-xs text-slate-400 italic mr-1"></span>
               )}
 
               {/* Botón Exportar Todo */}

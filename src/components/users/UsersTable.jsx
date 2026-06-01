@@ -34,8 +34,6 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
   const rawRole = currentUser?.role || currentUser?.authInfo?.role || "";
   const currentRole = String(rawRole).trim().toLowerCase();
 
-  // Imprimimos en consola para asegurarnos de qué está leyendo React
-  console.log("Rol detectado para eliminar:", currentRole);
   const canDeleteUser =
     currentRole === "superadmin" || currentRole === "middifyadmin";
 
@@ -121,7 +119,7 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
       );
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
-      fetchUsers(); // Recargamos la tabla
+      fetchUsers();
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
       toast.error(error.message || "Hubo un error al eliminar el usuario");
@@ -217,7 +215,7 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
                 key={user._id}
                 className="hover:bg-slate-50/50 transition-colors group"
               >
-                {/* 1. Columna Usuario / Email */}
+                {/* 1. Columna usuario / email */}
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { saveDashboardColumns } from "../../api/orders/postParamTable";
 import {
@@ -11,48 +10,32 @@ import StoreColumnsTab from "./StoreColumnsTab";
 import StoreUsersTab from "./StoreUsersTab";
 
 const TABS = [
-  { id: "columns", label: "Campos tablas" },
+  //{ id: "columns", label: "Campos tablas" },
   { id: "users", label: "Usuarios" },
 ];
-
-const prepareColumns = (columns = []) =>
-  columns.map((column) => {
-    const active =
-      column?.active !== undefined
-        ? Boolean(column.active)
-        : column?.hasFilter !== undefined
-          ? Boolean(column.hasFilter)
-          : true;
-
-    return {
-      ...column,
-      active,
-    };
-  });
 
 const StoreDetail = ({ token, currentUser }) => {
   const navigate = useNavigate();
   const { storeId } = useParams();
   const location = useLocation();
   const storeName = location.state?.store?.name ?? storeId ?? "Tienda";
-  const [activeTab, setActiveTab] = useState(TABS[0].id);
-  const [columns, setColumns] = useState(() =>
-    prepareColumns(DASHBOARD_COLUMNS_TEMPLATE),
-  );
-  const [loadingColumns, setLoadingColumns] = useState(false);
+
+  // const [activeTab, setActiveTab] = useState(TABS[0].id);
+  const [activeTab, setActiveTab] = useState("users");
+  const [columns, setColumns] = useState([]);
+  const [loadingColumns, setLoadingColumns] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState({ text: "", type: "" });
+
   const selectedCount = useMemo(
     () => columns.filter((column) => column.active).length,
     [columns],
   );
-  const allSelected = selectedCount === columns.length;
-  // const queryClient = useQueryClient();
+
+  const allSelected = columns.length > 0 && selectedCount === columns.length;
 
   useEffect(() => {
-    if (!token) {
-      return;
-    }
+    if (!token) return;
 
     let isMounted = true;
     const controller = new AbortController();
@@ -60,33 +43,29 @@ const StoreDetail = ({ token, currentUser }) => {
     const loadColumns = async () => {
       try {
         setLoadingColumns(true);
+
         const result = await fetchTenantColumns({
           token,
           tenantName: storeName,
           signal: controller.signal,
         });
-        if (!isMounted) {
-          return;
-        }
+
+        if (!isMounted) return;
+
         setColumns(
-          prepareColumns(
-            Array.isArray(result) && result.length
-              ? result
-              : DASHBOARD_COLUMNS_TEMPLATE,
-          ),
+          Array.isArray(result) && result.length > 0
+            ? result
+            : DASHBOARD_COLUMNS_TEMPLATE,
         );
       } catch (error) {
-        if (error.name === "AbortError" || !isMounted) {
-          return;
-        }
-        setColumns(prepareColumns(DASHBOARD_COLUMNS_TEMPLATE));
-        setMessage(
-          `Error: ${error.message || "No se pudo cargar la configuración actual."}`,
-        );
+        if (error.name === "AbortError" || !isMounted) return;
+        setColumns(DASHBOARD_COLUMNS_TEMPLATE);
+        setMessage({
+          text: "Error al cargar la configuración actual. Mostrando por defecto.",
+          type: "error",
+        });
       } finally {
-        if (isMounted) {
-          setLoadingColumns(false);
-        }
+        if (isMounted) setLoadingColumns(false);
       }
     };
 
@@ -98,7 +77,7 @@ const StoreDetail = ({ token, currentUser }) => {
   }, [token, storeName]);
 
   const handleToggleColumn = (value) => {
-    setMessage("");
+    setMessage({ text: "", type: "" });
     setColumns((prev) =>
       prev.map((column) =>
         column.value === value ? { ...column, active: !column.active } : column,
@@ -107,11 +86,9 @@ const StoreDetail = ({ token, currentUser }) => {
   };
 
   const handleToggleAllColumns = () => {
-    setMessage("");
+    setMessage({ text: "", type: "" });
     setColumns((prev) => {
-      if (prev.length === 0) {
-        return prev;
-      }
+      if (prev.length === 0) return prev;
       const shouldSelectAll = prev.some((column) => !column.active);
       return prev.map((column) => ({
         ...column,
@@ -122,7 +99,10 @@ const StoreDetail = ({ token, currentUser }) => {
 
   const handleSaveColumns = async () => {
     if (!token) {
-      setMessage("Necesitas iniciar sesión.");
+      setMessage({
+        text: "Sesión expirada. Por favor, recarga la página.",
+        type: "error",
+      });
       return;
     }
 
@@ -131,22 +111,32 @@ const StoreDetail = ({ token, currentUser }) => {
       .map((column) => column.value);
 
     if (activeColumnValues.length === 0) {
-      setMessage("Selecciona al menos una columna antes de guardar.");
+      setMessage({
+        text: "Selecciona al menos una columna antes de guardar.",
+        type: "error",
+      });
       return;
     }
 
     try {
       setSaving(true);
-      setMessage("");
+      setMessage({ text: "", type: "" });
+
       await saveDashboardColumns({
         token,
         tenantName: storeName,
         params: activeColumnValues,
       });
 
-      setMessage("Columnas guardadas correctamente.");
+      setMessage({
+        text: "Configuración de columnas guardada correctamente en el Tenant.",
+        type: "success",
+      });
     } catch (error) {
-      setMessage(`${error.message || "Error al guardar columnas."}`);
+      setMessage({
+        text: ` ${error.message || "Error al guardar columnas."}`,
+        type: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -163,8 +153,8 @@ const StoreDetail = ({ token, currentUser }) => {
         Volver
       </button>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm min-h-[500px]">
+        {/*} <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-4">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -173,33 +163,71 @@ const StoreDetail = ({ token, currentUser }) => {
                 type="button"
                 onClick={() => {
                   setActiveTab(tab.id);
-                  setMessage("");
+                  setMessage({ text: "", type: "" });
                 }}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? "bg-catalina-blue-600 text-white shadow-sm"
-                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
                 {tab.label}
               </button>
             );
           })}
-        </div>
+        </div>*/}
+        {TABS.length > 1 && (
+          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-4">
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setMessage({ text: "", type: "" });
+                  }}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-        {activeTab === "columns" && (
+        {/* MENSAJE GLOBAL DE ERROR/ÉXITO */}
+        {message.text && (
+          <div
+            className={`mb-4 p-3 rounded-lg text-sm font-medium border ${
+              message.type === "error"
+                ? "bg-red-50 text-red-700 border-red-200"
+                : "bg-green-50 text-green-700 border-green-200"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        {/*{activeTab === "columns" && (
           <StoreColumnsTab
             columns={columns}
             selectedCount={selectedCount}
             allSelected={allSelected}
             loadingColumns={loadingColumns}
             saving={saving}
-            message={message}
+            // Ya manejamos el mensaje arriba, pero lo pasamos por si StoreColumnsTab lo necesita internamente
+            message={message.text}
             onToggleColumn={handleToggleColumn}
             onToggleAllColumns={handleToggleAllColumns}
             onSave={handleSaveColumns}
           />
-        )}
+        )}*/}
 
         {activeTab === "users" && (
           <StoreUsersTab

@@ -67,19 +67,57 @@ export const useStoreUsersLogic = ({
 
     setLoadingAllUsers(true);
     try {
-      const response = await getUsersList({
-        token,
-        pageSize: 200,
-        page: 1,
-        tenantId: storeId,
-      });
-      setAllUsers(response.users || []);
+      const role = String(
+        currentUser?.role || currentUser?.authInfo?.role || "",
+      )
+        .trim()
+        .toLowerCase();
+      const isGlobalAdmin = role === "superadmin" || role === "middifyadmin";
+
+      if (isGlobalAdmin) {
+        const response = await getUsersList({
+          token,
+          pageSize: 200,
+          page: 1,
+          tenantId: "ALL",
+        });
+        setAllUsers(response.users || []);
+      } else {
+        const myTenants = currentUser?.tenant || [];
+
+        const promises = myTenants.map((t) =>
+          getUsersList({
+            token,
+            pageSize: 200,
+            page: 1,
+            tenantId: t.tenantId,
+          }).catch((err) => {
+            console.warn(`Ignorando error de tenant ${t.tenantId}`, err);
+            return { users: [] };
+          }),
+        );
+
+        const results = await Promise.all(promises);
+
+        let combinedUsers = [];
+        results.forEach((res) => {
+          if (res && res.users) {
+            combinedUsers = [...combinedUsers, ...res.users];
+          }
+        });
+
+        const uniqueUsers = Array.from(
+          new Map(combinedUsers.map((u) => [u._id, u])).values(),
+        );
+
+        setAllUsers(uniqueUsers);
+      }
     } catch (err) {
       console.error("Error loading available users:", err);
     } finally {
       setLoadingAllUsers(false);
     }
-  }, [token, storeId, allUsers.length]);
+  }, [token, allUsers.length, currentUser]);
 
   useEffect(() => {
     loadStoreUsers();
@@ -98,6 +136,7 @@ export const useStoreUsersLogic = ({
     try {
       await updateUser({ token, userId, tenantsToAssign: [tenantEntry] });
       triggerRefresh();
+
       return { success: true, message: "Usuario asignado correctamente" };
     } catch (err) {
       return {

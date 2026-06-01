@@ -91,18 +91,27 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Definimos permisos basados en el rol
-  const isSuperAdmin = currentUser?.role === "SuperAdmin";
-  const isMiddifyAdmin = currentUser?.role === "MiddifyAdmin";
-  const isTenantAdmin =
-    currentUser?.role === "Admin" || currentUser?.role === "admin";
+  const rawRole = currentUser?.role || currentUser?.authInfo?.role || "";
+  const currentRole = String(rawRole).trim().toLowerCase();
+
+  const isSuperAdmin = currentRole === "superadmin";
+  const isMiddifyAdmin = currentRole === "middifyadmin";
+  const isTenantAdmin = currentRole === "admin";
+  const isRestricted = currentRole === "user";
 
   const canManage = isSuperAdmin || isMiddifyAdmin || isTenantAdmin;
+  const ENABLE_ASSIGN_FEATURE = canManage;
 
-  //desaparece el "asignar usuario" hasta enclarecer requerimiento
-  const ENABLE_ASSIGN_FEATURE = false;
+  const secureAvailableUsers = useMemo(() => {
+    const allUsers = availableUsers || [];
+    if (isSuperAdmin || isMiddifyAdmin) return allUsers;
 
-  const isRestricted = currentUser?.role === "User";
+    const myTenantIds = (currentUser?.tenant || []).map((t) => t.tenantId);
+    return allUsers.filter((user) =>
+      (user.tenant || []).some((t) => myTenantIds.includes(t.tenantId)),
+    );
+  }, [availableUsers, isSuperAdmin, isMiddifyAdmin, currentUser]);
+  //const isRestricted = currentUser?.role === "User";
 
   const rows = users.map((u) => ({ id: u._id, ...u }));
 
@@ -114,7 +123,7 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
       }, canManage),
     [canManage],
   );
-  // Rendering condicional para userTenant
+
   if (isRestricted) {
     return (
       <div className="flex flex-col items-center justify-center p-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
@@ -190,13 +199,14 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
           </p>
         </div>
         {/* Solo mostramos el botón de asignar si tiene permisos */}
-        {canManage && ENABLE_ASSIGN_FEATURE && (
+        {ENABLE_ASSIGN_FEATURE && (
           <button
-            onClick={() => {
-              if (!isAssigning) loadAvailableUsers();
-              setIsAssigning(!isAssigning);
-            }}
-            className="inline-flex items-center gap-2 rounded-lg bg-catalina-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-catalina-blue-700"
+            onClick={handleToggleAssign}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200 ${
+              isAssigning
+                ? "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
           >
             <PersonAddAlt1OutlinedIcon fontSize="small" />
             {isAssigning ? "Cerrar" : "Asignar Usuario"}
@@ -204,7 +214,7 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
         )}
       </header>
 
-      {isAssigning && canManage && ENABLE_ASSIGN_FEATURE && (
+      {isAssigning && ENABLE_ASSIGN_FEATURE && (
         <div className="rounded-xl border border-catalina-blue-100 bg-catalina-blue-50 p-4 transition-all animate-in fade-in slide-in-from-top-2">
           <h3 className="mb-3 text-sm font-medium text-catalina-blue-900">
             Asignar nuevo usuario
@@ -222,7 +232,8 @@ const StoreUsersTab = ({ token, storeName, storeId, currentUser }) => {
                     ? "Cargando lista..."
                     : "Selecciona un usuario..."}
                 </option>
-                {availableUsers.map((user) => (
+                {/* lista filtrada de usuarios */}
+                {secureAvailableUsers.map((user) => (
                   <option key={user._id} value={user._id}>
                     {user.email} {user.fullName ? `(${user.fullName})` : ""}
                   </option>

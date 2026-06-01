@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import { createUser } from "../../api/users/createUser";
 import { CircularProgress } from "@mui/material";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { toast } from "react-toastify";
 
 const CreateUsers = ({
@@ -67,23 +68,15 @@ const CreateUsers = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
-
-      if (name === "role") {
-        const isNowGlobal = value === "SuperAdmin" || value === "MiddifyAdmin";
-        if (!isNowGlobal) newData.tenantId = "";
-      }
-      return newData;
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validamos solo si NO es un rol global
-    if (!isGlobalRole && !formData.tenantId) {
-      toast.error("Por favor selecciona una tienda (tenant)");
+    // 🌟 AHORA SIEMPRE ES OBLIGATORIO PARA SATISFACER A COGNITO
+    if (!formData.tenantId) {
+      toast.error("Por favor selecciona una tienda base (tenant)");
       return;
     }
 
@@ -91,18 +84,21 @@ const CreateUsers = ({
     try {
       const payload = { ...formData };
 
-      // LÓGICA MULTI-TENANT
-      if (isGlobalRole) {
-        payload.tenantId = "ALL";
+      // 🌟 LE PASAMOS UN ID REAL A COGNITO (EL QUE ELIGIÓ EN EL SELECTOR)
+      // Ya no forzamos "ALL" en el tenantId principal para que Cognito no falle.
+      const selectedT = tenantsParaMostrar.find(
+        (t) => t.tenantId === formData.tenantId,
+      );
 
+      // LÓGICA MULTI-TENANT PARA MONGODB
+      if (isGlobalRole) {
+        // En BD le guardamos la lista completa de tenants por si acaso,
+        // aunque el backend ya sabe que es global por su rol.
         payload.tenant = tenantsParaMostrar.map((t) => ({
           tenantId: t.tenantId,
           tenantName: t.tenantName,
         }));
       } else {
-        const selectedT = tenantsParaMostrar.find(
-          (t) => t.tenantId === formData.tenantId,
-        );
         if (selectedT) {
           payload.tenant = [
             { tenantId: selectedT.tenantId, tenantName: selectedT.tenantName },
@@ -209,38 +205,40 @@ const CreateUsers = ({
             {/* SELECTOR DE TIENDA INTELIGENTE */}
             <div className="flex flex-col">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Tienda (Tenant)
+                {isGlobalRole ? "Tienda Base (Requerida)" : "Tienda (Tenant)"}
               </label>
               <select
                 name="tenantId"
-                required={!isGlobalRole}
-                disabled={isGlobalRole}
-                value={isGlobalRole ? "ALL" : formData.tenantId}
+                required
+                value={formData.tenantId}
                 onChange={handleChange}
-                className={`text-sm font-semibold transition-all outline-none rounded-xl px-4 py-3 appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em] border ${
-                  isGlobalRole
-                    ? "bg-indigo-50 text-indigo-700 border-indigo-200 cursor-not-allowed"
-                    : "bg-slate-50/30 text-slate-700 border-slate-200 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                }`}
+                className="text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50/30 transition-all cursor-pointer appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1em_1em]"
                 style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23${isGlobalRole ? "4f46e5" : "64748b"}'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                 }}
               >
-                {isGlobalRole ? (
-                  <option value="ALL">Todas las tiendas (Acceso Global)</option>
-                ) : (
-                  <>
-                    <option value="">Selecciona una tienda</option>
-                    {tenantsParaMostrar?.map((tenant) => (
-                      <option key={tenant.tenantId} value={tenant.tenantId}>
-                        {tenant.tenantName}
-                      </option>
-                    ))}
-                  </>
-                )}
+                <option value="">Selecciona una tienda</option>
+                {tenantsParaMostrar?.map((tenant) => (
+                  <option key={tenant.tenantId} value={tenant.tenantId}>
+                    {tenant.tenantName}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
+          {/* 🌟 MENSAJE ACLARATORIO PARA UX */}
+          {isGlobalRole && (
+            <div className="flex items-start gap-2 bg-indigo-50 text-indigo-700 p-3 rounded-xl text-sm font-medium border border-indigo-100">
+              <InfoOutlinedIcon fontSize="small" className="mt-0.5 shrink-0" />
+              <p>
+                Cognito requiere asignar una tienda base para el registro. Sin
+                embargo, al tener el rol <strong>{formData.role}</strong>, este
+                usuario tendrá{" "}
+                <strong>acceso global a todas las tiendas</strong> de la base de
+                datos automáticamente.
+              </p>
+            </div>
+          )}
 
           <div className="pt-6 border-t border-slate-100 flex justify-end">
             <button
