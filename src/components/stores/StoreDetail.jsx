@@ -8,20 +8,21 @@ import {
 } from "../../api/orders/getOrdersByState";
 import StoreColumnsTab from "./StoreColumnsTab";
 import StoreUsersTab from "./StoreUsersTab";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TABS = [
-  //{ id: "columns", label: "Campos tablas" },
+  { id: "columns", label: "Campos tablas" },
   { id: "users", label: "Usuarios" },
 ];
 
 const StoreDetail = ({ token, currentUser }) => {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { storeId } = useParams();
   const location = useLocation();
   const storeName = location.state?.store?.name ?? storeId ?? "Tienda";
 
-  // const [activeTab, setActiveTab] = useState(TABS[0].id);
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [columns, setColumns] = useState([]);
   const [loadingColumns, setLoadingColumns] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,6 +47,7 @@ const StoreDetail = ({ token, currentUser }) => {
 
         const result = await fetchTenantColumns({
           token,
+          tenantId: storeId,
           tenantName: storeName,
           signal: controller.signal,
         });
@@ -127,6 +129,8 @@ const StoreDetail = ({ token, currentUser }) => {
         tenantName: storeName,
         params: activeColumnValues,
       });
+      queryClient.invalidateQueries(["tenantColumns"]);
+      queryClient.invalidateQueries(["orders"]);
 
       setMessage({
         text: "Configuración de columnas guardada correctamente en el Tenant.",
@@ -154,7 +158,7 @@ const StoreDetail = ({ token, currentUser }) => {
       </button>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm min-h-[500px]">
-        {/*} <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-4">
+        <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-4">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -175,33 +179,8 @@ const StoreDetail = ({ token, currentUser }) => {
               </button>
             );
           })}
-        </div>*/}
-        {TABS.length > 1 && (
-          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-4">
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setMessage({ text: "", type: "" });
-                  }}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* MENSAJE GLOBAL DE ERROR/ÉXITO */}
+        </div>
+        {/* MENSAJE ERROR/ÉXITO */}
         {message.text && (
           <div
             className={`mb-4 p-3 rounded-lg text-sm font-medium border ${
@@ -213,21 +192,19 @@ const StoreDetail = ({ token, currentUser }) => {
             {message.text}
           </div>
         )}
-
-        {/*{activeTab === "columns" && (
+        {activeTab === "columns" && (
           <StoreColumnsTab
             columns={columns}
             selectedCount={selectedCount}
             allSelected={allSelected}
             loadingColumns={loadingColumns}
             saving={saving}
-            // Ya manejamos el mensaje arriba, pero lo pasamos por si StoreColumnsTab lo necesita internamente
             message={message.text}
             onToggleColumn={handleToggleColumn}
             onToggleAllColumns={handleToggleAllColumns}
             onSave={handleSaveColumns}
           />
-        )}*/}
+        )}
 
         {activeTab === "users" && (
           <StoreUsersTab

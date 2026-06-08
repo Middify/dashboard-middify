@@ -10,6 +10,7 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import LogoFull from "../assets/logo/logo-removebg-preview.png";
 import LogoCompact from "../assets/logo/middify.png";
 import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const PRIMARY_NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", Icon: AssessmentIcon },
@@ -807,6 +808,21 @@ const Sidebar = ({
           className={`mt-auto ${footerPaddingX} pb-4 border-t border-white/10`}
         >
           <div className={`pt-3 mb-2 flex justify-center`}>
+            {/* BOTÓN: CENTRO DE AYUDA */}
+            <button
+              type="button"
+              aria-label="Centro de Ayuda"
+              className={`flex items-center ${collapsed ? "justify-center p-2" : "justify-start px-3 py-2 gap-3"} rounded-xl transition-colors duration-200 ${
+                activeView === "help"
+                  ? "bg-white/10 text-white font-medium"
+                  : "text-white/85 hover:bg-white/10 hover:text-white"
+              }`}
+              title="Centro de Ayuda"
+              onClick={() => handleViewChange("help")}
+            >
+              <HelpOutlineIcon fontSize="small" />
+              {!collapsed && <span className="text-sm">Ayuda</span>}
+            </button>
             <button
               type="button"
               aria-label="Papelera de reciclaje"

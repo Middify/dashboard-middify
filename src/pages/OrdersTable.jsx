@@ -62,6 +62,21 @@ const OrdersTable = ({
     message: "",
     severity: "info",
   });
+  // FILTRO  DE COLUMNAS DESDE APARTADO TIENDAS
+  const visibleColumns = useMemo(() => {
+    if (!grid?.columns) return [];
+
+    return grid.columns.filter((col) => {
+      if (
+        col.field === "__check__" ||
+        col.field === "actions" ||
+        col.field === "view_details"
+      )
+        return true;
+
+      return col.active !== false;
+    });
+  }, [grid?.columns]);
 
   const canEditState = useMemo(() => {
     const role = user?.role;
@@ -245,7 +260,8 @@ const OrdersTable = ({
 
       exportOrdersToExcel({
         rows: formattedRows,
-        columns: grid.columns,
+        // si queremos que el excel tambien tengas las columnas filtrdas hay que cambiar el "grid.columns" por "visibleColumns"
+        columns: visibleColumns,
         fileName: selectionFileName,
       });
     } catch (error) {
@@ -285,6 +301,7 @@ const OrdersTable = ({
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <TableGrid
             {...grid}
+            columns={visibleColumns}
             MobileComponent={OrderMobileCard}
             mobileComponentProps={{}}
           />

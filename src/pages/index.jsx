@@ -19,7 +19,7 @@ const OrdersTable = lazy(() => import("./OrdersTable"));
 const Price = lazy(() => import("./Price"));
 const RecycleBin = lazy(() => import("./RecycleBin"));
 const DetailsOrders = lazy(() => import("./DetailsOrders"));
-
+const HelpDashboard = lazy(() => import("./HelpDashboard"));
 // Componentes secundarios también lazy
 const StoreDetail = lazy(() => import("../components/stores/StoreDetail"));
 const ProductDetails = lazy(
@@ -247,6 +247,7 @@ const Index = ({ token, currentUser }) => {
           />
           <Route path="/orders" element={<OrdersTableWrapper />} />
           <Route path="/price" element={<Price />} />
+          <Route path="/help" element={<HelpDashboard />} />
           <Route path="/recycle" element={<RecycleBinWrapper />} />
           <Route
             path="/orders/detalle"

@@ -37,6 +37,7 @@ const deriveView = (pathname, hasDetail) => {
   if (pathname.startsWith("/orders")) return "orders";
   if (pathname.startsWith("/products")) return "products";
   if (pathname.startsWith("/price")) return "price";
+  if (pathname.startsWith("/help")) return "help";
   return "dashboard";
 };
 
@@ -197,6 +198,9 @@ const MainLayout = () => {
         default:
           navigate("/");
           break;
+        case "help":
+          navigate("/help");
+          break;
       }
     },
     [navigate, resolvedOrderState, lastOrderState],
@@ -339,7 +343,7 @@ const MainLayout = () => {
         </div>
       </div>
       <ToastContainer position="bottom-right" autoClose={2000} />
-      <AidaChatWidget />
+      {/*<AidaChatWidget />*/}
     </div>
   );
 };

@@ -64,13 +64,18 @@ export const fetchOrdersByState = async ({ token, params = {}, signal }) => {
   };
 };
 
-export const fetchTenantColumns = async ({ token, tenantName, signal }) => {
+export const fetchTenantColumns = async ({
+  token,
+  tenantId,
+  tenantName,
+  signal,
+}) => {
   if (!token || !tenantName) return DASHBOARD_COLUMNS_TEMPLATE;
 
   try {
     const result = await fetchOrdersByState({
       token,
-      params: { tenantName, pageSize: 1 },
+      params: { tenantId, tenantName, pageSize: 1 },
       signal,
     });
 
@@ -155,7 +160,8 @@ export const useOrdersData = (token, params = {}, refreshTrigger = 0) => {
 export const useTenantColumns = (token, tenantId, tenantName) => {
   return useQuery({
     queryKey: ["tenantColumns", token, tenantId, tenantName],
-    queryFn: ({ signal }) => fetchTenantColumns({ token, tenantName, signal }),
+    queryFn: ({ signal }) =>
+      fetchTenantColumns({ token, tenantId, tenantName, signal }),
     enabled: !!token && !!tenantName,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
