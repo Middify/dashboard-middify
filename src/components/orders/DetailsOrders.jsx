@@ -7,6 +7,7 @@ import PanelThree from "./details/PanelThree";
 import PanelFour from "./details/PanelFour";
 import PanelFive from "./details/PanelFive";
 import PanelSix from "./details/PanelSix";
+import PanelSeven from "./details/PanelSeven";
 import { formatText } from "./details/formatters";
 
 const TABS = [
@@ -16,6 +17,7 @@ const TABS = [
   { id: "panel4", label: "Cliente" },
   { id: "panel5", label: "Documentos" },
   { id: "panel6", label: "Etapas" },
+  { id: "panel7", label: "Historial" },
 ];
 
 const buildFallbackPanels = (order) => {
@@ -47,6 +49,7 @@ const buildFallbackPanels = (order) => {
     panel_4: order.customer ?? null,
     panel_5: order.documents ?? null,
     panel_6: stages ? { stages } : null,
+    panel_7: null,
   };
 };
 
@@ -166,6 +169,12 @@ const DetailsOrders = ({
               )}
               {activeTab === "panel6" && (
                 <PanelSix data={resolvedPanels.panel_6} canEdit={canEdit} />
+              )}
+              {activeTab === "panel7" && (
+                <PanelSeven
+                  data={resolvedPanels.panel_7}
+                  current={resolvedPanels.panel_1}
+                />
               )}
             </div>
           </div>

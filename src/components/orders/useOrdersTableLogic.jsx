@@ -617,9 +617,7 @@ export const useOrdersTableLogic = ({
 
   const getSelectedOrderIds = useCallback(
     () =>
-      rows
-        .filter((r) => rowSelectionModel.includes(r.id))
-        .map((r) => r.internalId),
+      rows.filter((r) => rowSelectionModel.includes(r.id)).map((r) => r._id),
     [rows, rowSelectionModel],
   );
 
