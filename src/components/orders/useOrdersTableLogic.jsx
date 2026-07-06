@@ -354,7 +354,8 @@ export const useOrdersTableLogic = ({
   onSelectOrder = () => {},
   onExportSuccess = () => {},
   orderIdFilter,
-  dateFilter,
+  startDateFilter,
+  endDateFilter,
 }) => {
   const {
     paginationModel,
@@ -385,7 +386,8 @@ export const useOrdersTableLogic = ({
       pageSize: paginationModel.pageSize,
       marketPlace: selectedMarketplace || undefined,
       orderId: orderIdFilter,
-      date: dateFilter,
+      startDate: startDateFilter,
+      endDate: endDateFilter,
     }),
     [
       selectedTenantId,
@@ -395,7 +397,8 @@ export const useOrdersTableLogic = ({
       paginationModel.pageSize,
       selectedMarketplace,
       orderIdFilter,
-      dateFilter,
+      startDateFilter,
+      endDateFilter,
     ],
   );
 
@@ -657,6 +660,9 @@ export const useOrdersTableLogic = ({
       state: apiStatus,
       tenantId: selectedTenantId,
       tenantName: selectedTenantName,
+      startDate: startDateFilter,
+      endDate: endDateFilter,
+      marketPlace: selectedMarketplace,
     };
 
     const selectedIds = getSelectedOrderIds();
@@ -671,6 +677,9 @@ export const useOrdersTableLogic = ({
     apiStatus,
     selectedTenantId,
     selectedTenantName,
+    startDateFilter,
+    endDateFilter,
+    selectedMarketplace,
     startExport,
     getSelectedOrderIds,
   ]);

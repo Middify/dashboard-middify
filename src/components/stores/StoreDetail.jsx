@@ -129,8 +129,9 @@ const StoreDetail = ({ token, currentUser }) => {
         tenantName: storeName,
         params: activeColumnValues,
       });
-      queryClient.invalidateQueries(["tenantColumns"]);
-      queryClient.invalidateQueries(["orders"]);
+
+      await queryClient.invalidateQueries({ queryKey: ["tenantColumns"] });
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
 
       setMessage({
         text: "Configuración de columnas guardada correctamente en el Tenant.",

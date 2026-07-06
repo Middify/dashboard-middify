@@ -262,8 +262,11 @@ const HelpDashboard = () => {
                     </h4>
                     <p className="text-sm text-blue-700">
                       El colaborador recibirá un correo electrónico automático
-                      del sistema (remitente: no-reply@verificationemail.com)
-                      con su nombre de usuario y una contraseña provisoria.
+                      del sistema (remitente:{" "}
+                      <strong className="font-bold text-blue-900">
+                        Middify Dashboard[dashboard-auth@middify.com]
+                      </strong>
+                      ) con su nombre de usuario y una contraseña provisoria.
                     </p>
                   </div>
                 </section>

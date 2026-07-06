@@ -19,7 +19,8 @@ const OrdersTable = ({
   availableMarketplaces = [],
 }) => {
   const [orderIdFilter, setOrderIdFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
   const {
     error,
     grid,
@@ -40,12 +41,13 @@ const OrdersTable = ({
     selectedOrderState,
     selectedTenantName,
     orderIdFilter,
-    dateFilter,
+    startDateFilter,
+    endDateFilter,
     onSelectOrder,
     onExportSuccess: () => {
       setSnackbar({
         open: true,
-        message: "Exportación lista. La descarga comenzará automáticamente.",
+        message: "Exportación lista.",
         severity: "success",
       });
     },
@@ -295,8 +297,10 @@ const OrdersTable = ({
           availableMarketplaces={availableMarketplaces}
           orderIdFilter={orderIdFilter}
           onOrderIdChange={setOrderIdFilter}
-          dateFilter={dateFilter}
-          onDateChange={setDateFilter}
+          startDateFilter={startDateFilter}
+          onStartDateChange={setStartDateFilter}
+          endDateFilter={endDateFilter}
+          onEndDateChange={setEndDateFilter}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <TableGrid

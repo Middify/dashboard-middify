@@ -23,11 +23,16 @@ const OrdersTableHeader = ({
   onMarketplaceChange,
   orderIdFilter,
   onOrderIdChange,
-  dateFilter,
-  onDateChange,
+  startDateFilter,
+  onStartDateChange,
+  endDateFilter,
+  onEndDateChange,
   availableMarketplaces = [],
 }) => {
   const hasSelection = selectedCount > 0;
+  const hasActiveFilters = Boolean(
+    selectedMarketplace || orderIdFilter || startDateFilter || endDateFilter,
+  );
   const canTriggerExport =
     typeof onExportData === "function" && !exportDisabled;
   const canTriggerExportSelected =
@@ -145,7 +150,7 @@ const OrdersTableHeader = ({
                 <span className="hidden sm:block text-xs text-slate-400 italic mr-1"></span>
               )}
 
-              {/* Botón Exportar Todo */}
+              {/* Botón Exportar Todo / Exportar Filtrado */}
               <button
                 type="button"
                 onClick={() =>
@@ -157,14 +162,20 @@ const OrdersTableHeader = ({
                     : "bg-slate-800 text-white hover:bg-black"
                 }`}
                 disabled={!canTriggerExport || isExportingData}
-                title="Exportar todas las órdenes de la base de datos"
+                title={
+                  hasActiveFilters
+                    ? "Exportar las órdenes según los filtros aplicados"
+                    : "Exportar todas las órdenes de la base de datos"
+                }
               >
                 {isExportingData && !hasSelection ? (
                   <CircularProgress size={14} color="inherit" />
                 ) : (
                   <FileDownloadOutlinedIcon className="text-[16px]" />
                 )}
-                <span>Exportar Todo</span>
+                <span>
+                  {hasActiveFilters ? "Exportar Filtrado" : "Exportar Todo"}
+                </span>
               </button>
 
               {/* Botón Exportar Selección */}
@@ -273,14 +284,52 @@ const OrdersTableHeader = ({
             </div>
 
             {/* 3. Filtro de Fecha */}
-            <div className="relative w-full sm:w-48">
-              <input
-                type="date"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-600 shadow-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 hover:bg-slate-100 cursor-pointer"
-                value={dateFilter || ""}
-                onChange={(e) => onDateChange(e.target.value)}
-                title="Filtrar por fecha de creación"
-              />
+            <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-36">
+                <input
+                  type="date"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-600 shadow-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 hover:bg-slate-100 cursor-pointer"
+                  value={startDateFilter || ""}
+                  onChange={(e) => onStartDateChange(e.target.value)}
+                  title="Fecha desde"
+                />
+              </div>
+              <span className="text-slate-400 text-sm font-medium">al</span>
+              <div className="relative w-full sm:w-36">
+                <input
+                  type="date"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm text-slate-600 shadow-sm transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 hover:bg-slate-100 cursor-pointer"
+                  value={endDateFilter || ""}
+                  onChange={(e) => onEndDateChange(e.target.value)}
+                  title="Fecha hasta"
+                  min={startDateFilter}
+                />
+              </div>
+              {/* Botón para limpiar ambas fechas simultáneamente */}
+              {(startDateFilter || endDateFilter) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onStartDateChange("");
+                    onEndDateChange("");
+                  }}
+                  className="flex items-center justify-center rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  title="Limpiar rango de fechas"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* Opcional: Si en el futuro quiero poner el texto "ENCONTRADOS X" */}
@@ -344,6 +393,8 @@ OrdersTableHeader.defaultProps = {
   isExportingSelectedData: false,
   exportSelectedDisabled: false,
   canEditState: true,
+  onStartDateChange: () => {},
+  onEndDateChange: () => {},
 };
 
 export default OrdersTableHeader;
