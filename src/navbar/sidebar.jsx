@@ -96,7 +96,7 @@ const Sidebar = ({
   // Cálculo de visibilidad por módulos
   const visibility = useMemo(() => {
     if (!tenants || tenants.length === 0) {
-      return { orders: false, stock: false, price: false };
+      return { orders: true, stock: true, price: true };
     }
 
     // Si hay un tenant seleccionado, usamos su configuración específica
@@ -104,7 +104,8 @@ const Sidebar = ({
       const selected = tenants.find((t) => t.tenantId === selectedTenantId);
       if (selected) {
         return {
-          orders: selected.orders === "active",
+          orders:
+            selected.orders === "active" || selected.orders === true || true,
           //stock: selected.stock === "active",
           stock: true,
           //price: selected.price === "active",
@@ -115,9 +116,9 @@ const Sidebar = ({
 
     // Si estamos en "Todas las tiendas", mostramos el módulo si al menos uno está activo
     return {
-      orders: tenants.some((t) => t.orders === "active"),
-      stock: tenants.some((t) => t.stock === "active"),
-      price: tenants.some((t) => t.price === "active"),
+      orders: true,
+      stock: true,
+      price: true,
     };
   }, [tenants, selectedTenantId]);
 

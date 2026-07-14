@@ -58,6 +58,7 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
     return false;
   };
   const fetchUsers = async () => {
+    console.log("1. Tenant ID actual:", selectedTenantId);
     if (!selectedTenantId) return;
     try {
       setLoading(true);
@@ -67,6 +68,7 @@ const UsersTable = ({ token, allTenants, selectedTenantId, currentUser }) => {
         pageSize: pagination.pageSize,
         tenantId: selectedTenantId,
       });
+      console.log("2. Respuesta cruda de la API:", data);
       setUsers(data.users || []);
       setPagination((prev) => ({
         ...prev,

@@ -1,6 +1,14 @@
-const API_URL = "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/users/create";
+const API_URL =
+  "https://957chi25kf.execute-api.us-east-2.amazonaws.com/dev/users/create";
 
-export const createUser = async ({ token, email, fullName, tenantId, role }) => {
+export const createUser = async ({
+  token,
+  email,
+  fullName,
+  tenantId,
+  tenant,
+  role,
+}) => {
   if (!token) {
     throw new Error("Token de autenticación no proporcionado.");
   }
@@ -16,6 +24,7 @@ export const createUser = async ({ token, email, fullName, tenantId, role }) => 
         email,
         fullName,
         tenantId,
+        tenant,
         role,
       }),
     });
@@ -23,7 +32,9 @@ export const createUser = async ({ token, email, fullName, tenantId, role }) => 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.error || errorData.message || `Error ${response.status}: ${response.statusText}`
+        errorData.error ||
+          errorData.message ||
+          `Error ${response.status}: ${response.statusText}`,
       );
     }
 
@@ -31,16 +42,9 @@ export const createUser = async ({ token, email, fullName, tenantId, role }) => 
   } catch (error) {
     if (error.name === "TypeError" && error.message === "Failed to fetch") {
       throw new Error(
-        "Error de conexión. Verifica tu conexión a internet y que el servidor esté disponible."
+        "Error de conexión. Verifica tu conexión a internet y que el servidor esté disponible.",
       );
     }
     throw error;
   }
 };
-
-
-
-
-
-
-
