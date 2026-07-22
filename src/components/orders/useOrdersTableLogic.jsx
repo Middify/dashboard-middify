@@ -146,7 +146,7 @@ const buildColumnDefinition = (column) => {
   const base = {
     field: column.value,
     headerName: column.title ?? column.value,
-    sortable: false,
+    sortable: true,
     flex: 1,
     minWidth: 160,
     renderCell: ({ row }) => (
@@ -356,6 +356,7 @@ export const useOrdersTableLogic = ({
   orderIdFilter,
   startDateFilter,
   endDateFilter,
+  sortModel,
 }) => {
   const {
     paginationModel,
@@ -388,6 +389,8 @@ export const useOrdersTableLogic = ({
       orderId: orderIdFilter,
       startDate: startDateFilter,
       endDate: endDateFilter,
+      sortField: sortModel?.[0]?.field,
+      sortDirection: sortModel?.[0]?.sort,
     }),
     [
       selectedTenantId,
@@ -399,6 +402,7 @@ export const useOrdersTableLogic = ({
       orderIdFilter,
       startDateFilter,
       endDateFilter,
+      sortModel,
     ],
   );
 

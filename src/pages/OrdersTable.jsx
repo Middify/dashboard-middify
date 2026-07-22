@@ -21,6 +21,9 @@ const OrdersTable = ({
   const [orderIdFilter, setOrderIdFilter] = useState("");
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
+  const [sortModel, setSortModel] = useState([
+    { field: "lastUpdate", sort: "desc" },
+  ]);
   const {
     error,
     grid,
@@ -44,6 +47,7 @@ const OrdersTable = ({
     startDateFilter,
     endDateFilter,
     onSelectOrder,
+    sortModel,
     onExportSuccess: () => {
       setSnackbar({
         open: true,
@@ -308,6 +312,9 @@ const OrdersTable = ({
             columns={visibleColumns}
             MobileComponent={OrderMobileCard}
             mobileComponentProps={{}}
+            sortModel={sortModel}
+            onSortModelChange={(newModel) => setSortModel(newModel)}
+            sortingMode="server"
           />
         </section>
       </div>
