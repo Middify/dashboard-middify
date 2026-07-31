@@ -93,7 +93,8 @@ const getColumnRawValue = (order, key) => {
           t.includes("boleta") ||
           t.includes("invoice") ||
           t.includes("dte") ||
-          t.includes("factura")
+          t.includes("factura") ||
+          t.includes("documento")
         );
       });
 
@@ -107,7 +108,8 @@ const getColumnRawValue = (order, key) => {
           t.includes("boleta") ||
           t.includes("invoice") ||
           t.includes("dte") ||
-          t.includes("factura")
+          t.includes("factura") ||
+          t.includes("documento")
         );
       });
 
@@ -179,6 +181,27 @@ const buildColumnDefinition = (column) => {
             </span>
           );
         },
+      };
+
+    case "subTotal":
+    case "total":
+    case "costoEnvio":
+    case "totalPagado":
+      return {
+        ...base,
+        align: "right",
+        headerAlign: "right",
+        minWidth: 120,
+        sortComparator: (v1, v2) => {
+          const num1 = Number(String(v1).replace(/[^0-9-]+/g, "")) || 0;
+          const num2 = Number(String(v2).replace(/[^0-9-]+/g, "")) || 0;
+          return num1 - num2;
+        },
+        renderCell: ({ row }) => (
+          <span className="text-sm font-medium text-slate-700">
+            {row[column.value]}
+          </span>
+        ),
       };
 
     case "stages":
@@ -320,22 +343,6 @@ const buildColumnDefinition = (column) => {
             className="text-xs text-slate-500 truncate"
             title={row[column.value]}
           >
-            {row[column.value]}
-          </span>
-        ),
-      };
-
-    case "subTotal":
-    case "total":
-    case "costoEnvio":
-    case "totalPagado":
-      return {
-        ...base,
-        align: "right",
-        headerAlign: "right",
-        minWidth: 120,
-        renderCell: ({ row }) => (
-          <span className="text-sm font-medium text-slate-700">
             {row[column.value]}
           </span>
         ),
