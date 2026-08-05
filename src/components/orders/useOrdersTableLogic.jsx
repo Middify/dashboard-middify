@@ -10,11 +10,64 @@ import {
   formatCurrency,
   formatDateTime,
   getSelectedStateLabel,
-  normalizeStatusKey,
-  ORDER_STATE_LOOKUP,
 } from "./helpers";
 import { useExportOrders } from "./useExportOrders";
 import { useTableState } from "../../hooks/useTableState";
+
+// 🌟 COMPONENTES DE FILTRO (TÍTULO ARRIBA, INPUT ABAJO)
+const HeaderSelectFilter = ({ title, value, onChange, options = [] }) => (
+  <div className="flex flex-col w-full gap-1.5 justify-center h-full">
+    <span className="font-semibold text-[11px] text-slate-600 uppercase tracking-wider truncate leading-none">
+      {title}
+    </span>
+    <select
+      className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-xs text-slate-700 focus:border-indigo-500 focus:outline-none capitalize cursor-pointer font-normal shadow-sm"
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <option value="">Todos</option>
+      {(options || []).map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
+const HeaderInputFilter = ({
+  title,
+  value,
+  onChange,
+  placeholder = "Buscar...",
+}) => {
+  const [localVal, setLocalVal] = useState(value || "");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localVal !== value) onChange(localVal);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [localVal, value, onChange]);
+
+  return (
+    <div className="flex flex-col w-full gap-1.5 justify-center h-full">
+      <span className="font-semibold text-[11px] text-slate-600 uppercase tracking-wider truncate leading-none">
+        {title}
+      </span>
+      <input
+        type="text"
+        className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-indigo-500 focus:outline-none font-normal shadow-sm"
+        placeholder={placeholder}
+        value={localVal}
+        onChange={(e) => setLocalVal(e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+};
 
 const marketplaceLogos = import.meta.glob(
   "../../assets/marketplace/*.{png,jpg,jpeg,webp}",
@@ -25,9 +78,7 @@ const getLogoUrl = (marketName) => {
   if (!marketName) return null;
   let normalized = String(marketName).toLowerCase().replace(/\s+/g, "");
 
-  if (normalized.includes("meli")) {
-    normalized = "mercadolibre";
-  }
+  if (normalized.includes("meli")) normalized = "mercadolibre";
 
   for (const path in marketplaceLogos) {
     const fileName = path.split("/").pop().toLowerCase();
@@ -40,6 +91,7 @@ const getLogoUrl = (marketName) => {
   }
   return null;
 };
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const PREFETCH_STATES = ["deleted", "en proceso"];
 
@@ -144,7 +196,11 @@ const formatColumnValue = (key, order) => {
   return String(value);
 };
 
-const buildColumnDefinition = (column) => {
+const buildColumnDefinition = (
+  column,
+  headerFilters = {},
+  availableOriginStatuses = [],
+) => {
   const base = {
     field: column.value,
     headerName: column.title ?? column.value,
@@ -208,17 +264,30 @@ const buildColumnDefinition = (column) => {
     case "estadoMiddify":
       return {
         ...base,
-        minWidth: 150,
+        minWidth: 160,
+        renderHeader: (params) => (
+          <HeaderSelectFilter
+            title={params.colDef.headerName}
+            value={headerFilters?.processingStatus}
+            onChange={headerFilters?.setProcessingStatus}
+            options={[
+              { label: "Ingresada", value: "ingresada" },
+              { label: "Procesada", value: "procesada" },
+              { label: "Error", value: "error" },
+              { label: "Descartada", value: "descartada" },
+            ]}
+          />
+        ),
         renderCell: ({ row }) => {
           const val = String(row[column.value] || "").toLowerCase();
           const isSuccess =
             val.includes("procesada") || val.includes("success");
           const isError = val.includes("error") || val.includes("descartada");
 
-          let colors = "bg-slate-100 text-slate-700 border-slate-200"; // Gris
+          let colors = "bg-slate-100 text-slate-700 border-slate-200";
           if (isSuccess)
-            colors = "bg-emerald-50 text-emerald-700 border-emerald-200"; // Verde
-          if (isError) colors = "bg-rose-50 text-rose-700 border-rose-200"; // Rojo
+            colors = "bg-emerald-50 text-emerald-700 border-emerald-200";
+          if (isError) colors = "bg-rose-50 text-rose-700 border-rose-200";
 
           return (
             <span
@@ -229,11 +298,20 @@ const buildColumnDefinition = (column) => {
           );
         },
       };
+
     case "status":
     case "estadoOrigen":
       return {
         ...base,
-        minWidth: 150,
+        minWidth: 170,
+        renderHeader: (params) => (
+          <HeaderSelectFilter
+            title={params.colDef.headerName}
+            value={headerFilters?.originStatus}
+            onChange={headerFilters?.setOriginStatus}
+            options={availableOriginStatuses}
+          />
+        ),
         renderCell: ({ row }) => {
           const rawStatus = String(row[column.value] || "");
           const val = rawStatus.toLowerCase().trim();
@@ -268,6 +346,21 @@ const buildColumnDefinition = (column) => {
             </span>
           );
         },
+      };
+
+    case "taxes":
+    case "folioBoleta":
+      return {
+        ...base,
+        minWidth: 150,
+        renderHeader: (params) => (
+          <HeaderInputFilter
+            title={params.colDef.headerName}
+            value={headerFilters?.folio}
+            onChange={headerFilters?.setFolio}
+            placeholder="Buscar..."
+          />
+        ),
       };
 
     case "documents":
@@ -321,6 +414,7 @@ const buildColumnDefinition = (column) => {
           );
         },
       };
+
     case "_id":
     case "idOrden":
       return {
@@ -364,6 +458,12 @@ export const useOrdersTableLogic = ({
   startDateFilter,
   endDateFilter,
   sortModel,
+  originStatusFilter,
+  setOriginStatusFilter,
+  processingStatusFilter,
+  setProcessingStatusFilter,
+  folioFilter,
+  setFolioFilter,
 }) => {
   const {
     paginationModel,
@@ -377,7 +477,6 @@ export const useOrdersTableLogic = ({
     resetPagination,
   } = useTableState({ initialPageSize: 100 });
 
-  //filtro por marketplace
   const [selectedMarketplace, setSelectedMarketplace] = useState("");
 
   const apiStatus = selectedOrderState
@@ -398,6 +497,9 @@ export const useOrdersTableLogic = ({
       endDate: endDateFilter,
       sortField: sortModel?.[0]?.field,
       sortDirection: sortModel?.[0]?.sort,
+      originStatus: originStatusFilter || undefined,
+      processingStatus: processingStatusFilter || undefined,
+      folio: folioFilter || undefined,
     }),
     [
       selectedTenantId,
@@ -410,6 +512,9 @@ export const useOrdersTableLogic = ({
       startDateFilter,
       endDateFilter,
       sortModel,
+      originStatusFilter,
+      processingStatusFilter,
+      folioFilter,
     ],
   );
 
@@ -418,6 +523,39 @@ export const useOrdersTableLogic = ({
     isLoading: loadingOrders,
     error,
   } = useOrdersData(token, queryParams, refreshTrigger);
+
+  const orders = ordersData?.orders || [];
+  const meta = ordersData?.meta || {};
+
+  const availableOriginStatuses = useMemo(() => {
+    const STATUS_TRANSLATIONS = {
+      abandoned: "Abandonada",
+      "pending payment": "Pago Pendiente",
+      paid: "Pagada",
+      shipped: "Enviada",
+      delivered: "Entregada",
+      canceled: "Cancelada",
+      cancelled: "Cancelada",
+      open: "Abierta",
+      created: "Creada",
+      unfulfilled: "No Procesada",
+      fulfilled: "Procesada",
+      closed: "Cerrada",
+      confirmed: "Confirmado",
+      pending: "Pendiente",
+    };
+
+    const set = new Set();
+    orders.forEach((o) => {
+      const st = o.marketPlace?.status;
+      if (st) set.add(st);
+    });
+
+    return Array.from(set).map((st) => ({
+      value: st,
+      label: STATUS_TRANSLATIONS[st.toLowerCase().trim()] || st,
+    }));
+  }, [orders]);
 
   useEffect(() => {
     if (!token || !selectedTenantId || selectedTenantId === "") return;
@@ -489,6 +627,25 @@ export const useOrdersTableLogic = ({
     resetPagination();
   }, [selectedTenantId, selectedOrderState, resetPagination]);
 
+  const headerFilters = useMemo(
+    () => ({
+      originStatus: originStatusFilter,
+      setOriginStatus: setOriginStatusFilter,
+      processingStatus: processingStatusFilter,
+      setProcessingStatus: setProcessingStatusFilter,
+      folio: folioFilter,
+      setFolio: setFolioFilter,
+    }),
+    [
+      originStatusFilter,
+      setOriginStatusFilter,
+      processingStatusFilter,
+      setProcessingStatusFilter,
+      folioFilter,
+      setFolioFilter,
+    ],
+  );
+
   const activeColumns = useMemo(() => {
     let mergedColumns = [...DASHBOARD_COLUMNS_TEMPLATE];
 
@@ -499,7 +656,6 @@ export const useOrdersTableLogic = ({
         );
         return {
           ...templateCol,
-
           active: backendCol ? backendCol.active : templateCol.active,
         };
       });
@@ -513,9 +669,6 @@ export const useOrdersTableLogic = ({
           (b.sortOrder ?? b.originalIndex ?? 0),
       );
   }, [columnsData]);
-
-  const orders = ordersData?.orders || [];
-  const meta = ordersData?.meta || {};
 
   const rows = useMemo(() => {
     return orders.map((order, index) => {
@@ -555,7 +708,7 @@ export const useOrdersTableLogic = ({
       return row;
     });
   }, [orders, activeColumns]);
-  //Cambiar solo a estados finales
+
   const isStateChangeLocked = useMemo(() => {
     if (!rowSelectionModel || rowSelectionModel.length === 0) return false;
 
@@ -579,7 +732,9 @@ export const useOrdersTableLogic = ({
   }, [rowSelectionModel, rows]);
 
   const columns = useMemo(() => {
-    const baseColumns = activeColumns.map(buildColumnDefinition);
+    const baseColumns = activeColumns.map((col) =>
+      buildColumnDefinition(col, headerFilters, availableOriginStatuses),
+    );
 
     baseColumns.push({
       field: "detalles",
@@ -620,7 +775,7 @@ export const useOrdersTableLogic = ({
     });
 
     return baseColumns;
-  }, [activeColumns, onSelectOrder]);
+  }, [activeColumns, onSelectOrder, headerFilters, availableOriginStatuses]);
 
   const rowCount = useMemo(() => {
     if (meta?.totalPages && meta?.pageSize)
@@ -656,16 +811,6 @@ export const useOrdersTableLogic = ({
     [activeColumns],
   );
 
-  //Antes
-  /*const handleExport = useCallback(() => {
-    const filters = {
-      state: apiStatus,
-      tenantId: selectedTenantId,
-      tenantName: selectedTenantName,
-    };
-    Object.keys(filters).forEach((k) => !filters[k] && delete filters[k]);
-    startExport(filters);
-  }, [apiStatus, selectedTenantId, selectedTenantName, startExport]);*/
   const handleExport = useCallback(() => {
     const filters = {
       state: apiStatus,
@@ -674,6 +819,9 @@ export const useOrdersTableLogic = ({
       startDate: startDateFilter,
       endDate: endDateFilter,
       marketPlace: selectedMarketplace,
+      originStatus: originStatusFilter,
+      processingStatus: processingStatusFilter,
+      folio: folioFilter,
     };
 
     const selectedIds = getSelectedOrderIds();
@@ -691,6 +839,9 @@ export const useOrdersTableLogic = ({
     startDateFilter,
     endDateFilter,
     selectedMarketplace,
+    originStatusFilter,
+    processingStatusFilter,
+    folioFilter,
     startExport,
     getSelectedOrderIds,
   ]);
@@ -705,6 +856,7 @@ export const useOrdersTableLogic = ({
     isStateChangeLocked,
     selectedMarketplace,
     setSelectedMarketplace,
+    availableOriginStatuses,
     clearSelection: () => handleSelectionModelChange([]),
     refreshData: triggerRefresh,
     formatOrdersForExport: formatOrdersForExportFunc,
@@ -719,7 +871,6 @@ export const useOrdersTableLogic = ({
       pageSizeOptions: PAGE_SIZE_OPTIONS,
       rowCount: Number(rowCount) || 0,
       onViewDetails: (row) => onSelectOrder(row),
-
       rowSelectionModel,
       onRowSelectionModelChange: handleSelectionModelChange,
       onToggleRowSelection: handleToggleRowSelection,

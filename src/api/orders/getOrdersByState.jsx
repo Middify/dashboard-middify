@@ -28,6 +28,11 @@ export const buildUrlWithParams = ({
   orderId,
   startDate,
   endDate,
+  originStatus,
+  processingStatus,
+  folio,
+  sortField,
+  sortDirection,
 } = {}) => {
   const url = new URL(API_URL);
   if (tenantId) url.searchParams.set("tenantId", tenantId);
@@ -39,6 +44,12 @@ export const buildUrlWithParams = ({
   if (orderId) url.searchParams.set("orderId", orderId);
   if (startDate) url.searchParams.set("startDate", startDate);
   if (endDate) url.searchParams.set("endDate", endDate);
+  if (originStatus) url.searchParams.set("originStatus", originStatus);
+  if (processingStatus)
+    url.searchParams.set("processingStatus", processingStatus);
+  if (folio) url.searchParams.set("folio", folio);
+  if (sortField) url.searchParams.set("sortField", sortField);
+  if (sortDirection) url.searchParams.set("sortDirection", sortDirection);
   return url;
 };
 

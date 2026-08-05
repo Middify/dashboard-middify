@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Snackbar, Alert } from "@mui/material";
 import OrdersTableHeader from "../components/orders/OrdersTableHeader";
 import TableGrid from "../components/common/TableGrid";
@@ -8,6 +8,7 @@ import { useOrdersTableLogic } from "../components/orders/useOrdersTableLogic";
 import { patchStateOrder } from "../api/orders/patchStateOrder";
 import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
 import exportOrdersToExcel from "../utils/exportOrdersToExcel";
+import PropTypes from "prop-types";
 
 const OrdersTable = ({
   token = null,
@@ -21,6 +22,11 @@ const OrdersTable = ({
   const [orderIdFilter, setOrderIdFilter] = useState("");
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
+  // Estados para los filtros secundarios
+  const [originStatusFilter, setOriginStatusFilter] = useState("");
+  const [processingStatusFilter, setProcessingStatusFilter] = useState("");
+  const [folioFilter, setFolioFilter] = useState("");
+
   const [sortModel, setSortModel] = useState([
     { field: "lastUpdate", sort: "desc" },
   ]);
@@ -36,6 +42,7 @@ const OrdersTable = ({
     formatOrdersForExport,
     selectedMarketplace,
     setSelectedMarketplace,
+    availableOriginStatuses,
     exporting,
     onExport,
   } = useOrdersTableLogic({
@@ -48,6 +55,12 @@ const OrdersTable = ({
     endDateFilter,
     onSelectOrder,
     sortModel,
+    originStatusFilter,
+    setOriginStatusFilter,
+    processingStatusFilter,
+    setProcessingStatusFilter,
+    folioFilter,
+    setFolioFilter,
     onExportSuccess: () => {
       setSnackbar({
         open: true,
@@ -276,7 +289,12 @@ const OrdersTable = ({
     } finally {
       setIsExportingSelection(false);
     }
-  }, [getSelectedOrders, formatOrdersForExport, exportFileName, grid.columns]);
+  }, [
+    getSelectedOrders,
+    formatOrdersForExport,
+    exportFileName,
+    visibleColumns,
+  ]);
 
   return (
     <>
@@ -306,7 +324,7 @@ const OrdersTable = ({
           endDateFilter={endDateFilter}
           onEndDateChange={setEndDateFilter}
         />
-        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col overflow-visible mt-10">
           <TableGrid
             {...grid}
             columns={visibleColumns}
@@ -315,6 +333,7 @@ const OrdersTable = ({
             sortModel={sortModel}
             onSortModelChange={(newModel) => setSortModel(newModel)}
             sortingMode="server"
+            columnHeaderHeight={65}
           />
         </section>
       </div>
@@ -343,6 +362,15 @@ const OrdersTable = ({
       </Snackbar>
     </>
   );
+};
+OrdersTable.propTypes = {
+  token: PropTypes.string,
+  selectedTenantId: PropTypes.string,
+  selectedTenantName: PropTypes.string,
+  selectedOrderState: PropTypes.string,
+  onSelectOrder: PropTypes.func,
+  user: PropTypes.object,
+  availableMarketplaces: PropTypes.array,
 };
 
 export default OrdersTable;

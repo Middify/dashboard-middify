@@ -89,7 +89,7 @@ const TableGrid = ({
   MobileComponent,
   mobileComponentProps = {},
   rowHeight = 52,
-  headerHeight = 48,
+  headerHeight = 65,
   checkboxSelection = false,
 }) => {
   const { page, pageSize } = paginationModel;
