@@ -14,7 +14,6 @@ import {
 import { useExportOrders } from "./useExportOrders";
 import { useTableState } from "../../hooks/useTableState";
 
-// 🌟 COMPONENTES DE FILTRO (TÍTULO ARRIBA, INPUT ABAJO)
 const HeaderSelectFilter = ({ title, value, onChange, options = [] }) => (
   <div className="flex flex-col w-full gap-1.5 justify-center h-full">
     <span className="font-semibold text-[11px] text-slate-600 uppercase tracking-wider truncate leading-none">

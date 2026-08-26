@@ -14,25 +14,15 @@ import {
 import HistoryIcon from "@mui/icons-material/History";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 
-const PanelSeven = ({ data, current }) => {
+const PanelSeven = ({ data }) => {
   const pastHistory = data?.history || [];
 
   const fullHistory = useMemo(() => {
     const historyArray = [...pastHistory];
-
-    if (current && current.statusOrder) {
-      historyArray.push({
-        status: current.statusOrder,
-        mensaje: current.message || "Estado actual",
-        timestamp: current.lastUpdate || current.creation,
-        isCurrent: true,
-      });
-    }
-
     return historyArray.sort(
       (a, b) => new Date(b.timestamp) - new Date(a.timestamp),
     );
-  }, [pastHistory, current]);
+  }, [pastHistory]);
 
   if (fullHistory.length === 0) {
     return (
@@ -44,6 +34,7 @@ const PanelSeven = ({ data, current }) => {
       </div>
     );
   }
+
   const cleanUser = (mensaje) => {
     if (!mensaje) return "Sistema";
     const match = mensaje.match(/por\s+(.+)$/i);
@@ -129,11 +120,6 @@ const PanelSeven = ({ data, current }) => {
                   <TableCell className="text-slate-600">
                     <div className="flex flex-col gap-1">
                       <span className="text-sm">
-                        {log.isCurrent && (
-                          <strong className="text-indigo-600 mr-1">
-                            Actual:
-                          </strong>
-                        )}
                         {cleanMessage(log.mensaje)}
                       </span>
                       <div className="flex items-center gap-1.5 text-slate-400 mt-1">
@@ -158,12 +144,10 @@ PanelSeven.propTypes = {
   data: PropTypes.shape({
     history: PropTypes.array,
   }),
-  current: PropTypes.object,
 };
 
 PanelSeven.defaultProps = {
   data: null,
-  current: null,
 };
 
 export default PanelSeven;

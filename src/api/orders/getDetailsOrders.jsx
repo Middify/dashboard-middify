@@ -49,11 +49,7 @@ export const getOrderDetails = async ({ token, orderId, signal } = {}) => {
   return payload?.data || payload;
 };
 
-export const useOrderDetails = (
-  token,
-  orderId,
-  { enabled = true } = {}
-) => {
+export const useOrderDetails = (token, orderId, { enabled = true } = {}) => {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(Boolean(token && orderId && enabled));
   const [error, setError] = useState(null);
@@ -127,5 +123,3 @@ export const useOrderDetails = (
 
   return { details, loading, error };
 };
-
-

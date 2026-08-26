@@ -9,6 +9,7 @@ import { patchStateOrder } from "../api/orders/patchStateOrder";
 import { STATE_DEFINITIONS } from "../components/dashboard/CardsStates";
 import exportOrdersToExcel from "../utils/exportOrdersToExcel";
 import PropTypes from "prop-types";
+import { reprocessOrders } from "../api/orders/reprocessOrders";
 
 const OrdersTable = ({
   token = null,
@@ -76,6 +77,7 @@ const OrdersTable = ({
   const [pendingStatus, setPendingStatus] = useState(null);
   const [selectedStatusValue, setSelectedStatusValue] = useState("");
   const [isExportingSelection, setIsExportingSelection] = useState(false);
+  const [isReprocessing, setIsReprocessing] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -131,6 +133,25 @@ const OrdersTable = ({
 
     return !hasLockedOrder;
   }, [user, getSelectedOrders, selectedRowIds]);
+
+  // 🌟 NUEVA LÓGICA: Evaluar si se puede reprocesar la selección
+  const canReprocess = useMemo(() => {
+    // Si no es musicChile, apagamos el botón automáticamente
+    if (
+      selectedTenantName !== "musicChile" &&
+      selectedTenantName !== "musicchile"
+    )
+      return false;
+
+    const selectedOrders = getSelectedOrders();
+    if (selectedOrders.length === 0) return false;
+
+    // Retorna true si AL MENOS UNA orden en la selección cumple el criterio estricto
+    return selectedOrders.some((order) => {
+      const currentStatus = (order.status || order.state || "").toLowerCase();
+      return currentStatus === "error" && order.extras?.dontRetry === true;
+    });
+  }, [selectedTenantName, getSelectedOrders]);
 
   const stateOptions = useMemo(() => {
     const baseOptions =
@@ -242,6 +263,43 @@ const OrdersTable = ({
     clearSelection,
   ]);
 
+  // 🌟 NUEVA FUNCIÓN: Ejecutar el reprocesamiento
+  const handleReprocessOrders = useCallback(async () => {
+    const selectedOrders = getSelectedOrders();
+
+    // Filtramos para enviar SOLO los IDs de las órdenes que realmente cumplen las reglas
+    const validIds = selectedOrders
+      .filter((o) => {
+        const currentStatus = (o.status || o.state || "").toLowerCase();
+        return currentStatus === "error" && o.extras?.dontRetry === true;
+      })
+      .map((o) => o._id || o.id);
+
+    if (validIds.length === 0) {
+      alert("En tu selección no hay órdenes válidas para reprocesar.");
+      return;
+    }
+
+    setIsReprocessing(true);
+    try {
+      await reprocessOrders({ token, orderIds: validIds });
+      refreshData();
+      clearSelection();
+      setSnackbar({
+        open: true,
+        message: `Se enviaron ${validIds.length} órdenes a reprocesar.`,
+        severity: "success",
+      });
+    } catch (err) {
+      console.error("Error al reprocesar órdenes:", err);
+      alert(
+        `Error al reprocesar: ${err.message || "Ocurrió un error inesperado"}`,
+      );
+    } finally {
+      setIsReprocessing(false);
+    }
+  }, [token, getSelectedOrders, refreshData, clearSelection]);
+
   const exportFileName = useMemo(() => {
     const parts = ["ordenes"];
     const sanitize = (value) =>
@@ -323,6 +381,9 @@ const OrdersTable = ({
           onStartDateChange={setStartDateFilter}
           endDateFilter={endDateFilter}
           onEndDateChange={setEndDateFilter}
+          onReprocessData={handleReprocessOrders}
+          isReprocessing={isReprocessing}
+          canReprocess={canReprocess}
         />
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col overflow-visible mt-10">
           <TableGrid

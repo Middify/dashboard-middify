@@ -56,6 +56,7 @@ const CreateUsers = ({
   const [formData, setFormData] = useState({
     email: "",
     fullName: "",
+    phone: "",
     tenantId: "",
     role: rolesPermitidos[0]?.value || "",
   });
@@ -74,26 +75,32 @@ const CreateUsers = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🌟 AHORA SIEMPRE ES OBLIGATORIO PARA SATISFACER A COGNITO
     if (!formData.tenantId) {
       toast.error("Por favor selecciona una tienda base (tenant)");
       return;
     }
 
+    // validacion para telefono
+    if (formData.phone) {
+      const phoneRegex = /^\+[1-9]\d{10,14}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        toast.error(
+          "El teléfono debe usar formato internacional (Ej: +56912345678)",
+        );
+        return;
+      }
+    }
+    console.log("Payload a enviar:", formData);
     setLoading(true);
     try {
       const payload = { ...formData };
 
-      // 🌟 LE PASAMOS UN ID REAL A COGNITO (EL QUE ELIGIÓ EN EL SELECTOR)
-      // Ya no forzamos "ALL" en el tenantId principal para que Cognito no falle.
       const selectedT = tenantsParaMostrar.find(
         (t) => t.tenantId === formData.tenantId,
       );
 
-      // LÓGICA MULTI-TENANT PARA MONGODB
+      // LÓGICA MULTI-TENANT
       if (isGlobalRole) {
-        // En BD le guardamos la lista completa de tenants por si acaso,
-        // aunque el backend ya sabe que es global por su rol.
         payload.tenant = tenantsParaMostrar.map((t) => ({
           tenantId: t.tenantId,
           tenantName: t.tenantName,
@@ -112,6 +119,7 @@ const CreateUsers = ({
       setFormData({
         email: "",
         fullName: "",
+        phone: "",
         tenantId: "",
         role: rolesPermitidos[0]?.value || "",
       });
@@ -175,6 +183,20 @@ const CreateUsers = ({
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="usuario@ejemplo.com"
+                className="text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50/30 transition-all"
+              />
+            </div>
+            {/*  INPUT DE TELÉFONO */}
+            <div className="flex flex-col">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                Teléfono
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Ej: +56912345678"
                 className="text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50/30 transition-all"
               />
             </div>

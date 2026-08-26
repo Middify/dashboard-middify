@@ -179,7 +179,7 @@ const RecycleBinWrapper = () => {
 };
 
 const DetailsRoute = () => {
-  const { token, lastOrderState } = useOutletContext();
+  const { token, user, lastOrderState } = useOutletContext();
   const routeParams = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -204,6 +204,7 @@ const DetailsRoute = () => {
       orderId={routeParams.orderId ?? null}
       fallbackOrder={fallbackOrder}
       onClose={handleCloseOrderDetails}
+      currentUser={user}
     />
   );
 };

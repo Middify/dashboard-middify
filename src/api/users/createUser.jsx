@@ -5,6 +5,7 @@ export const createUser = async ({
   token,
   email,
   fullName,
+  phone,
   tenantId,
   tenant,
   role,
@@ -23,6 +24,7 @@ export const createUser = async ({
       body: JSON.stringify({
         email,
         fullName,
+        phone,
         tenantId,
         tenant,
         role,

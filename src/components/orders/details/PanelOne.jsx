@@ -1,132 +1,189 @@
 import PropTypes from "prop-types";
-import { formatDateTime, formatMoney, formatNumber, formatText } from "./formatters";
+import {
+  formatDateTime,
+  formatMoney,
+  formatNumber,
+  formatText,
+} from "./formatters";
 
-const InfoCard = ({ label, value }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-    <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
-    <p className="mt-1 text-sm font-medium text-slate-800">{value}</p>
-  </div>
-);
+const EditableInfoCard = ({
+  label,
+  value,
+  field,
+  isEditing,
+  isLocked,
+  type = "text",
+  placeholder,
+  hint,
+  onChange,
+}) => {
+  return (
+    <div
+      className={`rounded-xl border ${isEditing && !isLocked ? "border-indigo-200 bg-white shadow-sm ring-1 ring-indigo-50" : "border-slate-200 bg-slate-50"} p-4 transition-all`}
+    >
+      <p className="text-xs font-semibold uppercase text-slate-500 mb-1">
+        {label}
+      </p>
 
-InfoCard.propTypes = {
-  label: PropTypes.string.isRequired,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      {isEditing && !isLocked ? (
+        <div className="mt-1">
+          <input
+            type={type}
+            value={value || ""}
+            onChange={(e) => onChange(field, e.target.value)}
+            placeholder={placeholder}
+            className="w-full text-sm font-medium text-slate-800 bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-indigo-500 focus:bg-white placeholder:text-slate-300 transition-colors"
+          />
+          {hint && <p className="text-[10px] text-slate-400 mt-1">{hint}</p>}
+        </div>
+      ) : (
+        <p className="text-sm font-medium text-slate-800">
+          {type === "money"
+            ? formatMoney(value)
+            : type === "number"
+              ? formatNumber(value)
+              : formatText(value)}
+        </p>
+      )}
+    </div>
+  );
 };
 
-const PanelOne = ({ data, fallbackOrder, orderId }) => {
+const PanelOne = ({ data, fallbackOrder, orderId, isEditing, onChange }) => {
   const summaryInfo = [
     {
       label: "Orden marketplace",
-      value: formatText(
+      field: "orderId",
+      value:
         data?.orderId ??
-          fallbackOrder?.marketPlace?.orderId ??
-          fallbackOrder?.marketPlace?.idOrdenMarket ??
-          fallbackOrder?.orderId
-      ),
+        fallbackOrder?.marketPlace?.orderId ??
+        fallbackOrder?.marketPlace?.idOrdenMarket ??
+        fallbackOrder?.orderId,
+      isLocked: true,
     },
     {
       label: "ID interno",
-      value: formatText(orderId ?? fallbackOrder?._id ?? fallbackOrder?.id),
+      field: "_id",
+      value: orderId ?? fallbackOrder?._id ?? fallbackOrder?.id,
+      isLocked: true,
     },
     {
       label: "Marketplace",
-      value: formatText(
+      field: "nombre",
+      value:
         data?.nombre ??
-          fallbackOrder?.marketPlace?.nombre ??
-          fallbackOrder?.marketPlace?.name
-      ),
+        fallbackOrder?.marketPlace?.nombre ??
+        fallbackOrder?.marketPlace?.name,
+      isLocked: true,
     },
     {
       label: "Estado (Middify)",
-      value: formatText(
+      field: "statusOrder",
+      value:
         data?.statusOrder ??
-          fallbackOrder?.status ??
-          fallbackOrder?.marketPlace?.status
-      ),
+        fallbackOrder?.status ??
+        fallbackOrder?.marketPlace?.status,
+      isLocked: true,
+      placeholder: "Ej. ingresada, procesada, error, pendiente o descartada",
+      hint: "Debe coincidir con los estados válidos del sistema.",
     },
     {
       label: "Estado original",
-      value: formatText(
+      field: "status",
+      value:
         data?.status ??
-          fallbackOrder?.marketPlace?.status ??
-          fallbackOrder?.status
-      ),
+        fallbackOrder?.marketPlace?.status ??
+        fallbackOrder?.status,
+      isLocked: true,
     },
     {
       label: "Intentos",
-      value: formatNumber(
+      value:
         data?.attempts ??
-          fallbackOrder?.attempts ??
-          fallbackOrder?.marketPlace?.attempts
-      ),
+        fallbackOrder?.attempts ??
+        fallbackOrder?.marketPlace?.attempts,
+      type: "number",
+      isLocked: true,
     },
     {
       label: "Mensaje",
-      value: formatText(
+      field: "message",
+      value:
         data?.message ??
-          fallbackOrder?.message ??
-          fallbackOrder?.marketPlace?.message
-      ),
+        fallbackOrder?.message ??
+        fallbackOrder?.marketPlace?.message,
+      isLocked: true,
+      placeholder: "Ej. Timeout esperando respuesta del ERP",
     },
     {
       label: "Creación",
-      value: formatDateTime(
+      field: "creation",
+      value:
         data?.creation ??
-          fallbackOrder?.creation ??
-          fallbackOrder?.marketPlace?.creation
-      ),
+        fallbackOrder?.creation ??
+        fallbackOrder?.marketPlace?.creation,
+      type: "date", // Esto es solo referencial, está bloqueado
+      isLocked: true,
     },
     {
       label: "Última actualización",
-      value: formatDateTime(
+      field: "lastUpdate",
+      value:
         data?.lastUpdate ??
-          fallbackOrder?.lastUpdate ??
-          fallbackOrder?.marketPlace?.lastUpdate
-      ),
+        fallbackOrder?.lastUpdate ??
+        fallbackOrder?.marketPlace?.lastUpdate,
+      type: "date",
+      isLocked: true,
     },
     {
       label: "Error reportado",
-      value: formatText(
+      value:
         data?.errorDetail?.message ??
-          fallbackOrder?.errorDetail?.message ??
-          fallbackOrder?.marketPlace?.errorDetail?.message
-      ),
+        fallbackOrder?.errorDetail?.message ??
+        fallbackOrder?.marketPlace?.errorDetail?.message,
+      isLocked: true,
     },
     {
       label: "Subtotal",
-      value: formatMoney(data?.subTotal ?? fallbackOrder?.subTotal),
+      field: "subTotal",
+      value: data?.subTotal ?? fallbackOrder?.subTotal,
+      type: "money",
+      isLocked: true,
+      placeholder: "0",
     },
     {
       label: "Total",
-      value: formatMoney(data?.total ?? fallbackOrder?.total),
+      field: "total",
+      value: data?.total ?? fallbackOrder?.total,
+      type: "money",
+      isLocked: true,
+      placeholder: "0",
     },
   ];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-slate-800">Resumen de la orden</h2>
+      <h2 className="text-lg font-semibold text-slate-800">
+        {isEditing ? "Editando Resumen" : "Resumen de la orden"}
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2">
-        {summaryInfo.map((item) => (
-          <InfoCard key={item.label} label={item.label} value={item.value} />
+        {summaryInfo.map((item, i) => (
+          <EditableInfoCard
+            key={i}
+            label={item.label}
+            value={item.value}
+            field={item.field}
+            type={item.type}
+            isEditing={isEditing}
+            isLocked={item.isLocked}
+            placeholder={item.placeholder}
+            hint={item.hint}
+            onChange={onChange}
+          />
         ))}
       </div>
     </div>
   );
 };
 
-PanelOne.propTypes = {
-  data: PropTypes.object,
-  fallbackOrder: PropTypes.object,
-  orderId: PropTypes.string,
-};
-
-PanelOne.defaultProps = {
-  data: null,
-  fallbackOrder: null,
-  orderId: null,
-};
-
 export default PanelOne;
-
-
-

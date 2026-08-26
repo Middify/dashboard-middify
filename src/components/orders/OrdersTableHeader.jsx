@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
+import ReplayIcon from "@mui/icons-material/Replay";
 
 const OrdersTableHeader = ({
   title,
@@ -28,6 +29,9 @@ const OrdersTableHeader = ({
   endDateFilter,
   onEndDateChange,
   availableMarketplaces = [],
+  onReprocessData,
+  isReprocessing,
+  canReprocess,
 }) => {
   const hasSelection = selectedCount > 0;
   const hasActiveFilters = Boolean(
@@ -149,6 +153,23 @@ const OrdersTableHeader = ({
               {!hasSelection && (
                 <span className="hidden sm:block text-xs text-slate-400 italic mr-1"></span>
               )}
+              {/* Botón Reprocesar */}
+              {hasSelection && canReprocess && (
+                <button
+                  type="button"
+                  onClick={onReprocessData}
+                  disabled={isReprocessing}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+                  title="Habilitar estas órdenes para un nuevo reintento"
+                >
+                  {isReprocessing ? (
+                    <CircularProgress size={14} color="inherit" />
+                  ) : (
+                    <ReplayIcon className="text-[16px]" />
+                  )}
+                  <span>Reprocesar</span>
+                </button>
+              )}
 
               {/* Botón Exportar Todo / Exportar Filtrado */}
               <button
@@ -257,7 +278,7 @@ const OrdersTableHeader = ({
               </div>
             </div>
 
-            {/* 2. Filtro de ID de Orden */}
+            {/* Filtro de ID de Orden */}
             <div className="relative w-full sm:w-64">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                 <svg
@@ -283,7 +304,7 @@ const OrdersTableHeader = ({
               />
             </div>
 
-            {/* 3. Filtro de Fecha */}
+            {/* Filtro de Fecha */}
             <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
               <div className="relative w-full sm:w-36">
                 <input

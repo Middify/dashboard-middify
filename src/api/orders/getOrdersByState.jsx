@@ -58,7 +58,7 @@ export const fetchOrdersByState = async ({ token, params = {}, signal }) => {
 
   if (!params.tenantId || params.tenantId === "") {
     console.log("Petición fantasma bloqueada exitosamente");
-    return { orders: [], meta: { total: 0, totalPages: 0 } }; // Le damos un resultado vacío a React para que se quede tranquilo
+    return { orders: [], meta: { total: 0, totalPages: 0 } };
   }
   const response = await fetch(buildUrlWithParams(params), {
     headers: { Authorization: `Bearer ${token}` },
